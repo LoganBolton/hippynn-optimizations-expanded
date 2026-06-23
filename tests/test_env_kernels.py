@@ -6,9 +6,19 @@ import torch
 import hippynn
 
 from hippynn.custom_kernels import CUSTOM_KERNELS_AVAILABLE, _RECOMMENDED_CUSTOM_KERNELS
+
 CUDA_STATUSES = [False]
 if torch.cuda.is_available():
     CUDA_STATUSES.append(True)
+
+TEST_KERNELS = list(set(list(CUSTOM_KERNELS_AVAILABLE) + list(_RECOMMENDED_CUSTOM_KERNELS)))
+
+KERNEL_PARAMETRIZATION = []
+for kname in TEST_KERNELS:
+    skip = kname not in CUSTOM_KERNELS_AVAILABLE
+    marks = pytest.mark.skipif(skip, reason=f"envsum kernels implementation {kname!r} not available")
+    KERNEL_PARAMETRIZATION.append(pytest.param(kname, marks=marks))
+
 
 from hippynn.custom_kernels.env_pytorch import envsum, sensesum, featsum
 from hippynn.custom_kernels.registry import MessagePassingKernels
@@ -41,21 +51,18 @@ def default_envtest_args():
         no_speed=True,
         no_gpu=False,
         no_cpu=False,
-        n_large=0, 
+        n_large=0,
         seed=0,
     )
     args = SimpleNamespace(**args)
     return args
 
 
-@pytest.mark.xfail(strict=False)
-@pytest.mark.parametrize("implementation",_RECOMMENDED_CUSTOM_KERNELS)
-def test_available_implementation(implementation):
-    assert implementation in CUSTOM_KERNELS_AVAILABLE
+ignore_not_importable = pytest.mark.filterwarnings("ignore:.*implementation not importable*.")
 
 
-@pytest.mark.filterwarnings("ignore:.*implementation not importable*.")
-def test_meta_envsum(default_envtest_args):
+@ignore_not_importable
+def test_meta_envsum_fails_when_bad(default_envtest_args):
     """
     Test that the envsum tester fails if the envsum implementation is broken.
     """
@@ -79,17 +86,22 @@ def test_meta_envsum(default_envtest_args):
     args.no_cpu = False
     args.implementation = "bad_kernels"
     import hippynn.custom_kernels.test_env as test_env
+
     with pytest.raises(RuntimeError) as e:
+        print("NOTE: the following is supposed to fail:")
         test_env.main(args)
+    print("NOTE: the above was supposed to fail!")
     assert "Failed during envsum" in str(e.value)
 
-@pytest.mark.filterwarnings("ignore:.*implementation not importable*.")
+
+@ignore_not_importable
 @pytest.mark.parametrize("cuda_status", CUDA_STATUSES)
-@pytest.mark.parametrize("implementation", CUSTOM_KERNELS_AVAILABLE.copy())
+@pytest.mark.parametrize("implementation", KERNEL_PARAMETRIZATION)
 def test_envsum_kernel(implementation, cuda_status, default_envtest_args):
     args = default_envtest_args
     args.no_gpu = not cuda_status
     args.no_cpu = cuda_status
 
     import hippynn.custom_kernels.test_env as test_env
+
     test_env.main(args)

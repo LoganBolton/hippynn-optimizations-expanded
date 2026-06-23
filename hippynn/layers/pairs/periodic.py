@@ -1,6 +1,7 @@
 import torch
 
 from .open import _PairIndexer, PairMemory
+from .csr_pairs import calc_neighbors
 
 # Deprecated?
 class StaticImagePeriodicPairIndexer(_PairIndexer):
@@ -22,11 +23,11 @@ class StaticImagePeriodicPairIndexer(_PairIndexer):
             cur_device = coordinates.device
 
             # Figure out how many molecules and atoms we have
-            n_molecules, n_atoms, _ = coordinates.shape
+            n_systems, n_atoms, _ = coordinates.shape
             n_atoms_max_batch = int(nonblank.sum(axis=1).max())
             # Construct a unique index for each atom (including blanks here)
             atom_index = torch.reshape(
-                torch.arange(n_molecules * n_atoms, dtype=torch.long, device=cur_device), (n_molecules, n_atoms)
+                torch.arange(n_systems * n_atoms, dtype=torch.long, device=cur_device), (n_systems, n_atoms)
             )
 
             nonblank = nonblank[:, :n_atoms_max_batch]
@@ -71,7 +72,7 @@ class StaticImagePeriodicPairIndexer(_PairIndexer):
 
             del nb_b, nb_a1, nb_a2, cp_pair, pair_dist, offsets, pair_diffcoords, nonblank_pair, atom_index
 
-        coordflat = original_coordinates.reshape(n_molecules * n_atoms, 3)[real_atoms]
+        coordflat = original_coordinates.reshape(n_systems * n_atoms, 3)[real_atoms]
         paircoord = coordflat[pair_first] - coordflat[pair_second] + pair_offsets
         distflat2 = paircoord.norm(dim=1)
 
@@ -215,11 +216,11 @@ class PeriodicPairIndexer(_PairIndexer):
             cur_device = coordinates.device
 
             # Figure out how many molecules and atoms we have
-            n_molecules, n_atoms, _ = coordinates.shape
+            n_systems, n_atoms, _ = coordinates.shape
             n_atoms_max_batch = nonblank.sum(dim=1).max()
             # Construct a unique index for each atom (including blanks here)
-            atom_index = torch.arange(n_molecules * n_atoms, dtype=torch.long, device=cur_device)
-            atom_index = atom_index.reshape(n_molecules, n_atoms)
+            atom_index = torch.arange(n_systems * n_atoms, dtype=torch.long, device=cur_device)
+            atom_index = atom_index.reshape(n_systems, n_atoms)
 
             # Trim padding in this batch to minimal level
             nonblank = nonblank[:, :n_atoms_max_batch]
@@ -298,7 +299,7 @@ class PeriodicPairIndexer(_PairIndexer):
             int_offsets = combinator[nb_image]
             nonself_pairs = torch.logical_or(int_offsets.to(torch.bool).any(dim=1), torch.ne(nb_p1, nb_p2))
 
-            # Compute indices of considered pairs relative to MolAtom format.
+            # Compute indices of considered pairs relative to SysAtom format.
             pair_first = atom_index[nb_sys, nb_p1]
             del nb_p1
             pair_second = atom_index[nb_sys, nb_p2]
@@ -320,7 +321,7 @@ class PeriodicPairIndexer(_PairIndexer):
             del int_offsets, close_pairs
             # ## End expensive part ## #
 
-            # This converts the atom index from an index that counts blank atoms (MolAtom) to one that doesn't;
+            # This converts the atom index from an index that counts blank atoms (SysAtom) to one that doesn't;
             # Afterwards it indexes the flat array of atoms in the batch. (Atoms format)
             pair_first = inv_real_atoms[pair_first]
             pair_second = inv_real_atoms[pair_second]
@@ -335,7 +336,7 @@ class PeriodicPairIndexer(_PairIndexer):
 
         # Compute distance differentiably from total image offsets and pair indices
         pair_shifts = torch.matmul(cell_offsets.unsqueeze(1).to(cells.dtype), cells[pair_mol]).squeeze(1)
-        coordflat = original_coordinates.reshape(n_molecules * n_atoms, 3)[real_atoms]
+        coordflat = original_coordinates.reshape(n_systems * n_atoms, 3)[real_atoms]
         paircoord = coordflat[pair_first] - coordflat[pair_second] + pair_shifts
         distflat2 = paircoord.norm(dim=1)
 
@@ -357,7 +358,7 @@ class PeriodicPairIndexerMemory(PairMemory):
 
     def forward(self, coordinates, nonblank, real_atoms, inv_real_atoms, cells):
         if self.recalculation_needed(coordinates, cells):
-            self.n_molecules, self.n_atoms, _ = coordinates.shape
+            self.n_systems, self.n_atoms, _ = coordinates.shape
             self.recalculations += 1
 
             inputs = (coordinates, nonblank, real_atoms, inv_real_atoms, cells)
@@ -378,9 +379,33 @@ class PeriodicPairIndexerMemory(PairMemory):
         else:
             self.reuses += 1
             pair_shifts = torch.matmul(self.cell_offsets.unsqueeze(1).to(cells.dtype), cells[self.pair_mol]).squeeze(1)
-            coordflat = coordinates.reshape(self.n_molecules * self.n_atoms, 3)[real_atoms]
+            coordflat = coordinates.reshape(self.n_systems * self.n_atoms, 3)[real_atoms]
             paircoord = coordflat[self.pair_first] - coordflat[self.pair_second] + pair_shifts
             distflat = paircoord.norm(dim=1)
 
         # We filter the lists to only send forward relevant pairs (those with distance under cutoff), improving performance.   
         return filter_pairs(self.hard_dist_cutoff, distflat, self.pair_first, self.pair_second, paircoord, self.cell_offsets, self.offset_num)
+    
+
+class SparsePairIndexer(_PairIndexer):
+    def forward(self, coordinates, nonblank, real_atoms, inv_real_atoms, cells, cutoff=None):
+
+        # TODO CSR algorithm re-generates atom indices (real atoms/inv_real_atoms),
+        # pass those in instead (in case atoms are numbered differently) 
+
+        if cutoff is None:
+            cutoff = self.hard_dist_cutoff
+       
+        with torch.no_grad():
+            pair_first, pair_second, pair_system, cell_offsets = calc_neighbors(coordinates, nonblank, cells, cutoff, return_displacements=False)
+
+        pair_shifts = torch.matmul(cell_offsets.unsqueeze(1).to(cells.dtype), cells[pair_system]).squeeze(1)
+        n_systems, n_atoms, ndim = coordinates.shape
+
+        coordflat = coordinates.reshape(n_systems * n_atoms, 3)[real_atoms]
+        pair_coord = coordflat[pair_first] - coordflat[pair_second] + pair_shifts
+        distflat2 = pair_coord.norm(dim=1)
+
+        # final None is offset number, which is used when caching pairs?
+        return distflat2, pair_first, pair_second, pair_coord, cell_offsets, None
+

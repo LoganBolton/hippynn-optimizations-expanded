@@ -129,8 +129,9 @@ class InteractLayerVec(InteractLayer):
             f"Loaded state does not contain 'cusp_reg' parameter. "
             f"Using deprecated value of 1e-30. "
             f"This compatibility behavior will be removed in the future. "
-            f"To avoid this warning, re-save this model."
-        )
+            f"To avoid this warning, re-save this model.",
+            stacklevel=3,
+            )
         self.set_extra_state({"cusp_reg": DEPRECATED_CUSP_REG})
         missing.remove(m)
 
@@ -304,6 +305,11 @@ class HOPInteractionLayer(InteractLayer):
             self.group_norm = torch.nn.GroupNorm(self.n_invariants, self.n_invariants * self.nf_out, eps=group_norm_eps, affine=True)
         else:
             self.group_norm = None
+
+    def regularization_params(self):
+        p = super().regularization_params()
+        p += [self.mixing_weights]
+        return p
 
     def forward(self, in_features, pair_first, pair_second, dist_pairs, tensor_rhats):
 
