@@ -19,7 +19,7 @@ def test_polynomial_invariants():
 
         from hippynn.custom_kernels.poly_triton import EvaluatePolynomials
 
-        for l_max in range(4):
+        for l_max in range(5):
             for n_max in range(1,5):
 
                 n_tensor_comp = (l_max+1)**2
@@ -59,7 +59,7 @@ def test_invariants_wrapper():
     except:
         triton_available = False
 
-    for l_max in range(4):
+    for l_max in range(5):
         for n_max in range(1,5):
 
             n_tensor_comp = (l_max+1)**2

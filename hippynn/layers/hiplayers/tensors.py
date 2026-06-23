@@ -155,7 +155,7 @@ c = {}
 p = {}
 c[0] = torch.ones((1, 1))
 p[0] = torch.ones((1, 1))
-for i in range(1, 4):
+for i in range(1, 5):
     c[i] = cartesian_irreducible_mapping(i).to(torch.get_default_dtype())
     p[i] = pinv_project(c[i])
 cmaps = c
@@ -171,7 +171,7 @@ class TensorExtractor(torch.nn.Module):
             p.requires_grad_(False)
 
     def forward(self, rhats):
-        s = v = q = t = None
+        s = v = q = t = f = None
         s = torch.ones(rhats.shape[0], device=rhats.device, dtype=rhats.dtype).unsqueeze(1)
         with shared_intermediates():  # opt_einsum or null, see import logic
             if self.l_max > 0:
@@ -180,7 +180,9 @@ class TensorExtractor(torch.nn.Module):
                 q = torch.einsum("ijk,bi,bj->bk", self.pmaps[2], rhats, rhats)
             if self.l_max > 2:
                 t = torch.einsum("ijkl,bi,bj,bk->bl", self.pmaps[3], rhats, rhats, rhats)
-        return s, v, q, t
+            if self.l_max > 3:
+                f = torch.einsum("ijklm,bi,bj,bk,bl->bm", self.pmaps[4], rhats, rhats, rhats, rhats)
+        return s, v, q, t, f
 
 
 # Note:!! Jitting this function with torch.jit.script does something bad:
@@ -193,7 +195,7 @@ def calc_invariants(l_max: int, n_max: int, tensor_features, C: List[Tensor]):
     im = intermediates
     I = invariants
 
-    s = v = q = t = None
+    s = v = q = t = f = None
 
     if l_max == 0:
         s = tensor_features
@@ -203,6 +205,8 @@ def calc_invariants(l_max: int, n_max: int, tensor_features, C: List[Tensor]):
         s, v, q = tensor_features.split([1, 3, 5], dim=-1)
     elif l_max == 3:
         s, v, q, t = tensor_features.split([1, 3, 5, 7], dim=-1)
+    elif l_max == 4:
+        s, v, q, t, f = tensor_features.split([1, 3, 5, 7, 9], dim=-1)
     else:
         raise ValueError(f"Invalid l_max:{l_max}")
 
@@ -295,6 +299,43 @@ def calc_invariants(l_max: int, n_max: int, tensor_features, C: List[Tensor]):
             # I[12] = torch.einsum('bi,bi->b',e,e) # no change
             I[12] = (e * e).sum(dim=-1)
 
+    if l_max >= 4:
+        if n_max >= 2:
+            c4_perm = C[4].permute(4, 0, 1, 2, 3).reshape(9, 81)
+            f_full = im["f_full"] = torch.matmul(f, c4_perm).reshape(-1, 3, 3, 3, 3)
+
+            # I[13] = torch.einsum('ijkl,ijkl->', four, four)
+            I[13] = (f_full * f_full).sum(dim=(-1, -2, -3, -4))
+
+        if n_max >= 3:
+            q_full = a_half
+            t_full = b_half
+
+            # I[14] = torch.einsum('ij,kl,ijkl->', two, two, four)
+            I[14] = torch.einsum("zij,zkl,zijkl->z", q_full, q_full, f_full)
+
+            # I[15] = torch.einsum('ij,iklm,jklm->', two, four, four)
+            I[15] = torch.einsum("zij,ziklm,zjklm->z", q_full, f_full, f_full)
+
+            # I[16] = torch.einsum('ijk,ilm,jklm->', three, three, four)
+            I[16] = torch.einsum("zijk,zilm,zjklm->z", t_full, t_full, f_full)
+
+            # I[17] = torch.einsum('ijkl,ijmn,klmn->', four, four, four)
+            I[17] = torch.einsum("zijkl,zijmn,zklmn->z", f_full, f_full, f_full)
+
+        if n_max >= 4:
+            # I[18] = torch.einsum('i,j,iklm,jklm->', one, one, four, four)
+            I[18] = torch.einsum("zi,zj,ziklm,zjklm->z", v, v, f_full, f_full)
+
+            # I[19] = torch.einsum('ij,kl,lm,ijkm->', two, two, two, four)
+            I[19] = torch.einsum("zij,zkl,zlm,zijkm->z", q_full, q_full, q_full, f_full)
+
+            # I[20] = torch.einsum('ijk,ijl,abkm,ablm->', three, three, four, four)
+            I[20] = torch.einsum("zijk,zijl,zabkm,zablm->z", t_full, t_full, f_full, f_full)
+
+            # I[21] = torch.einsum('ijkl,ijkm,abcl,abcm->', four, four, four, four)
+            I[21] = torch.einsum("zijkl,zijkm,zabcl,zabcm->z", f_full, f_full, f_full, f_full)
+
     invariants = [invariants[i] for i in sorted(invariants.keys())]
 
     invars = torch.stack(invariants, dim=-1)
@@ -311,19 +352,21 @@ class HopInvariantLayerTorch(torch.nn.Module):
         if self.n_max < 1 or self.n_max > 4:
             raise ValueError(f"Bad n: {n_max}")
 
-        if self.l_max < 0 or self.l_max > 3:
+        if self.l_max < 0 or self.l_max > 4:
             raise ValueError(f"Bad l: {l_max}")
 
     def extra_repr(self):
         return f"n_max={self.n_max}, l_max={self.l_max}"
 
     def forward(self, tensor_features):
-        s = v = q = t = True
+        s = v = q = t = f = True
         if self.l_max > 0:
             assert v is not None
             if self.l_max > 1:
                 assert q is not None
                 if self.l_max > 2:
                     assert t is not None
+                    if self.l_max > 3:
+                        assert f is not None
         C = self.cmaps
         return calc_invariants(self.l_max, self.n_max, tensor_features, C)
