@@ -247,18 +247,22 @@ class InteractLayerQuad(InteractLayerVec):
 
 # n_max, l_max: warning counts for invariants.
 _invariant_counts = {
+    (4, 4): 22,
     (4, 3): 13,
     (4, 2): 6,
     (4, 1): 2,  # Similar to HIP-NN-TS
     (4, 0): 1,  # Quasi-redundant with HIP-NN
+    (3, 4): 12,
     (3, 3): 7,
     (3, 2): 5,
     (3, 1): 2,  # Similar to HIP-NN-TS
     (3, 0): 1,  # Quasi-redundant with HIP-NN
+    (2, 4): 5,
     (2, 3): 4,  # Similar to HIP-NN-TS
     (2, 2): 3,  # Similar to HIP-NN-TS
     (2, 1): 2,  # Similar to HIP-NN-TS
     (2, 0): 1,  # Quasi-redundant with HIP-NN
+    (1, 4): 1,  # Quasi-redundant with HIP-NN
     (1, 3): 1,  # Quasi-redundant with HIP-NN
     (1, 2): 1,  # Quasi-redundant with HIP-NN
     (1, 1): 1,  # Quasi-redundant with HIP-NN
@@ -272,9 +276,13 @@ class HOPInteractionLayer(InteractLayer):
 
         if l_max < 0:
             raise ValueError(f"{l_max=} must be a non-negative integer.")
+        if l_max > 4:
+            raise ValueError(f"{l_max=} implementation not presently available.")
 
         if n_max <= 0:
             raise ValueError(f"{n_max=} must be a positive integer.")
+        if n_max > 4:
+            raise ValueError(f"{n_max=} implementation not presently available.")
         elif n_max == 1:
             if l_max > 0:
                 warnings.warn(f"If variable n_max==1, l_max>0 is unneeded. ({n_max=},{l_max=})")

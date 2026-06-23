@@ -34,7 +34,7 @@ except:
     triton_available_with_gather = False
 
 # tensor ordering and list of invariants for the default invariants.
-default_tensor_ordering = ["zero", "one", "two", "three"]
+default_tensor_ordering = ["zero", "one", "two", "three", "four"]
 
 default_invariants_list = [
     "->,zero",
@@ -50,7 +50,17 @@ default_invariants_list = [
     "ij,jkl,ikl->,two,three,three",
     "ij,jk,ilm,klm->,two,two,three,three",
     "ij,ijk,kab,ab->,two,three,three,two",
+    "ijkl,ijkl->,four,four",
+    "ij,kl,ijkl->,two,two,four",
+    "ij,iklm,jklm->,two,four,four",
+    "ijk,ilm,jklm->,three,three,four",
+    "ijkl,ijmn,klmn->,four,four,four",
+    "i,j,iklm,jklm->,one,one,four,four",
+    "ij,kl,lm,ijkm->,two,two,two,four",
+    "ijk,ijl,abkm,ablm->,three,three,four,four",
+    "ijkl,ijkm,abcl,abcm->,four,four,four,four",
 ]
+
 
 def split_invariant(invariants):
     """
