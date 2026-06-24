@@ -336,6 +336,9 @@ class TensorProductWrapper(torch.autograd.Function):
 
             device = T.device
             dtype = T.dtype
+            # Triton pointer args must be tensors, even when this branch does not read E.
+            if E is None:
+                E = torch.empty(1, device=device, dtype=dtype)
         else:
             i, t, nu, b = E.shape
             device = E.device
