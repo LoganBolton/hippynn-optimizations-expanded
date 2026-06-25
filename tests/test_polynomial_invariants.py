@@ -1,8 +1,66 @@
 import pytest
 import torch
 
-from hippynn.layers.hiplayers.tensors import HopInvariantLayerTorch
-from hippynn.layers.hiplayers.invariants import HopInvariantLayer, compute_invariant_polynomial_collection
+from hippynn.layers.hiplayers.tensors import HopInvariantLayerTorch, TensorExtractor
+from hippynn.layers.hiplayers.invariants import HopInvariantLayer, compute_invariant_polynomial_collection, default_invariants_list, split_invariant
+from hippynn.layers.hiplayers.interactions import _invariant_counts
+
+
+def test_default_invariant_definitions_parse():
+    for invariant in default_invariants_list:
+        indices, tensors = split_invariant(invariant)
+        assert len(indices) == len(tensors)
+
+        for index, tensor in zip(indices, tensors):
+            assert len(index) == {"zero": 0, "one": 1, "two": 2, "three": 3, "four": 4}[tensor]
+
+
+def test_polynomial_invariant_counts_match_interaction_lmax4():
+    for n_max in range(1, 5):
+        polyCollection = compute_invariant_polynomial_collection(n_max, 4)
+        _, _, polynomial_sizes, _ = polyCollection.get_polynomials()
+
+        assert len(polynomial_sizes) == _invariant_counts[n_max, 4]
+
+
+def evaluate_polynomial_collection_torch(x, polyCollection):
+    coefs, terms, polynomial_sizes, _ = polyCollection.get_polynomials()
+
+    outputs = []
+    monomial_start = 0
+    for polynomial_size in polynomial_sizes.tolist():
+        values = x.new_zeros(x.shape[0])
+        for monomial_idx in range(monomial_start, monomial_start + polynomial_size):
+            term_indices = terms[monomial_idx]
+            term_indices = term_indices[term_indices >= 0]
+            values = values + coefs[monomial_idx].to(x) * x[:, term_indices].prod(dim=1)
+
+        outputs.append(values)
+        monomial_start += polynomial_size
+
+    return torch.stack(outputs, dim=1)
+
+
+def test_polynomial_invariants_are_rotation_invariant_lmax4():
+    n_point = 11
+    torch.manual_seed(0)
+
+    rhats = torch.randn(n_point, 3)
+    rhats = rhats / rhats.norm(dim=1, keepdim=True)
+
+    rotation, _ = torch.linalg.qr(torch.randn(3, 3))
+    if torch.linalg.det(rotation) < 0:
+        rotation[:, 0] *= -1
+
+    tensor_extractor = TensorExtractor(l_max=4)
+    tensor_features = torch.cat(tensor_extractor(rhats), dim=1)
+    rotated_tensor_features = torch.cat(tensor_extractor(rhats @ rotation), dim=1)
+
+    polyCollection = compute_invariant_polynomial_collection(n_max=4, l_max=4)
+    invariants = evaluate_polynomial_collection_torch(tensor_features, polyCollection)
+    rotated_invariants = evaluate_polynomial_collection_torch(rotated_tensor_features, polyCollection)
+
+    assert torch.allclose(invariants, rotated_invariants, rtol=1e-4, atol=1e-4)
 
 def test_polynomial_invariants():
 

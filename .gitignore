@@ -4,6 +4,8 @@ __pycache__/
 *.pyc
 build/
 hippynn.egg-info/*
+.venv-methane/
+.matplotlib-cache/
 
 **/*.ipynb_checkpoints/
 **/__pycache__/

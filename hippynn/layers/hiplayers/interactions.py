@@ -247,7 +247,7 @@ class InteractLayerQuad(InteractLayerVec):
 
 # n_max, l_max: warning counts for invariants.
 _invariant_counts = {
-    (4, 4): 22,
+    (4, 4): 23,
     (4, 3): 13,
     (4, 2): 6,
     (4, 1): 2,  # Similar to HIP-NN-TS
