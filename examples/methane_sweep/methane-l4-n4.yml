@@ -1,0 +1,17 @@
+name: methane-l4-n4
+program: examples/methane_sweep/methane_configurations.py
+method: grid
+metric:
+  name: T-MAE
+  goal: minimize
+parameters:
+  run_name:
+    value: methane-l4-n4
+  wandb_mode:
+    value: online
+  seed:
+    values: [2025, 2026, 2027, 2028]
+  hiphop_l_max:
+    value: 4
+  hiphop_n_max:
+    value: 4

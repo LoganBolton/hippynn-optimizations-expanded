@@ -25,11 +25,69 @@ below, which will create a methane.traj file automatically for future use. But t
 may take a while (~1hr)."
 """
 
+import argparse
+import json
 import os
+import subprocess
+
+def positive_int(value):
+    value = int(value)
+    if value <= 0:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return value
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--seed", type=int, required=True)
+parser.add_argument("--hiphop_l_max", type=int, choices=range(0, 5), required=True)
+parser.add_argument("--hiphop_n_max", type=int, choices=range(1, 5), required=True)
+parser.add_argument("--run_name", type=str, required=True)
+parser.add_argument("--wandb_mode", choices=("online", "offline", "disabled"), required=True)
+parser.add_argument("--n_epochs", type=positive_int, default=10_000)
+parser.add_argument("--data_size", type=positive_int, default=1000)
+parser.add_argument("--test_set_size", type=positive_int, default=80_000)
+parser.add_argument("--activation_max_batches", type=positive_int, default=10)
+parser.add_argument("--activation_max_values", type=positive_int, default=200_000)
+args, _ = parser.parse_known_args()
+
 import ase
+import matplotlib.pyplot as plt
 import torch
 import numpy as np
 from pathlib import Path
+
+try:
+    import wandb
+except ModuleNotFoundError:
+    if args.wandb_mode != "disabled":
+        raise
+
+    class _DisabledWandbRun:
+        def __init__(self):
+            self.summary = {}
+
+        def finish(self):
+            pass
+
+    class _DisabledWandb:
+        Image = staticmethod(lambda figure: figure)
+
+        def init(self, *args, **kwargs):
+            return _DisabledWandbRun()
+
+        def define_metric(self, *args, **kwargs):
+            pass
+
+        def log(self, *args, **kwargs):
+            pass
+
+        def watch(self, *args, **kwargs):
+            pass
+
+        def save(self, *args, **kwargs):
+            pass
+
+    wandb = _DisabledWandb()
 
 import hippynn
 from hippynn.graphs import inputs, targets, physics
@@ -41,26 +99,181 @@ from hippynn.plotting import PlotMaker, Hist2D, SensitivityPlot
 from hippynn.pretraining import set_e0_values
 from hippynn.tools import active_directory
 
+WANDB_PATH = os.path.join(Path.home(), ".wandb_key.json")
+torch.set_float32_matmul_precision("high")
+
+
+def configure_wandb_auth(wandb_mode):
+    if wandb_mode != "online":
+        return
+    assert os.path.exists(WANDB_PATH), f"Wandb json not found at. {WANDB_PATH}"
+    with open(WANDB_PATH, "r") as f:
+        config = json.load(f)
+    os.environ["WANDB_API_KEY"] = config["WANDB_API_KEY"]
+    if "WANDB_HOST" in config:
+        os.environ["WANDB_HOST"] = config["WANDB_HOST"]
+
+
+def get_git_sha():
+    result = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return result.stdout.strip()
+
+
+def _metric_value(value):
+    if hasattr(value, "detach"):
+        value = value.detach()
+    if hasattr(value, "cpu"):
+        value = value.cpu()
+    if hasattr(value, "item"):
+        return value.item()
+    return value
+
+
+def _flatten_metrics(prefix, metrics):
+    flat_metrics = {}
+    for split_name, split_metrics in metrics.items():
+        for metric_name, value in split_metrics.items():
+            flat_metrics[f"{prefix}/{split_name}/{metric_name}"] = _metric_value(value)
+    return flat_metrics
+
+
+def _model_size_metrics(model):
+    params = list(model.parameters())
+    buffers = list(model.buffers())
+    total_params = sum(p.numel() for p in params)
+    trainable_params = sum(p.numel() for p in params if p.requires_grad)
+    non_trainable_params = total_params - trainable_params
+    param_bytes = sum(p.numel() * p.element_size() for p in params)
+    buffer_bytes = sum(b.numel() * b.element_size() for b in buffers)
+    total_bytes = param_bytes + buffer_bytes
+    return {
+        "model/params_total": total_params,
+        "model/params_trainable": trainable_params,
+        "model/params_non_trainable": non_trainable_params,
+        "model/params_mb": param_bytes / (1024 ** 2),
+        "model/buffers_mb": buffer_bytes / (1024 ** 2),
+        "model/total_mb": total_bytes / (1024 ** 2),
+    }
+
+
+def collect_activations(model, dataloader, device, n_inputs, max_batches=10, max_values=200_000):
+    model.eval()
+    model = model.to(device)
+    activations = {}
+    hooks = []
+    leaf_modules = [
+        (name, module)
+        for name, module in model.named_modules()
+        if name and len(list(module.children())) == 0
+    ]
+
+    def get_activation_hook(name):
+        def hook(module, input, output):
+            if isinstance(output, (tuple, list)):
+                output = output[0]
+            if not hasattr(output, "detach"):
+                return
+            values = output.detach().float().cpu().reshape(-1).numpy()
+            if values.size > max_values:
+                values = values[:max_values]
+            current_size = sum(item.size for item in activations.get(name, []))
+            if current_size < max_values:
+                activations.setdefault(name, []).append(values[: max_values - current_size])
+
+        return hook
+
+    for name, module in leaf_modules:
+        hooks.append(module.register_forward_hook(get_activation_hook(name)))
+
+    with torch.no_grad():
+        for batch_idx, batch in enumerate(dataloader):
+            if batch_idx >= max_batches:
+                break
+            batch = [item.to(device=device, non_blocking=True) for item in batch]
+            model(*batch[:n_inputs])
+
+    for hook in hooks:
+        hook.remove()
+
+    return {
+        name: np.concatenate(values)
+        for name, values in activations.items()
+        if values and np.concatenate(values).size
+    }
+
+
+def plot_activation_distributions(activations, prefix="FinalTraining"):
+    if not activations:
+        return
+    n_layers = len(activations)
+    fig, axes = plt.subplots(n_layers, 1, figsize=(10, max(3, 3 * n_layers)))
+    axes = np.atleast_1d(axes)
+    for ax, (layer_name, acts) in zip(axes, activations.items()):
+        ax.hist(acts, bins=50, density=True, alpha=0.7, color="C0", edgecolor="black")
+        ax.set_title(f"{layer_name}\n(mean={np.mean(acts):.3f}, var={np.var(acts):.3f})")
+        ax.set_xlabel("Activation values")
+        ax.set_ylabel("Density")
+        ax.grid(True, alpha=0.3)
+    plt.tight_layout()
+    wandb.log({f"{prefix}_activations": wandb.Image(fig)})
+    plt.close(fig)
+
+
+class WandbEpochLogger:
+    def __init__(self, metric_tracker, controller):
+        self.metric_tracker = metric_tracker
+        self.controller = controller
+
+    def __call__(self, epoch, new_best):
+        if not self.metric_tracker.epoch_metric_values:
+            return
+        epoch_metrics = _flatten_metrics("epoch", self.metric_tracker.epoch_metric_values[-1])
+        valid_metrics = self.metric_tracker.epoch_metric_values[-1].get("valid", {})
+        if "T-MAE" in valid_metrics:
+            epoch_metrics["T-MAE"] = _metric_value(valid_metrics["T-MAE"])
+        epoch_metrics.update(
+            {
+                "epoch": epoch,
+                "epoch/new_best": bool(new_best),
+                "epoch/batch_size": self.controller.batch_size,
+                "epoch/eval_batch_size": self.controller.eval_batch_size,
+            }
+        )
+        if self.metric_tracker.epoch_times:
+            epoch_metrics["epoch/time_sec"] = self.metric_tracker.epoch_times[-1]
+        for idx, group in enumerate(self.controller.optimizer.param_groups):
+            epoch_metrics[f"optimizer/lr_group_{idx}"] = group["lr"]
+        wandb.log(epoch_metrics, step=epoch)
+
+
 # ----- Constants -----
 TOTAL_NUM_SAMPLES = 7_732_488 
-TEST_SET_SIZE = 80_000
+TEST_SET_SIZE = args.test_set_size
 ENERGY_MEAN = -25042.327220945674
 
 # ----- User parameters -----
-seed = 2025
+seed = args.seed
+run_name = args.run_name
+wandb_mode = args.wandb_mode
 data_root = Path(__file__).parents[2] / "datasets"
 data_src = data_root / "methane.extxyz"
 processed_src = data_root / "methane.traj"
-model_save_folder = Path(__file__).parents[1] / Path("TEST_METHANE_MODEL")
-n_epochs = 10_000  # reduce to decrease the run time of the script
-data_size = 1000
+n_epochs = args.n_epochs  # reduce to decrease the run time of the script
+data_size = args.data_size
 random_subset = False  # whether to use a random subset of data or the first data_size sample
 # network_class = Hipnn # Original HIP-NN
 # network_class = HipnnVec # HIP-NN-TS, l=1
 # network_class = HipnnQuad # HIP-NN-TS, l=2
 network_class = HipHopnn  # HIP-HOP
-hiphop_l_max = 3 # these will not be used if network_class != HipHopnn
-hiphop_n_max = 4 # these will not be used if network_class != HipHopnn
+hiphop_l_max = args.hiphop_l_max  # these will not be used if network_class != HipHopnn
+hiphop_n_max = args.hiphop_n_max  # these will not be used if network_class != HipHopnn
+model_save_folder = Path(__file__).parents[1] / Path(f"TEST_METHANE_MODEL_l{hiphop_l_max}_n{hiphop_n_max}_seed{seed}")
+sha = get_git_sha()
 
 network_params = {
     "possible_species": [0, 1, 6],
@@ -80,6 +293,51 @@ if network_class == HipHopnn:
             "n_max": hiphop_n_max,
         }
     )
+
+configure_wandb_auth(wandb_mode)
+
+wandb_run = wandb.init(
+    name=run_name,
+    mode=wandb_mode,
+    config={
+        "run_name": run_name,
+        "wandb_mode": wandb_mode,
+        "seed": seed,
+        "sha": sha,
+        "activation_max_batches": args.activation_max_batches,
+        "activation_max_values": args.activation_max_values,
+        "float_precision": "high",
+        "data_src": str(data_src),
+        "processed_src": str(processed_src),
+        "random_subset": random_subset,
+        "data_size": data_size,
+        "test_set_size": TEST_SET_SIZE,
+        "energy_mean": ENERGY_MEAN,
+        "network_class": network_class.__name__,
+        "network_params": network_params,
+        "hiphop_l_max": hiphop_l_max,
+        "hiphop_n_max": hiphop_n_max,
+        "n_epochs": n_epochs,
+        "optimizer_name": "Adam",
+        "optimizer_hparams": {"lr": 2.5e-3},
+        "scheduler_name": "RaiseBatchSizeOnPlateau",
+        "scheduler_hparams": {"max_batch_size": 2048, "patience": 150, "factor": 0.5},
+        "controller_name": "PatienceController",
+        "controller_hparams": {
+            "batch_size": 256,
+            "eval_batch_size": 2048,
+            "max_epochs": n_epochs,
+            "stopping_key": "T-MAE",
+            "termination_patience": 300,
+            "fraction_train_eval": 1,
+        },
+        "model_save_folder": str(model_save_folder),
+    },
+)
+wandb.define_metric("epoch")
+wandb.define_metric("epoch/*", step_metric="epoch")
+wandb.define_metric("optimizer/*", step_metric="epoch")
+wandb.define_metric("T-MAE", summary="min")
 
 # ----- Prepare data -----
 def prepare_data(data_src, train_size, test_size, random_subset=random_subset): 
@@ -234,6 +492,24 @@ training_modules, controller, metric_tracker = setup_training(
     setup_params=experiment_params,
 )
 
+wandb_size_metrics = _model_size_metrics(training_modules.model)
+wandb.log(wandb_size_metrics, step=0)
+wandb_run.summary.update(wandb_size_metrics)
+wandb.watch(training_modules.model, log="all", log_graph=False, log_freq=1000)
+
+accelerator = "cpu"
+gpu_info = {}
+if torch.cuda.is_available():
+    accelerator = "gpu"
+    gpu_info["gpu/count"] = torch.cuda.device_count()
+    for gpu_idx in range(torch.cuda.device_count()):
+        properties = torch.cuda.get_device_properties(gpu_idx)
+        gpu_info[f"gpu/{gpu_idx}/name"] = torch.cuda.get_device_name(gpu_idx)
+        gpu_info[f"gpu/{gpu_idx}/memory_mb"] = properties.total_memory / 1e6
+elif torch.backends.mps.is_available():
+    accelerator = "mps"
+gpu_info["accelerator"] = accelerator
+wandb_run.summary.update(gpu_info)
 
 # ----- Load data -----
 train_dict, test_dict = prepare_data(data_src, 
@@ -262,33 +538,67 @@ test_database.send_to_device(device)
 set_e0_values(henergy, train_database, trainable_after=False)
 
 # ----- Train model -----
-with active_directory(model_save_folder):
+wandb_out_status = "aborted"
+try:
+    with active_directory(model_save_folder):
+        metric_tracker = train_model(
+            training_modules=training_modules,
+            database=train_database,
+            controller=controller,
+            metric_tracker=metric_tracker,
+            callbacks=[WandbEpochLogger(metric_tracker, controller)],
+            batch_callbacks=None,
+            store_all_better=False,
+            store_best=True,
+            store_every=0,
+            quiet=False,
+        )
 
-    metric_tracker = train_model(
-        training_modules=training_modules,
-        database=train_database,
-        controller=controller,
-        metric_tracker=metric_tracker,
-        callbacks=None,
-        batch_callbacks=None,
-        store_all_better=False,
-        store_best=True,
-        store_every=0,
-        quiet=False,
-    )
+        # ----- Evaluate model -----
+        evaluator = training_modules.evaluator
+        best_model = metric_tracker.best_model
+        if best_model:
+            evaluator.model.load_state_dict(best_model)
 
-    # ----- Evaluate model -----
-    evaluator = training_modules.evaluator
-    best_model = metric_tracker.best_model
-    if best_model:
-        evaluator.model.load_state_dict(best_model)
+        print("Testing model...")
+        torch.cuda.empty_cache()
+        test_model(
+            test_database,
+            evaluator,
+            when="FinalTraining",
+            batch_size=controller.eval_batch_size,
+            metric_tracker=metric_tracker,
+        )
 
-    print("Testing model...")
-    torch.cuda.empty_cache()
-    test_model(
-        test_database,
-        evaluator,
-        when="FinalTraining",
-        batch_size=controller.eval_batch_size,
-        metric_tracker=metric_tracker,
-    )
+        activations = collect_activations(
+            model=evaluator.model,
+            dataloader=test_database.make_generator("test", "eval", controller.eval_batch_size),
+            device=device,
+            n_inputs=len(test_database.inputs),
+            max_batches=args.activation_max_batches,
+            max_values=args.activation_max_values,
+        )
+        plot_activation_distributions(activations, prefix="FinalTraining")
+
+        wandb_metrics = _flatten_metrics("best", metric_tracker.best_metric_values)
+        wandb_metrics.update(_flatten_metrics("FinalTraining", metric_tracker.other_metric_values.get("FinalTraining", {})))
+        best_valid_metrics = metric_tracker.best_metric_values.get("valid", {})
+        if "T-MAE" in best_valid_metrics:
+            wandb_metrics["T-MAE"] = _metric_value(best_valid_metrics["T-MAE"])
+        wandb.log(wandb_metrics)
+        wandb_run.summary.update(wandb_metrics)
+
+        for artifact_path in (
+            "best_model.pt",
+            "best_checkpoint.pt",
+            "training_metrics.pt",
+            "training_metrics.pkl",
+            "experiment_structure.pt",
+        ):
+            if os.path.exists(artifact_path):
+                wandb.save(artifact_path)
+
+    wandb_out_status = "success"
+finally:
+    wandb_run.summary["status"] = wandb_out_status
+    wandb_run.finish()
