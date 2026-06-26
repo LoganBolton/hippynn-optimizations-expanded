@@ -90,6 +90,7 @@ except ModuleNotFoundError:
     wandb = _DisabledWandb()
 
 import hippynn
+from hippynn.custom_kernels import CustomKernelError
 from hippynn.graphs import inputs, targets, physics
 from hippynn.graphs.nodes.networks import HipHopnn, Hipnn, HipnnVec, HipnnQuad
 from hippynn.experiment import setup_training, train_model, test_model
@@ -187,18 +188,22 @@ def collect_activations(model, dataloader, device, n_inputs, max_batches=10, max
 
         return hook
 
-    for name, module in leaf_modules:
-        hooks.append(module.register_forward_hook(get_activation_hook(name)))
+    try:
+        for name, module in leaf_modules:
+            hooks.append(module.register_forward_hook(get_activation_hook(name)))
 
-    with torch.no_grad():
+        # Force outputs are computed as energy gradients with respect to positions,
+        # so this forward pass must build an autograd graph even though hooks detach
+        # the activation tensors they record.
         for batch_idx, batch in enumerate(dataloader):
             if batch_idx >= max_batches:
                 break
             batch = [item.to(device=device, non_blocking=True) for item in batch]
-            model(*batch[:n_inputs])
-
-    for hook in hooks:
-        hook.remove()
+            with torch.enable_grad():
+                model(*batch[:n_inputs])
+    finally:
+        for hook in hooks:
+            hook.remove()
 
     return {
         name: np.concatenate(values)
@@ -251,6 +256,26 @@ class WandbEpochLogger:
         wandb.log(epoch_metrics, step=epoch)
 
 
+def require_cuda_triton_kernels():
+    if not torch.cuda.is_available():
+        raise RuntimeError("This training script requires CUDA because it is configured to use Triton custom kernels.")
+
+    try:
+        import triton  # noqa: F401
+    except ModuleNotFoundError as exc:
+        raise RuntimeError("This training script requires the triton package for custom CUDA kernels.") from exc
+
+    try:
+        active_kernel = hippynn.custom_kernels.set_custom_kernels("triton")
+    except CustomKernelError as exc:
+        raise RuntimeError("Triton custom kernels were requested, but hippynn could not activate them.") from exc
+
+    if active_kernel != "triton":
+        raise RuntimeError(f"Expected Triton custom kernels, but hippynn activated {active_kernel!r}.")
+
+    print(f"Using hippynn custom kernels: {active_kernel}")
+
+
 # ----- Constants -----
 TOTAL_NUM_SAMPLES = 7_732_488 
 TEST_SET_SIZE = args.test_set_size
@@ -295,6 +320,7 @@ if network_class == HipHopnn:
     )
 
 configure_wandb_auth(wandb_mode)
+require_cuda_triton_kernels()
 
 wandb_run = wandb.init(
     name=run_name,
