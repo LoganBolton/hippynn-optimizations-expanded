@@ -78,7 +78,7 @@ def test_polynomial_invariants():
         from hippynn.custom_kernels.poly_triton import EvaluatePolynomials
 
         for l_max in range(5):
-            for n_max in range(1,5):
+            for n_max in range(1, 5):
 
                 n_tensor_comp = (l_max+1)**2
                 tensor_features = torch.randn((n_point, n_tensor_comp), requires_grad=True, device='cuda')
@@ -87,12 +87,7 @@ def test_polynomial_invariants():
                 polyCollection.set_device('cuda')
                 invars_poly = EvaluatePolynomials.apply(tensor_features, polyCollection)
 
-                torchInvariantLayer = HopInvariantLayerTorch(n_max, l_max)
-                torchInvariantLayer = torchInvariantLayer.to('cuda')
-                invars_torch = torchInvariantLayer(tensor_features)
-
-                # during this check we need tensor features to be float32 because the 
-                # old HopInvariantLayerTorch only supports float32
+                invars_torch = evaluate_polynomial_collection_torch(tensor_features, polyCollection)
 
                 assert torch.allclose(invars_poly, invars_torch, rtol=1e-4, atol=1e-4)
 
@@ -117,8 +112,10 @@ def test_invariants_wrapper():
     except:
         triton_available = False
 
+    n_max_values = range(1, 6) if triton_available and torch.cuda.is_available() else range(1, 5)
+
     for l_max in range(5):
-        for n_max in range(1,5):
+        for n_max in n_max_values:
 
             n_tensor_comp = (l_max+1)**2
             tensor_features = torch.randn((n_point, n_tensor_comp), requires_grad=True, device=device)
@@ -127,9 +124,14 @@ def test_invariants_wrapper():
             invariantLayer = invariantLayer.to(device)
             invars_poly = invariantLayer(tensor_features)
 
-            torchInvariantLayer = HopInvariantLayerTorch(n_max, l_max)
-            torchInvariantLayer = torchInvariantLayer.to(device)
-            invars_torch = torchInvariantLayer(tensor_features)
+            if triton_available and torch.cuda.is_available():
+                polyCollection = compute_invariant_polynomial_collection(n_max, l_max)
+                polyCollection.set_device(device)
+                invars_torch = evaluate_polynomial_collection_torch(tensor_features, polyCollection)
+            else:
+                torchInvariantLayer = HopInvariantLayerTorch(n_max, l_max)
+                torchInvariantLayer = torchInvariantLayer.to(device)
+                invars_torch = torchInvariantLayer(tensor_features)
 
             assert torch.allclose(invars_poly, invars_torch, rtol=1e-4, atol=1e-4)
 
