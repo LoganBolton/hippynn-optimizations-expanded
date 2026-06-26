@@ -1,0 +1,45 @@
+name: test_resnet-hist
+program: scripts/training.py
+method: grid
+metric:
+  name: val_accuracy
+  goal: maximize
+parameters:
+  d_hparams:
+    parameters:
+      batch_size:
+        value: 128
+      data_dir:
+        value: data
+      to_complex:
+        value: false
+      target_size:
+        values: [64, 96, 128]
+  dataset_name:
+    value: PCam
+  early_stopping:
+    value: 15
+  epochs:
+    value: 150
+  lr_hparams:
+    parameters:
+      gamma:
+        value: 0.1
+      milestones:
+        value: [10, 25, 40]
+  m_param:
+    parameters:
+      pretrained:
+        value: false
+  model_name:
+    value: timm:test_resnet.r160_in1k
+  optimizer_hparams:
+    parameters:
+      lr:
+        value: 0.001
+  optimizer_name:
+    value: AdamW
+  run_name:
+    value: test_resnet-pcam
+  seed:
+    values: [42, 7, 123, 24, 74]
