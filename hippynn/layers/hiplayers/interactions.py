@@ -247,31 +247,57 @@ class InteractLayerQuad(InteractLayerVec):
 
 # n_max, l_max: warning counts for invariants.
 _invariant_counts = {
-    (5, 4): 29,
+    (12, 3): 15,
+    (11, 3): 15,
+    (10, 3): 15,
+    (9, 3): 14,
+    (8, 3): 14,
+    (7, 3): 14,
+    (6, 3): 14,
     (5, 3): 13,
-    (5, 2): 6,
-    (5, 1): 2,  # Similar to HIP-NN-TS
-    (5, 0): 1,  # Quasi-redundant with HIP-NN
-    (4, 4): 24,
     (4, 3): 13,
-    (4, 2): 6,
-    (4, 1): 2,  # Similar to HIP-NN-TS
-    (4, 0): 1,  # Quasi-redundant with HIP-NN
-    (3, 4): 12,
     (3, 3): 7,
+    (2, 3): 4,
+    (1, 3): 1,
+
+    (12, 2): 6,
+    (11, 2): 6,
+    (10, 2): 6,
+    (9, 2): 6,
+    (8, 2): 6,
+    (7, 2): 6,
+    (6, 2): 6,
+    (5, 2): 6,
+    (4, 2): 6,
     (3, 2): 5,
-    (3, 1): 2,  # Similar to HIP-NN-TS
-    (3, 0): 1,  # Quasi-redundant with HIP-NN
-    (2, 4): 5,
-    (2, 3): 4,  # Similar to HIP-NN-TS
-    (2, 2): 3,  # Similar to HIP-NN-TS
-    (2, 1): 2,  # Similar to HIP-NN-TS
-    (2, 0): 1,  # Quasi-redundant with HIP-NN
-    (1, 4): 1,  # Quasi-redundant with HIP-NN
-    (1, 3): 1,  # Quasi-redundant with HIP-NN
-    (1, 2): 1,  # Quasi-redundant with HIP-NN
-    (1, 1): 1,  # Quasi-redundant with HIP-NN
-    (1, 0): 1,  # Quasi-redundant with HIP-NN
+    (2, 2): 3,
+    (1, 2): 1,
+
+    (12, 1): 2,
+    (11, 1): 2,
+    (10, 1): 2,
+    (9, 1): 2,
+    (8, 1): 2,
+    (7, 1): 2,
+    (6, 1): 2,
+    (5, 1): 2,
+    (4, 1): 2,
+    (3, 1): 2,
+    (2, 1): 2,
+    (1, 1): 1,
+
+    (12, 0): 1,
+    (11, 0): 1,
+    (10, 0): 1,
+    (9, 0): 1,
+    (8, 0): 1,
+    (7, 0): 1,
+    (6, 0): 1,
+    (5, 0): 1,
+    (4, 0): 1,
+    (3, 0): 1,
+    (2, 0): 1,
+    (1, 0): 1,
 }
 
 

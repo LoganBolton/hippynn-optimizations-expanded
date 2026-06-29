@@ -1,5 +1,6 @@
 import pytest
 import torch
+import time
 
 from hippynn.layers.hiplayers.tensors import HopInvariantLayerTorch, TensorExtractor
 from hippynn.layers.hiplayers.invariants import HopInvariantLayer, compute_invariant_polynomial_collection, default_invariants_list, split_invariant
@@ -15,12 +16,18 @@ def test_default_invariant_definitions_parse():
             assert len(index) == {"zero": 0, "one": 1, "two": 2, "three": 3, "four": 4}[tensor]
 
 
-def test_polynomial_invariant_counts_match_interaction_lmax4():
-    for n_max in range(1, 6):
-        polyCollection = compute_invariant_polynomial_collection(n_max, 4)
+def test_polynomial_invariant_counts_match_interaction_lmax3():
+    unit_tensor_bases = {order: torch.ones(*([1] * order), 1) for order in range(4)}
+    for n_max in range(1, 13):
+        polyCollection = compute_invariant_polynomial_collection(
+            n_max,
+            3,
+            tensor_bases=unit_tensor_bases,
+            input_tensor_ordering=["zero", "one", "two", "three"],
+        )
         _, _, polynomial_sizes, _ = polyCollection.get_polynomials()
 
-        assert len(polynomial_sizes) == _invariant_counts[n_max, 4]
+        assert len(polynomial_sizes) == _invariant_counts[n_max, 3]
 
 
 def evaluate_polynomial_collection_torch(x, polyCollection):
@@ -41,7 +48,7 @@ def evaluate_polynomial_collection_torch(x, polyCollection):
     return torch.stack(outputs, dim=1)
 
 
-def test_polynomial_invariants_are_rotation_invariant_lmax4():
+def test_polynomial_invariants_are_rotation_invariant_lmax3():
     n_point = 11
     torch.manual_seed(0)
 
@@ -52,13 +59,26 @@ def test_polynomial_invariants_are_rotation_invariant_lmax4():
     if torch.linalg.det(rotation) < 0:
         rotation[:, 0] *= -1
 
-    tensor_extractor = TensorExtractor(l_max=4)
-    tensor_features = torch.cat(tensor_extractor(rhats), dim=1)
-    rotated_tensor_features = torch.cat(tensor_extractor(rhats @ rotation), dim=1)
+    tensor_extractor = TensorExtractor(l_max=3)
+    tensor_features = torch.cat(tensor_extractor(rhats)[:4], dim=1)
+    rotated_tensor_features = torch.cat(tensor_extractor(rhats @ rotation)[:4], dim=1)
 
-    polyCollection = compute_invariant_polynomial_collection(n_max=4, l_max=4)
+    start = time.perf_counter()
+    print(f"Beginning polynomial construction: {start:.6f} s", flush=True)
+    polyCollection = compute_invariant_polynomial_collection(
+        n_max=12,
+        l_max=3,
+        input_tensor_ordering=["zero", "one", "two", "three"],
+    )
+    print(f"construct polynomial collection: {time.perf_counter() - start:.6f} s", flush=True)
+
+    start = time.perf_counter()
     invariants = evaluate_polynomial_collection_torch(tensor_features, polyCollection)
+    print(f"evaluate original invariants: {time.perf_counter() - start:.6f} s", flush=True)
+
+    start = time.perf_counter()
     rotated_invariants = evaluate_polynomial_collection_torch(rotated_tensor_features, polyCollection)
+    print(f"evaluate rotated invariants: {time.perf_counter() - start:.6f} s", flush=True)
 
     assert torch.allclose(invariants, rotated_invariants, rtol=1e-4, atol=1e-4)
 
@@ -77,13 +97,17 @@ def test_polynomial_invariants():
 
         from hippynn.custom_kernels.poly_triton import EvaluatePolynomials
 
-        for l_max in range(5):
-            for n_max in range(1, 6):
+        for l_max in range(4):
+            for n_max in range(1, 13):
 
                 n_tensor_comp = (l_max+1)**2
                 tensor_features = torch.randn((n_point, n_tensor_comp), requires_grad=True, device='cuda')
 
-                polyCollection = compute_invariant_polynomial_collection(n_max, l_max)
+                polyCollection = compute_invariant_polynomial_collection(
+                    n_max,
+                    l_max,
+                    input_tensor_ordering=["zero", "one", "two", "three"][: l_max + 1],
+                )
                 polyCollection.set_device('cuda')
                 invars_poly = EvaluatePolynomials.apply(tensor_features, polyCollection)
 
@@ -93,8 +117,9 @@ def test_polynomial_invariants():
 
                 tensor_features = tensor_features.to(torch.float64)
 
-                assert torch.autograd.gradcheck(EvaluatePolynomials.apply, (tensor_features, polyCollection))
-                assert torch.autograd.gradgradcheck(EvaluatePolynomials.apply, (tensor_features, polyCollection))
+                if n_max < 6:
+                    assert torch.autograd.gradcheck(EvaluatePolynomials.apply, (tensor_features, polyCollection))
+                    assert torch.autograd.gradgradcheck(EvaluatePolynomials.apply, (tensor_features, polyCollection))
 
 def test_invariants_wrapper():
 
@@ -112,9 +137,9 @@ def test_invariants_wrapper():
     except:
         triton_available = False
 
-    n_max_values = range(1, 6) if triton_available and torch.cuda.is_available() else range(1, 5)
+    n_max_values = range(1, 13) if triton_available and torch.cuda.is_available() else range(1, 5)
 
-    for l_max in range(5):
+    for l_max in range(4):
         for n_max in n_max_values:
 
             n_tensor_comp = (l_max+1)**2
@@ -125,7 +150,11 @@ def test_invariants_wrapper():
             invars_poly = invariantLayer(tensor_features)
 
             if triton_available and torch.cuda.is_available():
-                polyCollection = compute_invariant_polynomial_collection(n_max, l_max)
+                polyCollection = compute_invariant_polynomial_collection(
+                    n_max,
+                    l_max,
+                    input_tensor_ordering=["zero", "one", "two", "three"][: l_max + 1],
+                )
                 polyCollection.set_device(device)
                 invars_torch = evaluate_polynomial_collection_torch(tensor_features, polyCollection)
             else:
@@ -139,7 +168,7 @@ def test_invariants_wrapper():
             # old HopInvariantLayerTorch only supports float32
             # Thus, we can only gradcheck if triton is available
 
-            if triton_available and torch.cuda.is_available():
+            if triton_available and torch.cuda.is_available() and n_max < 6:
                 tensor_features = tensor_features.to(torch.float64)
 
                 assert torch.autograd.gradcheck(invariantLayer, (tensor_features,))
