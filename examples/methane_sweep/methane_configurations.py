@@ -26,6 +26,7 @@ may take a while (~1hr)."
 """
 
 import argparse
+import itertools
 import json
 import os
 import subprocess
@@ -38,11 +39,13 @@ def positive_int(value):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--seed", type=int, required=True)
-parser.add_argument("--hiphop_l_max", type=int, choices=range(0, 5), required=True)
-parser.add_argument("--hiphop_n_max", type=int, choices=range(1, 5), required=True)
-parser.add_argument("--run_name", type=str, required=True)
+parser.add_argument("--seed", type=int)
+parser.add_argument("--hiphop_l_max", type=int, choices=range(0, 5))
+parser.add_argument("--hiphop_n_max", type=int, choices=range(1, 5))
+parser.add_argument("--run_name", type=str)
 parser.add_argument("--wandb_mode", choices=("online", "offline", "disabled"), default="offline")
+parser.add_argument("--sweep_config", type=str)
+parser.add_argument("--sweep_task_id", type=int)
 parser.add_argument("--n_epochs", type=positive_int, default=200)
 parser.add_argument("--data_size", type=positive_int, default=1000)
 parser.add_argument("--test_set_size", type=positive_int, default=80_000)
@@ -51,6 +54,71 @@ parser.add_argument("--activation_max_values", type=positive_int, default=200_00
 parser.add_argument("--invariant_max_batches", type=positive_int, default=10)
 parser.add_argument("--invariant_max_values", type=positive_int, default=1_000_000)
 args, _ = parser.parse_known_args()
+
+
+def _sweep_parameter_values(name, spec):
+    if not isinstance(spec, dict):
+        raise ValueError(f"parameter {name!r} must be a mapping")
+    if "values" in spec:
+        values = spec["values"]
+    elif "value" in spec:
+        values = [spec["value"]]
+    elif "min" in spec and "max" in spec:
+        step = spec.get("step", 1)
+        values = list(range(int(spec["min"]), int(spec["max"]) + 1, int(step)))
+    else:
+        raise ValueError(f"parameter {name!r} needs value, values, or min/max")
+    if not values:
+        raise ValueError(f"parameter {name!r} has no values")
+    return values
+
+
+def _apply_sweep_task(args):
+    if args.sweep_config is None:
+        missing_args = [
+            name
+            for name in ("seed", "hiphop_l_max", "hiphop_n_max", "run_name")
+            if getattr(args, name) is None
+        ]
+        if missing_args:
+            parser.error(f"missing required arguments: {', '.join('--' + name for name in missing_args)}")
+        return
+
+    if args.sweep_task_id is None:
+        parser.error("--sweep_task_id is required when --sweep_config is used")
+
+    import yaml
+
+    with open(args.sweep_config, "r") as config_file:
+        sweep = yaml.safe_load(config_file)
+
+    parameters = sweep.get("parameters", {})
+    parser_defaults = {action.dest: action.default for action in parser._actions}
+    for name, spec in parameters.items():
+        if name in ("seed", "hiphop_l_max", "hiphop_n_max", "run_name"):
+            continue
+        if hasattr(args, name) and isinstance(spec, dict) and "value" in spec:
+            if getattr(args, name) == parser_defaults.get(name):
+                setattr(args, name, spec["value"])
+
+    grid_names = ["seed", "hiphop_l_max", "hiphop_n_max"]
+    grid_values = [_sweep_parameter_values(name, parameters[name]) for name in grid_names]
+    jobs = list(itertools.product(*grid_values))
+
+    if args.sweep_task_id >= len(jobs):
+        print(f"Sweep task {args.sweep_task_id} is outside the configured sweep size ({len(jobs)}); exiting.")
+        raise SystemExit(0)
+
+    seed, hiphop_l_max, hiphop_n_max = jobs[args.sweep_task_id]
+    args.seed = seed
+    args.hiphop_l_max = hiphop_l_max
+    args.hiphop_n_max = hiphop_n_max
+    if args.run_name is None:
+        args.run_name = f"methane-l{hiphop_l_max}-n{hiphop_n_max}-seed{seed}"
+    args.sweep_count = len(jobs)
+
+
+_apply_sweep_task(args)
 
 import ase
 import matplotlib.pyplot as plt
