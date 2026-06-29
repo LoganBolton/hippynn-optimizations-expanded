@@ -244,6 +244,22 @@ def compute_invariant_polynomial_collection(n_max, l_max, tensor_bases=cmaps, in
                                   'one' appears in X first, followed by the coefficients for 'two', and then the coefficients for 'three'.
     """
 
+    metadata = compute_invariant_polynomial_metadata(n_max, l_max, tensor_bases, invariants, input_tensor_ordering)
+
+    return PolynomialCollection(
+        metadata["coefs"],
+        metadata["terms"],
+        metadata["polynomial_sizes"],
+        metadata["input_dimension"],
+    )
+
+
+def compute_invariant_polynomial_metadata(n_max, l_max, tensor_bases=cmaps, invariants=default_invariants_list, input_tensor_ordering=default_tensor_ordering):
+    """
+    Compute polynomial data and human-readable metadata for the invariants selected
+    by ``n_max`` and ``l_max``.
+    """
+
     # compute the order of each tensor (and make sure that the orders are listed consistently)
     tensor_orders = {}
 
@@ -316,7 +332,23 @@ def compute_invariant_polynomial_collection(n_max, l_max, tensor_bases=cmaps, in
     terms = torch.vstack(terms_set_padded)
     polynomial_sizes = torch.IntTensor(polynomial_sizes_set)
 
-    return PolynomialCollection( coefs, terms, polynomial_sizes, input_dimension )
+    invariant_term_counts = [len(split_invariant(invar)[1]) for invar in invariants_kept]
+    invariant_max_orders = [max(tensor_orders[t] for t in split_invariant(invar)[1]) for invar in invariants_kept]
+
+    return {
+        "n_max": n_max,
+        "l_max": l_max,
+        "n_invariants": len(invariants_kept),
+        "invariant_codes": invariants_kept,
+        "invariant_term_counts": invariant_term_counts,
+        "invariant_max_orders": invariant_max_orders,
+        "input_offsets": input_offsets,
+        "input_dimension": input_dimension,
+        "coefs": coefs,
+        "terms": terms,
+        "polynomial_sizes": polynomial_sizes,
+        "polynomial_sizes_list": polynomial_sizes_set,
+    }
 
 class HopInvariantLayer(torch.nn.Module):
     """
@@ -348,6 +380,17 @@ class HopInvariantLayer(torch.nn.Module):
 
         # will be used if polynomial invariants are active
         self.polynomials = None 
+        self._invariant_metadata = None
+
+    def invariant_metadata(self):
+        if self._invariant_metadata is None:
+            metadata = compute_invariant_polynomial_metadata(self.n_max, self.l_max, self.cmaps)
+            self._invariant_metadata = {
+                key: value
+                for key, value in metadata.items()
+                if key not in ("coefs", "terms")
+            }
+        return self._invariant_metadata.copy()
 
     def forward(self, tensor_features):
         device = self.device_check.device
@@ -370,4 +413,5 @@ class HopInvariantLayer(torch.nn.Module):
         # Make sure that self.polynomials is not saved, because this model may be reloaded onto a machine
         # where triton or cuda is not available. In that case, the polynomials object would be unnecessary.
         state["polynomials"] = None
+        state["_invariant_metadata"] = None
         return state

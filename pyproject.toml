@@ -51,5 +51,6 @@ full=[
 [tool.pytest.ini_options]
 addopts = "-v"
 testpaths = ["tests"]
+pythonpath = ["."]
 markers = [
 ]

@@ -43,11 +43,13 @@ parser.add_argument("--hiphop_l_max", type=int, choices=range(0, 5), required=Tr
 parser.add_argument("--hiphop_n_max", type=int, choices=range(1, 5), required=True)
 parser.add_argument("--run_name", type=str, required=True)
 parser.add_argument("--wandb_mode", choices=("online", "offline", "disabled"), default="offline")
-parser.add_argument("--n_epochs", type=positive_int, default=10_000)
+parser.add_argument("--n_epochs", type=positive_int, default=200)
 parser.add_argument("--data_size", type=positive_int, default=1000)
 parser.add_argument("--test_set_size", type=positive_int, default=80_000)
 parser.add_argument("--activation_max_batches", type=positive_int, default=10)
 parser.add_argument("--activation_max_values", type=positive_int, default=200_000)
+parser.add_argument("--invariant_max_batches", type=positive_int, default=10)
+parser.add_argument("--invariant_max_values", type=positive_int, default=1_000_000)
 args, _ = parser.parse_known_args()
 
 import ase
@@ -96,6 +98,7 @@ from hippynn.graphs.nodes.networks import HipHopnn, Hipnn, HipnnVec, HipnnQuad
 from hippynn.experiment import setup_training, train_model, test_model
 from hippynn.graphs import loss
 from hippynn.experiment.controllers import RaiseBatchSizeOnPlateau, PatienceController
+from hippynn.layers.hiplayers.invariants import HopInvariantLayer
 from hippynn.plotting import PlotMaker, Hist2D, SensitivityPlot
 from hippynn.pretraining import set_e0_values
 from hippynn.tools import active_directory
@@ -161,6 +164,109 @@ def _model_size_metrics(model):
         "model/buffers_mb": buffer_bytes / (1024 ** 2),
         "model/total_mb": total_bytes / (1024 ** 2),
     }
+
+
+def collect_invariant_metadata(model):
+    metadata = {}
+    for name, module in model.named_modules():
+        if isinstance(module, HopInvariantLayer):
+            layer_metadata = module.invariant_metadata()
+            layer_metadata["polynomial_sizes"] = layer_metadata["polynomial_sizes"].cpu().tolist()
+            metadata[name] = layer_metadata
+    return metadata
+
+
+def collect_invariant_outputs(model, dataloader, device, n_inputs, max_batches=10, max_values=1_000_000):
+    model.eval()
+    model = model.to(device)
+    invariant_values = {}
+    invariant_shapes = {}
+    hooks = []
+    invariant_modules = [
+        (name, module)
+        for name, module in model.named_modules()
+        if isinstance(module, HopInvariantLayer)
+    ]
+
+    def get_invariant_hook(name):
+        def hook(module, input, output):
+            if not hasattr(output, "detach"):
+                return
+            output = output.detach().float().cpu()
+            invariant_shapes.setdefault(name, list(output.shape))
+            values = output.reshape(-1, output.shape[-1]).numpy()
+            current_size = sum(item.size for item in invariant_values.get(name, []))
+            if current_size < max_values:
+                max_rows = (max_values - current_size) // values.shape[1]
+                if max_rows > 0:
+                    invariant_values.setdefault(name, []).append(values[:max_rows])
+
+        return hook
+
+    try:
+        for name, module in invariant_modules:
+            hooks.append(module.register_forward_hook(get_invariant_hook(name)))
+
+        for batch_idx, batch in enumerate(dataloader):
+            if batch_idx >= max_batches:
+                break
+            batch = [item.to(device=device, non_blocking=True) for item in batch]
+            with torch.enable_grad():
+                model(*batch[:n_inputs])
+    finally:
+        for hook in hooks:
+            hook.remove()
+
+    return {
+        name: np.concatenate(values, axis=0)
+        for name, values in invariant_values.items()
+        if values and np.concatenate(values).size
+    }, invariant_shapes
+
+
+def save_invariant_tracking(model, dataloader, device, n_inputs, output_prefix="FinalTraining", max_batches=10, max_values=1_000_000):
+    metadata = collect_invariant_metadata(model)
+    values, output_shapes = collect_invariant_outputs(
+        model=model,
+        dataloader=dataloader,
+        device=device,
+        n_inputs=n_inputs,
+        max_batches=max_batches,
+        max_values=max_values,
+    )
+
+    metadata_path = f"{output_prefix}_invariant_metadata.pt"
+    values_path = f"{output_prefix}_invariant_values.npz"
+    value_key_map = {
+        f"layer_{idx}": layer_name
+        for idx, layer_name in enumerate(values)
+    }
+
+    torch.save(
+        {
+            "metadata": metadata,
+            "output_shapes": output_shapes,
+            "value_key_map": value_key_map,
+            "max_batches": max_batches,
+            "max_values": max_values,
+        },
+        metadata_path,
+    )
+    np.savez_compressed(values_path, **{key: values[layer_name] for key, layer_name in value_key_map.items()})
+
+    summary = {}
+    for layer_name, layer_metadata in metadata.items():
+        metric_prefix = f"invariants/{layer_name}"
+        summary[f"{metric_prefix}/count"] = layer_metadata["n_invariants"]
+        summary[f"{metric_prefix}/input_dimension"] = layer_metadata["input_dimension"]
+        if layer_name in values:
+            summary[f"{metric_prefix}/saved_values"] = int(values[layer_name].size)
+
+    if summary:
+        wandb.log(summary)
+    wandb.save(metadata_path)
+    wandb.save(values_path)
+    return metadata_path, values_path
 
 
 def collect_activations(model, dataloader, device, n_inputs, max_batches=10, max_values=200_000):
@@ -333,6 +439,8 @@ wandb_run = wandb.init(
         "sha": sha,
         "activation_max_batches": args.activation_max_batches,
         "activation_max_values": args.activation_max_values,
+        "invariant_max_batches": args.invariant_max_batches,
+        "invariant_max_values": args.invariant_max_values,
         "float_precision": "high",
         "data_src": str(data_src),
         "processed_src": str(processed_src),
@@ -595,6 +703,16 @@ try:
             when="FinalTraining",
             batch_size=controller.eval_batch_size,
             metric_tracker=metric_tracker,
+        )
+
+        save_invariant_tracking(
+            model=evaluator.model,
+            dataloader=test_database.make_generator("test", "eval", controller.eval_batch_size),
+            device=device,
+            n_inputs=len(test_database.inputs),
+            output_prefix="FinalTraining",
+            max_batches=args.invariant_max_batches,
+            max_values=args.invariant_max_values,
         )
 
         activations = collect_activations(

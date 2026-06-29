@@ -23,6 +23,16 @@ def test_polynomial_invariant_counts_match_interaction_lmax4():
         assert len(polynomial_sizes) == _invariant_counts[n_max, 4]
 
 
+def test_hop_invariant_layer_metadata_tracks_counts_and_sizes():
+    invariant_layer = HopInvariantLayer(n_max=4, l_max=4)
+    metadata = invariant_layer.invariant_metadata()
+
+    assert metadata["n_invariants"] == _invariant_counts[4, 4]
+    assert len(metadata["invariant_codes"]) == metadata["n_invariants"]
+    assert len(metadata["polynomial_sizes"]) == metadata["n_invariants"]
+    assert metadata["polynomial_sizes"].min().item() > 0
+
+
 def evaluate_polynomial_collection_torch(x, polyCollection):
     coefs, terms, polynomial_sizes, _ = polyCollection.get_polynomials()
 
