@@ -11,3 +11,5 @@ hippynn.egg-info/*
 **/__pycache__/
 
 datasets/
+
+**/wandb/*

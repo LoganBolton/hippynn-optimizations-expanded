@@ -42,7 +42,7 @@ parser.add_argument("--seed", type=int, required=True)
 parser.add_argument("--hiphop_l_max", type=int, choices=range(0, 5), required=True)
 parser.add_argument("--hiphop_n_max", type=int, choices=range(1, 5), required=True)
 parser.add_argument("--run_name", type=str, required=True)
-parser.add_argument("--wandb_mode", choices=("online", "offline", "disabled"), required=True)
+parser.add_argument("--wandb_mode", choices=("online", "offline", "disabled"), default="offline")
 parser.add_argument("--n_epochs", type=positive_int, default=10_000)
 parser.add_argument("--data_size", type=positive_int, default=1000)
 parser.add_argument("--test_set_size", type=positive_int, default=80_000)
@@ -106,6 +106,7 @@ torch.set_float32_matmul_precision("high")
 
 def configure_wandb_auth(wandb_mode):
     if wandb_mode != "online":
+        os.environ.setdefault("WANDB_MODE", wandb_mode)
         return
     assert os.path.exists(WANDB_PATH), f"Wandb json not found at. {WANDB_PATH}"
     with open(WANDB_PATH, "r") as f:
@@ -521,7 +522,7 @@ training_modules, controller, metric_tracker = setup_training(
 wandb_size_metrics = _model_size_metrics(training_modules.model)
 wandb.log(wandb_size_metrics, step=0)
 wandb_run.summary.update(wandb_size_metrics)
-wandb.watch(training_modules.model, log="all", log_graph=False, log_freq=1000)
+# wandb.watch(training_modules.model, log="all", log_graph=False, log_freq=1000)
 
 accelerator = "cpu"
 gpu_info = {}
