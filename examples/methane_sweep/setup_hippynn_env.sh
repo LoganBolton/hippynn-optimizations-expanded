@@ -1,24 +1,20 @@
 #!/bin/bash
 set -e
 
-echo "Creating conda environment 'hippynn'..."
-conda create -n hippynn python=3.12 -y
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+ENV_NAME="${ENV_NAME:-hippynn-expanded-lmax}"
+
+echo "Creating conda environment '$ENV_NAME' from environment.yml..."
+cd "$REPO_ROOT"
+conda env create -f "$SCRIPT_DIR/environment.yml" -n "$ENV_NAME"
 
 echo "Activating environment..."
 source "$(conda info --base)/etc/profile.d/conda.sh"
-conda activate hippynn
+conda activate "$ENV_NAME"
 
-echo "Installing PyTorch..."
-conda install -y -c pytorch -c nvidia \
-  pytorch torchvision torchaudio pytorch-cuda=11.8 \
-  "mkl<2025" "intel-openmp<2025"
-
-echo "Installing hippynn..."
-cd /vast/home/logan_bolton/Github/hippynn-optimizations-expanded
-python -m pip install -e .
-
-echo "Installing additional dependencies..."
-python -m pip install wandb ase
+echo "Installing this checkout of hippynn in editable mode..."
+python -m pip install -e "$REPO_ROOT"
 
 echo "Testing installation..."
 python -c "import sys; print('Python:', sys.version)"
@@ -27,5 +23,5 @@ python -c "import ase; print('ASE version:', ase.__version__)"
 python -c "import hippynn; print('Hippynn installed at:', hippynn.__file__)"
 
 echo ""
-echo "Environment 'hippynn' created successfully!"
-echo "To activate: conda activate hippynn"
+echo "Environment '$ENV_NAME' created successfully!"
+echo "To activate: conda activate $ENV_NAME"

@@ -15,7 +15,7 @@
 # each run locally, but it cannot pull sweep jobs from the online W&B backend.
 
 TRAINING_SCRIPT="examples/methane_sweep/methane_configurations.py"
-CONDA_ENV="hippynn"                     # Your conda environment name
+CONDA_ENV="hippynn-expanded-lmax"       # Your conda environment name
 WANDB_MODE="offline"
 HIPHOP_L_MAX=4
 HIPHOP_N_MAX=4

@@ -8,7 +8,7 @@
 #SBATCH --mem=64G                  # RAM
 
 TRAINING_SCRIPT="methane_configurations.py"
-CONDA_ENV="hippynn"
+CONDA_ENV="hippynn-expanded-lmax"
 SEED=2025
 HIPHOP_L_MAX=4
 HIPHOP_N_MAX=4
