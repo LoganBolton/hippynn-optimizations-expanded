@@ -3,8 +3,8 @@
 #SBATCH --output=./logs/%j_methane_sweep.out
 #SBATCH --error=./logs/%j_methane_sweep.err
 #SBATCH --time=10:00:00            # Job duration (adjust as needed)
-#SBATCH --partition=shared-gpu     # GPU partition name (check with: sinfo)
-#SBATCH --nodelist=cn4031          # Known-good GPU node for this environment
+#SBATCH --partition=shared-gpu-ampere  # GPU partition name (check with: sinfo)
+#SBATCH --constraint=gpu1_model:NVIDIA_A100-SXM4-40GB&gpu_count:4
 #SBATCH --cpus-per-task=32         # CPUs for four local workers
 #SBATCH --mem=96G                  # RAM for four local workers
 
@@ -113,7 +113,7 @@ for ((TASK_START = 0; TASK_START < SWEEP_COUNT; TASK_START += MAX_PARALLEL)); do
         echo "Starting sweep task $TASK_ID / $SWEEP_COUNT on GPU $GPU_ID"
         (
             export CUDA_VISIBLE_DEVICES="$GPU_ID"
-            python "$TRAINING_SCRIPT" \
+            python -u "$TRAINING_SCRIPT" \
                 --sweep_config "$SWEEP_CONFIG" \
                 --sweep_task_id "$TASK_ID"
         ) > "logs/${SLURM_JOB_ID}_${TASK_ID}_methane_sweep.out" 2> "logs/${SLURM_JOB_ID}_${TASK_ID}_methane_sweep.err" &

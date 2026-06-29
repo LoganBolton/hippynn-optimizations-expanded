@@ -13,3 +13,6 @@ hippynn.egg-info/*
 datasets/
 
 **/wandb/*
+
+
+examples/TEST_*/*

@@ -49,6 +49,9 @@ parser.add_argument("--sweep_task_id", type=int)
 parser.add_argument("--n_epochs", type=positive_int, default=200)
 parser.add_argument("--data_size", type=positive_int, default=1000)
 parser.add_argument("--test_set_size", type=positive_int, default=80_000)
+parser.add_argument("--batch_size", type=positive_int, default=256)
+parser.add_argument("--eval_batch_size", type=positive_int, default=2048)
+parser.add_argument("--max_batch_size", type=positive_int, default=2048)
 parser.add_argument("--activation_max_batches", type=positive_int, default=10)
 parser.add_argument("--activation_max_values", type=positive_int, default=200_000)
 parser.add_argument("--invariant_max_batches", type=positive_int, default=10)
@@ -524,11 +527,11 @@ wandb_run = wandb.init(
         "optimizer_name": "Adam",
         "optimizer_hparams": {"lr": 2.5e-3},
         "scheduler_name": "RaiseBatchSizeOnPlateau",
-        "scheduler_hparams": {"max_batch_size": 2048, "patience": 150, "factor": 0.5},
+        "scheduler_hparams": {"max_batch_size": args.max_batch_size, "patience": 150, "factor": 0.5},
         "controller_name": "PatienceController",
         "controller_hparams": {
-            "batch_size": 256,
-            "eval_batch_size": 2048,
+            "batch_size": args.batch_size,
+            "eval_batch_size": args.eval_batch_size,
             "max_epochs": n_epochs,
             "stopping_key": "T-MAE",
             "termination_patience": 300,
@@ -667,7 +670,7 @@ training_modules, db_info = hippynn.experiment.assemble_for_training(
 optimizer = torch.optim.Adam(training_modules.model.parameters(), lr=2.5e-3)
 scheduler = RaiseBatchSizeOnPlateau(
     optimizer=optimizer,
-    max_batch_size=2048,
+    max_batch_size=args.max_batch_size,
     patience=150,
     factor=0.5,
 )
@@ -675,8 +678,8 @@ scheduler = RaiseBatchSizeOnPlateau(
 controller = PatienceController(
     optimizer=optimizer,
     scheduler=scheduler,
-    batch_size=256,
-    eval_batch_size=2048,
+    batch_size=args.batch_size,
+    eval_batch_size=args.eval_batch_size,
     max_epochs=n_epochs,
     stopping_key="T-MAE",
     termination_patience=300,
@@ -739,6 +742,21 @@ test_database.split_the_rest("test")
 test_database.send_to_device(device)
 
 set_e0_values(henergy, train_database, trainable_after=False)
+train_split_size = len(train_database.splits["train"]["indices"])
+valid_split_size = len(train_database.splits["valid"]["indices"])
+test_split_size = len(test_database.splits["test"]["indices"])
+print(
+    "Batch config: "
+    f"requested_train_batch={controller.batch_size} "
+    f"requested_eval_batch={controller.eval_batch_size} "
+    f"train_split={train_split_size} "
+    f"valid_split={valid_split_size} "
+    f"test_split={test_split_size} "
+    f"train_batches_per_epoch={(train_split_size + controller.batch_size - 1) // controller.batch_size} "
+    f"valid_batches={(valid_split_size + controller.eval_batch_size - 1) // controller.eval_batch_size} "
+    f"test_batches={(test_split_size + controller.eval_batch_size - 1) // controller.eval_batch_size}",
+    flush=True,
+)
 
 # ----- Train model -----
 wandb_out_status = "aborted"

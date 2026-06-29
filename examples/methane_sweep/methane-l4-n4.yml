@@ -19,6 +19,12 @@ parameters:
     value: 1000000
   test_set_size:
     value: 80000
+  batch_size:
+    value: 65536
+  eval_batch_size:
+    value: 65536
+  max_batch_size:
+    value: 65536
   activation_max_batches:
     value: 10
   activation_max_values:
