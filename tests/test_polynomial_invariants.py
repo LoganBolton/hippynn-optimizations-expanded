@@ -64,7 +64,7 @@ def test_polynomial_invariants_are_rotation_invariant_lmax3():
     rotated_tensor_features = torch.cat(tensor_extractor(rhats @ rotation)[:4], dim=1)
 
     start = time.perf_counter()
-    print(f"Beginning polynomial construction: {start:.6f} s", flush=True)
+    print("beginning polynomial construction", flush=True)
     polyCollection = compute_invariant_polynomial_collection(
         n_max=12,
         l_max=3,
@@ -73,10 +73,12 @@ def test_polynomial_invariants_are_rotation_invariant_lmax3():
     print(f"construct polynomial collection: {time.perf_counter() - start:.6f} s", flush=True)
 
     start = time.perf_counter()
+    print("beginning original invariant evaluation", flush=True)
     invariants = evaluate_polynomial_collection_torch(tensor_features, polyCollection)
     print(f"evaluate original invariants: {time.perf_counter() - start:.6f} s", flush=True)
 
     start = time.perf_counter()
+    print("beginning rotated invariant evaluation", flush=True)
     rotated_invariants = evaluate_polynomial_collection_torch(rotated_tensor_features, polyCollection)
     print(f"evaluate rotated invariants: {time.perf_counter() - start:.6f} s", flush=True)
 
