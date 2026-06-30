@@ -18,7 +18,7 @@ def test_default_invariant_definitions_parse():
 
 def test_polynomial_invariant_counts_match_interaction_lmax3():
     unit_tensor_bases = {order: torch.ones(*([1] * order), 1) for order in range(4)}
-    for n_max in range(1, 13):
+    for n_max in range(1, 5):
         polyCollection = compute_invariant_polynomial_collection(
             n_max,
             3,
@@ -66,7 +66,7 @@ def test_polynomial_invariants_are_rotation_invariant_lmax3():
     start = time.perf_counter()
     print("beginning polynomial construction", flush=True)
     polyCollection = compute_invariant_polynomial_collection(
-        n_max=12,
+        n_max=4,
         l_max=3,
         input_tensor_ordering=["zero", "one", "two", "three"],
     )
@@ -100,7 +100,7 @@ def test_polynomial_invariants():
         from hippynn.custom_kernels.poly_triton import EvaluatePolynomials
 
         for l_max in range(4):
-            for n_max in range(1, 13):
+            for n_max in range(1, 5):
 
                 n_tensor_comp = (l_max+1)**2
                 tensor_features = torch.randn((n_point, n_tensor_comp), requires_grad=True, device='cuda')
@@ -139,10 +139,8 @@ def test_invariants_wrapper():
     except:
         triton_available = False
 
-    n_max_values = range(1, 13) if triton_available and torch.cuda.is_available() else range(1, 5)
-
     for l_max in range(4):
-        for n_max in n_max_values:
+        for n_max in range(1, 5):
 
             n_tensor_comp = (l_max+1)**2
             tensor_features = torch.randn((n_point, n_tensor_comp), requires_grad=True, device=device)

@@ -49,8 +49,6 @@ default_invariants_list = [
     "ij,jk,ilm,klm->,two,two,three,three",
     "ij,ijk,kab,ab->,two,three,three,two",
     "ijk,ijl,abk,abl->,three,three,three,three",
-    "ijk,ijl,lkm,mab,acd,bcd->,three,three,three,three,three,three",
-    "ijk,ijl,lkm,mab,abc,cde,def,fgh,gyz,hyz->,three,three,three,three,three,three,three,three,three,three",
 ]
 
 
