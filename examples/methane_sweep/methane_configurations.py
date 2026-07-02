@@ -107,7 +107,7 @@ def _apply_sweep_task(args):
             if getattr(args, name) == parser_defaults.get(name):
                 setattr(args, name, spec["value"])
 
-    grid_names = ["seed", "hiphop_l_max", "hiphop_n_max"]
+    grid_names = ["seed", "hiphop_l_max", "hiphop_n_max", "data_size"]
     grid_values = [_sweep_parameter_values(name, parameters[name]) for name in grid_names]
     jobs = list(itertools.product(*grid_values))
 
@@ -115,12 +115,13 @@ def _apply_sweep_task(args):
         print(f"Sweep task {args.sweep_task_id} is outside the configured sweep size ({len(jobs)}); exiting.")
         raise SystemExit(0)
 
-    seed, hiphop_l_max, hiphop_n_max = jobs[args.sweep_task_id]
+    seed, hiphop_l_max, hiphop_n_max, data_size = jobs[args.sweep_task_id]
     args.seed = seed
     args.hiphop_l_max = hiphop_l_max
     args.hiphop_n_max = hiphop_n_max
+    args.data_size = data_size
     if args.run_name is None:
-        args.run_name = f"methane-l{hiphop_l_max}-n{hiphop_n_max}-seed{seed}"
+        args.run_name = f"methane-l{hiphop_l_max}-n{hiphop_n_max}-d{data_size}-seed{seed}"
     args.sweep_count = len(jobs)
 
 
@@ -494,7 +495,10 @@ random_subset = False  # whether to use a random subset of data or the first dat
 network_class = HipHopnn  # HIP-HOP
 hiphop_l_max = args.hiphop_l_max  # these will not be used if network_class != HipHopnn
 hiphop_n_max = args.hiphop_n_max  # these will not be used if network_class != HipHopnn
-model_save_folder = Path(__file__).parents[1] / Path(f"TEST_METHANE_MODEL_l{hiphop_l_max}_n{hiphop_n_max}_seed{seed}")
+model_save_folder = (
+    Path(__file__).parents[1]
+    / Path(f"TEST_METHANE_MODEL_l{hiphop_l_max}_n{hiphop_n_max}_d{data_size}_seed{seed}")
+)
 sha = get_git_sha()
 
 network_params = {

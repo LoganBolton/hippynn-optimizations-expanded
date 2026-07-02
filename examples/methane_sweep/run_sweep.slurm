@@ -134,6 +134,7 @@ grid_values = [
     parameter_values(parameters["seed"]),
     parameter_values(parameters["hiphop_l_max"]),
     parameter_values(parameters["hiphop_n_max"]),
+    parameter_values(parameters["data_size"]),
 ]
 print(len(list(itertools.product(*grid_values))))
 PY

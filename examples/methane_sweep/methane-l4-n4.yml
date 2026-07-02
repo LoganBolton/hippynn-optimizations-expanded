@@ -8,7 +8,7 @@ parameters:
   wandb_mode:
     value: offline
   seed:
-    values: [42, 1776, 250]
+    values: [42, 1776]
   hiphop_l_max:
     values: [3, 4]
   hiphop_n_max:
@@ -16,11 +16,11 @@ parameters:
   n_epochs:
     value: 10000
   data_size:
-    value: 1000000
+    values: [1000000, 100000]
   test_set_size:
     value: 80000
   batch_size:
-    value: 65536
+    value: 16384
   eval_batch_size:
     value: 65536
   max_batch_size:
