@@ -2,7 +2,11 @@
 #SBATCH --job-name=methane_sweep
 #SBATCH --output=./logs/%j_methane_sweep.out
 #SBATCH --error=./logs/%j_methane_sweep.err
-#SBATCH --time=10:00:00            # Job duration (adjust as needed)
+#SBATCH --time=2-00:00:00          # Max for Darwin long QoS
+#SBATCH --qos=long
+#SBATCH --requeue
+#SBATCH --signal=B:USR1@600
+#SBATCH --open-mode=append
 #SBATCH --partition=shared-gpu-ampere  # GPU partition name (check with: sinfo)
 #SBATCH --constraint=gpu1_model:NVIDIA_A100-SXM4-40GB&gpu_count:4
 #SBATCH --cpus-per-task=32         # CPUs for four local workers
@@ -19,6 +23,28 @@ TRAINING_SCRIPT="$SCRIPT_DIR/methane_configurations.py"
 SWEEP_CONFIG="$SCRIPT_DIR/methane-l4-n4.yml"
 CONDA_ENV="hippynn-expanded-lmax"       # Your conda environment name
 MAX_PARALLEL=4
+CHECKPOINT_EVERY="${CHECKPOINT_EVERY:-10}"
+WANDB_MODE="${WANDB_MODE:-online}"
+ATTEMPT_ID="${SLURM_RESTART_COUNT:-0}"
+children=()
+
+case "$WANDB_MODE" in
+    online|offline|disabled)
+        ;;
+    off)
+        echo "Error: WANDB_MODE=off is not valid. Use WANDB_MODE=disabled, offline, or online."
+        exit 1
+        ;;
+    *)
+        echo "Error: WANDB_MODE must be one of: online, offline, disabled"
+        exit 1
+        ;;
+esac
+
+if ! [[ "$CHECKPOINT_EVERY" =~ ^[1-9][0-9]*$ ]]; then
+    echo "Error: CHECKPOINT_EVERY must be a positive integer, got '$CHECKPOINT_EVERY'"
+    exit 1
+fi
 
 if [ "$#" -ne 0 ]; then
     echo "Error: this local sweep does not take a W&B sweep ID"
@@ -28,7 +54,28 @@ fi
 
 set -e
 
+requeue_before_timeout() {
+    echo ""
+    echo "Received Slurm pre-timeout signal at $(date). Requeueing job $SLURM_JOB_ID..."
+    for child in "${children[@]:-}"; do
+        if kill -0 "$child" 2>/dev/null; then
+            kill -TERM "$child" 2>/dev/null || true
+        fi
+    done
+
+    if scontrol requeue "$SLURM_JOB_ID"; then
+        echo "Requeued job $SLURM_JOB_ID. The next allocation will resume from checkpoints."
+        exit 0
+    fi
+
+    echo "WARNING: scontrol requeue failed; exiting so this failure is visible."
+    exit 1
+}
+
+trap requeue_before_timeout USR1
+
 echo "Job ID:        $SLURM_JOB_ID"
+echo "Restart count: ${SLURM_RESTART_COUNT:-0}"
 echo "Node:          $(hostname)"
 echo "Partition:     $SLURM_JOB_PARTITION"
 echo "Working dir:   $(pwd)"
@@ -96,6 +143,8 @@ echo "Starting local sweep"
 echo "Sweep config: $SWEEP_CONFIG"
 echo "Sweep tasks:  $SWEEP_COUNT"
 echo "Parallelism:  $MAX_PARALLEL"
+echo "Checkpoint:   every $CHECKPOINT_EVERY epoch(s)"
+echo "W&B mode:     $WANDB_MODE"
 echo "=========================================="
 echo ""
 
@@ -115,9 +164,13 @@ for ((TASK_START = 0; TASK_START < SWEEP_COUNT; TASK_START += MAX_PARALLEL)); do
             export CUDA_VISIBLE_DEVICES="$GPU_ID"
             python -u "$TRAINING_SCRIPT" \
                 --sweep_config "$SWEEP_CONFIG" \
-                --sweep_task_id "$TASK_ID"
-        ) > "logs/${SLURM_JOB_ID}_${TASK_ID}_methane_sweep.out" 2> "logs/${SLURM_JOB_ID}_${TASK_ID}_methane_sweep.err" &
+                --sweep_task_id "$TASK_ID" \
+                --wandb_mode "$WANDB_MODE" \
+                --resume \
+                --checkpoint_every "$CHECKPOINT_EVERY"
+        ) > "logs/${SLURM_JOB_ID}_r${ATTEMPT_ID}_${TASK_ID}_methane_sweep.out" 2> "logs/${SLURM_JOB_ID}_r${ATTEMPT_ID}_${TASK_ID}_methane_sweep.err" &
         pids+=("$!")
+        children+=("$!")
     done
 
     for pid in "${pids[@]}"; do

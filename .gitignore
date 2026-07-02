@@ -16,3 +16,5 @@ datasets/
 
 
 examples/TEST_*/*
+
+examples/methane_sweep/logs_v1_10_hours_max

@@ -30,6 +30,7 @@ import itertools
 import json
 import os
 import subprocess
+from pathlib import Path
 
 def positive_int(value):
     value = int(value)
@@ -52,6 +53,8 @@ parser.add_argument("--test_set_size", type=positive_int, default=80_000)
 parser.add_argument("--batch_size", type=positive_int, default=256)
 parser.add_argument("--eval_batch_size", type=positive_int, default=2048)
 parser.add_argument("--max_batch_size", type=positive_int, default=2048)
+parser.add_argument("--resume", action="store_true")
+parser.add_argument("--checkpoint_every", type=int, default=10)
 parser.add_argument("--activation_max_batches", type=positive_int, default=10)
 parser.add_argument("--activation_max_values", type=positive_int, default=200_000)
 parser.add_argument("--invariant_max_batches", type=positive_int, default=10)
@@ -127,7 +130,6 @@ import ase
 import matplotlib.pyplot as plt
 import torch
 import numpy as np
-from pathlib import Path
 
 try:
     import wandb
@@ -434,6 +436,23 @@ class WandbEpochLogger:
         wandb.log(epoch_metrics, step=epoch)
 
 
+def latest_checkpoint(run_dir):
+    epoch_checkpoints = []
+    for path in run_dir.glob("checkpoint_epoch_*.pt"):
+        try:
+            epoch = int(path.stem.rsplit("_", 1)[-1])
+        except ValueError:
+            continue
+        epoch_checkpoints.append((epoch, path.stat().st_mtime, path))
+    if epoch_checkpoints:
+        return max(epoch_checkpoints)[2]
+
+    best_checkpoint = run_dir / "best_checkpoint.pt"
+    if best_checkpoint.exists():
+        return best_checkpoint
+    return None
+
+
 def require_cuda_triton_kernels():
     if not torch.cuda.is_available():
         raise RuntimeError("This training script requires CUDA because it is configured to use Triton custom kernels.")
@@ -502,6 +521,8 @@ require_cuda_triton_kernels()
 
 wandb_run = wandb.init(
     name=run_name,
+    id=run_name,
+    resume="allow" if args.resume else None,
     mode=wandb_mode,
     config={
         "run_name": run_name,
@@ -524,6 +545,8 @@ wandb_run = wandb.init(
         "hiphop_l_max": hiphop_l_max,
         "hiphop_n_max": hiphop_n_max,
         "n_epochs": n_epochs,
+        "resume": args.resume,
+        "checkpoint_every": args.checkpoint_every,
         "optimizer_name": "Adam",
         "optimizer_hparams": {"lr": 2.5e-3},
         "scheduler_name": "RaiseBatchSizeOnPlateau",
@@ -742,6 +765,34 @@ test_database.split_the_rest("test")
 test_database.send_to_device(device)
 
 set_e0_values(henergy, train_database, trainable_after=False)
+
+if args.resume:
+    checkpoint_path = latest_checkpoint(model_save_folder)
+    if checkpoint_path is not None:
+        print(f"Resuming {run_name} from {checkpoint_path}", flush=True)
+        checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
+        training_modules.model.load_state_dict(checkpoint["model"])
+        controller.load_state_dict(checkpoint["controller"])
+        metric_tracker = checkpoint["metric_tracker"]
+        if "torch_rng_state" in checkpoint:
+            torch.random.set_rng_state(checkpoint["torch_rng_state"])
+        if metric_tracker.current_epoch >= n_epochs:
+            print(f"{run_name} already reached {metric_tracker.current_epoch} epochs; nothing to do.", flush=True)
+            wandb_run.summary["status"] = "already_complete"
+            wandb_run.finish()
+            raise SystemExit(0)
+        wandb.log(
+            {
+                "resume/from_checkpoint": str(checkpoint_path),
+                "resume/start_epoch": metric_tracker.current_epoch,
+            },
+            step=metric_tracker.current_epoch,
+        )
+        wandb_run.summary["resumed_from_checkpoint"] = str(checkpoint_path)
+        wandb_run.summary["resume_start_epoch"] = metric_tracker.current_epoch
+    else:
+        print(f"No checkpoint found for {run_name}; starting from scratch.", flush=True)
+
 train_split_size = len(train_database.splits["train"]["indices"])
 valid_split_size = len(train_database.splits["valid"]["indices"])
 test_split_size = len(test_database.splits["test"]["indices"])
@@ -771,7 +822,7 @@ try:
             batch_callbacks=None,
             store_all_better=False,
             store_best=True,
-            store_every=0,
+            store_every=args.checkpoint_every,
             quiet=False,
         )
 
