@@ -44,6 +44,7 @@ parser.add_argument("--seed", type=int)
 parser.add_argument("--hiphop_l_max", type=int, choices=range(0, 5))
 parser.add_argument("--hiphop_n_max", type=int, choices=range(1, 5))
 parser.add_argument("--run_name", type=str)
+parser.add_argument("--model_suffix", type=str, default="")
 parser.add_argument("--wandb_mode", choices=("online", "offline", "disabled"), default="offline")
 parser.add_argument("--sweep_config", type=str)
 parser.add_argument("--sweep_task_id", type=int)
@@ -126,6 +127,11 @@ def _apply_sweep_task(args):
 
 
 _apply_sweep_task(args)
+
+if args.model_suffix:
+    suffix = args.model_suffix.strip("-_")
+    if suffix:
+        args.run_name = f"{args.run_name}-{suffix}"
 
 import ase
 import matplotlib.pyplot as plt
@@ -497,7 +503,7 @@ hiphop_l_max = args.hiphop_l_max  # these will not be used if network_class != H
 hiphop_n_max = args.hiphop_n_max  # these will not be used if network_class != HipHopnn
 model_save_folder = (
     Path(__file__).parents[1]
-    / Path(f"TEST_METHANE_MODEL_l{hiphop_l_max}_n{hiphop_n_max}_d{data_size}_seed{seed}")
+    / Path(f"TEST_METHANE_MODEL_l{hiphop_l_max}_n{hiphop_n_max}_d{data_size}_seed{seed}{('-' + args.model_suffix.strip('-_')) if args.model_suffix.strip('-_') else ''}")
 )
 sha = get_git_sha()
 
@@ -779,7 +785,16 @@ if args.resume:
         controller.load_state_dict(checkpoint["controller"])
         metric_tracker = checkpoint["metric_tracker"]
         if "torch_rng_state" in checkpoint:
-            torch.random.set_rng_state(checkpoint["torch_rng_state"])
+            try:
+                rng_state = checkpoint["torch_rng_state"]
+                if not isinstance(rng_state, torch.ByteTensor):
+                    if hasattr(rng_state, "byte"):
+                        rng_state = rng_state.byte()
+                    else:
+                        rng_state = torch.tensor(rng_state, dtype=torch.uint8)
+                torch.random.set_rng_state(rng_state)
+            except (TypeError, RuntimeError, ValueError) as exc:
+                print(f"Warning: could not restore torch RNG state: {exc}. Continuing resume.", flush=True)
         if metric_tracker.current_epoch >= n_epochs:
             print(f"{run_name} already reached {metric_tracker.current_epoch} epochs; nothing to do.", flush=True)
             wandb_run.summary["status"] = "already_complete"
