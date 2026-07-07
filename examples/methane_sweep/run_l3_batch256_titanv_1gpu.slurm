@@ -128,6 +128,7 @@ echo "Python version:  $(python --version)"
 echo ""
 
 export PYTHONPATH="$PROJECT_ROOT"
+export PYTHONNOUSERSITE=1
 mkdir -p "$WANDB_DIR"
 mkdir -p "$LOG_DIR"
 

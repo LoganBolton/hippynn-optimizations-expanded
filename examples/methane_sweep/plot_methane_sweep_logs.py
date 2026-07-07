@@ -42,6 +42,11 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--log-dir", default="logs", type=Path, help="Directory containing .out logs.")
     parser.add_argument(
+        "--log-pattern",
+        default="*_methane_*.out",
+        help="Glob pattern, relative to --log-dir, for selecting logs to parse.",
+    )
+    parser.add_argument(
         "--output-dir",
         default=Path("logs/metric_plots"),
         type=Path,
@@ -131,7 +136,7 @@ def parameter_values(spec: dict[str, object]) -> list[object]:
 
 
 def task_id_from_path(path: Path) -> int | None:
-    match = re.search(r"_(\d+)_methane_(?:sweep|resume_selected)\.out$", path.name)
+    match = re.search(r"_(\d+)_methane_(?:sweep|resume_selected|l3_b256)(?:_[A-Za-z0-9-]+)?\.out$", path.name)
     return int(match.group(1)) if match else None
 
 
@@ -1091,8 +1096,8 @@ def main() -> None:
 
     log_paths = sorted(
         path
-        for path in args.log_dir.glob("*_methane_*.out")
-        if re.search(r"_\d+_methane_(?:sweep|resume_selected)\.out$", path.name)
+        for path in args.log_dir.glob(args.log_pattern)
+        if re.search(r"_\d+_methane_(?:sweep|resume_selected|l3_b256)(?:_[A-Za-z0-9-]+)?\.out$", path.name)
     )
     if not log_paths:
         raise SystemExit(f"No array-task methane sweep .out files found in {args.log_dir}")

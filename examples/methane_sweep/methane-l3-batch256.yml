@@ -22,9 +22,9 @@ parameters:
   batch_size:
     value: 256
   eval_batch_size:
-    value: 65536
+    value: 512
   max_batch_size:
-    value: 65536
+    value: 512
   activation_max_batches:
     value: 10
   activation_max_values:
