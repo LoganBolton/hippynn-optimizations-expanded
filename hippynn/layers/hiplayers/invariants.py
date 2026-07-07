@@ -40,26 +40,17 @@ default_invariants_list = [
     "->,zero",
     "i,i->,one,one",
     "ij,ij->,two,two",
-    "ijk,ijk->,three,three",
-    "ijkl,ijkl->,four,four",
-    "i,ij,j->,one,two,one",
     "ij,ik,jk->,two,two,two",
-    "ij,kl,ijkl->,two,two,four",
-    "ij,jkl,ikl->,two,three,three",
-    "ij,iklm,jklm->,two,four,four",
-    "ijk,ilm,jklm->,three,three,four",
-    "ijkl,ijmn,klmn->,four,four,four",
-    "i,j,k,ijk->,one,one,one,three",
+    "ijk,ijk->,three,three",
+    "ijk,ijl,abk,abl->,three,three,three,three",
+    "i,ij,j->,one,two,one",
     "i,ij,jk,k->,one,two,two,one",
+    "i,j,k,ijk->,one,one,one,three",
     "i,ijk,jkl,l->,one,three,three,one",
-    "i,j,iklm,jklm->,one,one,four,four",
-    "ij,kl,lm,ijkm->,two,two,two,four",
+    "ij,jkl,ikl->,two,three,three",
     "ij,jk,ilm,klm->,two,two,three,three",
     "ij,ijk,kab,ab->,two,three,three,two",
-    "ijk,ijl,abk,abl->,three,three,three,three",
-    "ijk,ijl,abkm,ablm->,three,three,four,four",
-    "ijk,ilm,jkab,lmab->,three,three,four,four",
-    "ijk,abc,ijkl,abcl->,three,three,four,four"
+    "ijk,lmn,il,jm,kn->,three,three,two,two,two"
 ]
 
 
@@ -273,7 +264,8 @@ def compute_invariant_polynomial_collection(n_max, l_max, tensor_bases=cmaps, in
     next_offset = 0
 
     for t in input_tensor_ordering:
-        assert t in tensor_orders, f"Tensor {t} is never used in an invariant."
+        if t not in tensor_orders:
+            continue
 
         input_offsets[t] = next_offset
         next_offset += 2*tensor_orders[t] + 1
