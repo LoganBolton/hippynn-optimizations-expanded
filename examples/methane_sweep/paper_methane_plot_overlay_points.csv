@@ -1,0 +1,15 @@
+hiphop_l_max,hiphop_n_max,batch_size,accelerator,training_set_size,best_valid_T-RMSE,normalized_energy_RMSE,source_csv,run,sweep_task_id,logged_epochs,best_epoch
+3,3,256,A100,100000,0.75483,0.0075483,examples/methane_sweep/logs/metric_plots_l3_b256/paper_style_energy_comparison.csv,task 1: l=3 n=3 d=100k,1,2772,2337
+3,3,256,A100,1000000,0.52612,0.005261200000000001,examples/methane_sweep/logs/metric_plots_l3_b256/paper_style_energy_comparison.csv,task 0: l=3 n=3 d=1M,0,2142,1233
+3,3,256,TitanV,100000,0.64871,0.0064871,examples/methane_sweep/logs/metric_plots_titanv_l3_b256/paper_style_energy_comparison.csv,task 1: l=3 n=3 d=100k,1,4965,4285
+3,3,256,TitanV,1000000,0.48496,0.0048496,examples/methane_sweep/logs/metric_plots_titanv_l3_b256/paper_style_energy_comparison.csv,task 0: l=3 n=3 d=1M,0,1278,1272
+3,4,256,TitanV,100000,0.68767,0.0068767,examples/methane_sweep/logs/metric_plots_titanv_l3_b256/paper_style_energy_comparison.csv,task 3: l=3 n=4 d=100k,3,5455,5129
+3,4,256,TitanV,1000000,0.66785,0.0066785,examples/methane_sweep/logs/metric_plots_titanv_l3_b256/paper_style_energy_comparison.csv,task 2: l=3 n=4 d=1M,2,956,823
+3,3,16384,A100,100000,2.6457,0.026457,examples/methane_sweep/logs/metric_plots/paper_style_energy_comparison.csv,task 1: l=3 n=3 d=100k,1,1277,1219
+3,3,16384,A100,1000000,0.98742,0.0098742,examples/methane_sweep/logs/metric_plots/paper_style_energy_comparison.csv,task 8: l=3 n=3 d=1M,8,3739,3733
+3,4,16384,A100,100000,2.3579,0.023579,examples/methane_sweep/logs/metric_plots/paper_style_energy_comparison.csv,task 11: l=3 n=4 d=100k,11,1175,953
+3,4,16384,A100,1000000,0.87519,0.0087519,examples/methane_sweep/logs/metric_plots/paper_style_energy_comparison.csv,task 10: l=3 n=4 d=1M,10,3482,3479
+4,3,16384,A100,100000,2.3902,0.023902,examples/methane_sweep/logs/metric_plots/paper_style_energy_comparison.csv,task 5: l=4 n=3 d=100k,5,1162,858
+4,3,16384,A100,1000000,1.1105,0.011105,examples/methane_sweep/logs/metric_plots/paper_style_energy_comparison.csv,task 4: l=4 n=3 d=1M,4,1007,706
+4,4,16384,A100,100000,2.6483,0.026483,examples/methane_sweep/logs/metric_plots/paper_style_energy_comparison.csv,task 7: l=4 n=4 d=100k,7,723,564
+4,4,16384,A100,1000000,2.3911,0.023910999999999998,examples/methane_sweep/logs/metric_plots/paper_style_energy_comparison.csv,task 6: l=4 n=4 d=1M,6,77,74

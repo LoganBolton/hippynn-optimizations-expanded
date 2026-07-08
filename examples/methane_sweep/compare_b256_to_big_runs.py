@@ -172,7 +172,7 @@ def plot_best_metric_comparison(rows: list[dict[str, object]], output: Path) -> 
                 zorder=run_key_zorder(row),
             )
             ax.annotate(
-                f"{int(row['data_size']) // 1000}k l{row['hiphop_l_max']}n{row['hiphop_n_max']}",
+                f"{dataset_label(int(row['data_size']))} l{row['hiphop_l_max']}n{row['hiphop_n_max']}",
                 (float(row[time_key]), float(row[metric])),
                 xytext=(6, 5),
                 textcoords="offset points",

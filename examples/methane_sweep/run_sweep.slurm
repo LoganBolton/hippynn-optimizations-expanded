@@ -13,6 +13,7 @@
 #SBATCH --mem=96G                  # RAM for four local workers
 
 # Usage: sbatch run_sweep.slurm
+#        TASK_IDS="0 1 2 3 4 5 6 7" sbatch run_sweep.slurm
 #
 # This is a local/offline replacement for `wandb agent`. W&B offline mode logs
 # each run locally, but it cannot pull sweep jobs from the online W&B backend.
@@ -23,6 +24,7 @@ TRAINING_SCRIPT="$SCRIPT_DIR/methane_configurations.py"
 SWEEP_CONFIG="$SCRIPT_DIR/methane-l4-n4.yml"
 CONDA_ENV="hippynn-expanded-lmax"       # Your conda environment name
 MAX_PARALLEL=4
+TASK_IDS="${TASK_IDS:-}"
 CHECKPOINT_EVERY="${CHECKPOINT_EVERY:-10}"
 WANDB_MODE="${WANDB_MODE:-online}"
 ATTEMPT_ID="${SLURM_RESTART_COUNT:-0}"
@@ -144,20 +146,39 @@ echo "Starting local sweep"
 echo "Sweep config: $SWEEP_CONFIG"
 echo "Sweep tasks:  $SWEEP_COUNT"
 echo "Parallelism:  $MAX_PARALLEL"
+echo "Task ids:     ${TASK_IDS:-0..$((SWEEP_COUNT - 1))}"
 echo "Checkpoint:   every $CHECKPOINT_EVERY epoch(s)"
 echo "W&B mode:     $WANDB_MODE"
 echo "=========================================="
 echo ""
 
 EXIT_CODE=0
+if [ -n "$TASK_IDS" ]; then
+    read -r -a task_ids <<< "$TASK_IDS"
+else
+    task_ids=()
+    for ((TASK_ID = 0; TASK_ID < SWEEP_COUNT; TASK_ID++)); do
+        task_ids+=("$TASK_ID")
+    done
+fi
 
-for ((TASK_START = 0; TASK_START < SWEEP_COUNT; TASK_START += MAX_PARALLEL)); do
+for ((TASK_START = 0; TASK_START < ${#task_ids[@]}; TASK_START += MAX_PARALLEL)); do
     pids=()
 
     for ((GPU_ID = 0; GPU_ID < MAX_PARALLEL; GPU_ID++)); do
-        TASK_ID=$((TASK_START + GPU_ID))
-        if [ "$TASK_ID" -ge "$SWEEP_COUNT" ]; then
+        TASK_INDEX=$((TASK_START + GPU_ID))
+        if [ "$TASK_INDEX" -ge "${#task_ids[@]}" ]; then
             break
+        fi
+
+        TASK_ID="${task_ids[$TASK_INDEX]}"
+        if ! [[ "$TASK_ID" =~ ^[0-9]+$ ]]; then
+            echo "Error: task id must be an integer, got '$TASK_ID'"
+            exit 1
+        fi
+        if [ "$TASK_ID" -ge "$SWEEP_COUNT" ]; then
+            echo "Error: task id $TASK_ID is outside the configured sweep size ($SWEEP_COUNT)"
+            exit 1
         fi
 
         echo "Starting sweep task $TASK_ID / $SWEEP_COUNT on GPU $GPU_ID"

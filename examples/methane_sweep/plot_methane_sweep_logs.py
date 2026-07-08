@@ -23,6 +23,13 @@ TIME_RE = re.compile(r"(Training time|Total epoch time):\s*(%s)\s*s" % FLOAT_RE.
 BEST_RE = re.compile(r"Best T-MAE so far:\s*(%s)" % FLOAT_RE.pattern)
 SINCE_BEST_RE = re.compile(r"Epochs since last best:\s*(\d+)")
 CURRENT_MAX_RE = re.compile(r"Current max epochs:\s*(\d+)")
+FINAL_EVALUATION_MARKERS = (
+    "Training phase ended.",
+    "Reverting to best model found.",
+    "Making plots over training time...",
+    "Testing model...",
+    "Training complete.",
+)
 
 
 METRIC_NAMES = {
@@ -45,6 +52,12 @@ def parse_args() -> argparse.Namespace:
         "--log-pattern",
         default="*_methane_*.out",
         help="Glob pattern, relative to --log-dir, for selecting logs to parse.",
+    )
+    parser.add_argument(
+        "--extra-log-pattern",
+        action="append",
+        default=[],
+        help="Additional glob pattern, relative to --log-dir, for selecting logs to parse.",
     )
     parser.add_argument(
         "--output-dir",
@@ -135,6 +148,19 @@ def parameter_values(spec: dict[str, object]) -> list[object]:
     return []
 
 
+def format_data_size(value: object) -> str:
+    size = int(value)
+    if size == 100_000:
+        return "100k"
+    if size == 1_000_000:
+        return "1M"
+    if size >= 1_000_000 and size % 1_000_000 == 0:
+        return f"{size // 1_000_000}M"
+    if size >= 1_000 and size % 1_000 == 0:
+        return f"{size // 1_000}k"
+    return f"{size:,}"
+
+
 def task_id_from_path(path: Path) -> int | None:
     match = re.search(r"_(\d+)_methane_(?:sweep|resume_selected|l3_b256)(?:_[A-Za-z0-9-]+)?\.out$", path.name)
     return int(match.group(1)) if match else None
@@ -167,13 +193,9 @@ def run_label(path: Path, total_count: int | None, task_params: dict[str, object
             ]
         )
         if "data_size" in task_params:
-            detail += f" d={task_params['data_size']}"
-        if total_count is None:
-            return f"task {task}: {detail}"
-        return f"task {task}: {detail} ({total_count:,} params)"
-    if total_count is None:
-        return f"task {task}"
-    return f"task {task} ({total_count:,} params)"
+            detail += f" d={format_data_size(task_params['data_size'])}"
+        return f"task {task}: {detail}"
+    return f"task {task}"
 
 
 def parse_metric_values(line: str) -> tuple[str, float, float] | None:
@@ -211,6 +233,11 @@ def parse_log(
                 continue
 
             if current is None:
+                continue
+
+            if line in FINAL_EVALUATION_MARKERS:
+                rows.append(current)
+                current = None
                 continue
 
             if match := LR_RE.search(line):
@@ -562,11 +589,7 @@ def dataset_size_title(points: list[dict[str, float | int | str]]) -> str:
     if len(sizes) != 1:
         return "Dataset Size=Mixed"
     size = sizes[0]
-    if size >= 1_000_000 and size % 1_000_000 == 0:
-        return f"Dataset Size={size // 1_000_000}M"
-    if size >= 1_000 and size % 1_000 == 0:
-        return f"Dataset Size={size // 1_000}K"
-    return f"Dataset Size={size:,}"
+    return f"Dataset Size={format_data_size(size)}"
 
 
 def model_group_key(point: dict[str, float | int | str]) -> tuple[str, str, str]:
@@ -1059,7 +1082,7 @@ def plot_paper_style_energy_comparison(
         ax.scatter(x_value, y_value, s=95, zorder=3)
         setup_label = f"l={point['hiphop_l_max']} n={point['hiphop_n_max']}"
         if point.get("data_size") not in ("", None):
-            setup_label += f" d={point['data_size']}"
+            setup_label += f" d={format_data_size(point['data_size'])}"
         ax.annotate(
             setup_label,
             (x_value, y_value),
@@ -1094,10 +1117,14 @@ def main() -> None:
     args.output_dir.mkdir(parents=True, exist_ok=True)
     os.environ.setdefault("MPLCONFIGDIR", str(args.output_dir / ".matplotlib"))
 
+    log_patterns = [args.log_pattern, *args.extra_log_pattern]
     log_paths = sorted(
-        path
-        for path in args.log_dir.glob(args.log_pattern)
-        if re.search(r"_\d+_methane_(?:sweep|resume_selected|l3_b256)(?:_[A-Za-z0-9-]+)?\.out$", path.name)
+        {
+            path
+            for pattern in log_patterns
+            for path in args.log_dir.glob(pattern)
+            if re.search(r"_\d+_methane_(?:sweep|resume_selected|l3_b256)(?:_[A-Za-z0-9-]+)?\.out$", path.name)
+        }
     )
     if not log_paths:
         raise SystemExit(f"No array-task methane sweep .out files found in {args.log_dir}")
