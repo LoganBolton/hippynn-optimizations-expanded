@@ -2,7 +2,13 @@ import pytest
 import torch
 
 from hippynn.layers.hiplayers.tensors import HopInvariantLayerTorch, TensorExtractor
-from hippynn.layers.hiplayers.invariants import HopInvariantLayer, compute_invariant_polynomial_collection, default_invariants_list, split_invariant
+from hippynn.layers.hiplayers.invariants import (
+    HopInvariantLayer,
+    compute_invariant_polynomial_collection,
+    default_invariants_list,
+    split_invariant,
+    triton_available_with_gather,
+)
 from hippynn.layers.hiplayers.interactions import _invariant_counts
 
 
@@ -16,7 +22,10 @@ def test_default_invariant_definitions_parse():
 
 
 def test_polynomial_invariant_counts_match_interaction_lmax4():
-    for n_max in range(1, 5):
+    if not triton_available_with_gather:
+        pytest.skip("PolynomialCollection requires triton.")
+
+    for n_max in range(1, 8):
         polyCollection = compute_invariant_polynomial_collection(n_max, 4)
         _, _, polynomial_sizes, _ = polyCollection.get_polynomials()
 
@@ -112,7 +121,7 @@ def test_invariants_wrapper():
     except:
         triton_available = False
 
-    n_max_values = range(1, 6) if triton_available and torch.cuda.is_available() else range(1, 5)
+    n_max_values = (*range(1, 5), 7) if triton_available and torch.cuda.is_available() else range(1, 5)
 
     for l_max in range(5):
         for n_max in n_max_values:
@@ -139,7 +148,7 @@ def test_invariants_wrapper():
             # old HopInvariantLayerTorch only supports float32
             # Thus, we can only gradcheck if triton is available
 
-            if triton_available and torch.cuda.is_available():
+            if triton_available and torch.cuda.is_available() and n_max <= 4:
                 tensor_features = tensor_features.to(torch.float64)
 
                 assert torch.autograd.gradcheck(invariantLayer, (tensor_features,))
