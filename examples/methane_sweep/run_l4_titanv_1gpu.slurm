@@ -15,7 +15,7 @@
 
 # Usage:
 #   mkdir -p logs/titanv_l4
-#   TASK_IDS="8 9 10 11 12 13 14 15" sbatch --array=0-7 run_l4_titanv_1gpu.slurm
+#   RESUME=0 MODEL_SUFFIX=b256_fresh_volta TASK_IDS="8 9 10 11 12 13 14 15" sbatch --array=0-7 run_l4_titanv_1gpu.slurm
 #
 # This is the Volta one-GPU companion for methane-l4-n4.yml. Darwin exposes
 # these GPUs as Slurm features rather than GRES, so the constraint accepts
@@ -30,8 +30,8 @@ SWEEP_CONFIG="$SCRIPT_DIR/methane-l4-n4.yml"
 CONDA_ENV="hippynn-expanded-lmax"
 TASK_IDS="${TASK_IDS:-8 9 10 11 12 13 14 15}"
 CHECKPOINT_EVERY="${CHECKPOINT_EVERY:-10}"
-WANDB_MODE="${WANDB_MODE:-online}"
-MODEL_SUFFIX="${MODEL_SUFFIX:-titanv}"
+WANDB_MODE="${WANDB_MODE:-offline}"
+MODEL_SUFFIX="${MODEL_SUFFIX:-b256_fresh_volta}"
 RESUME="${RESUME:-1}"
 ATTEMPT_ID="${SLURM_RESTART_COUNT:-0}"
 LOG_DIR="${LOG_DIR:-$SCRIPT_DIR/logs/titanv_l4}"

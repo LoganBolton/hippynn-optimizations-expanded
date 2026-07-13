@@ -77,6 +77,16 @@ def parse_args() -> argparse.Namespace:
         help="Only include runs with this training data size.",
     )
     parser.add_argument(
+        "--hiphop-l-max",
+        type=int,
+        help="Only include runs with this HIP-HOP l_max.",
+    )
+    parser.add_argument(
+        "--hiphop-n-max",
+        type=int,
+        help="Only include runs with this HIP-HOP n_max.",
+    )
+    parser.add_argument(
         "--pareto-seed",
         type=int,
         help="Only include this seed in the force/energy Pareto plots. Defaults to the best seed for each model/data-size setup.",
@@ -162,7 +172,10 @@ def format_data_size(value: object) -> str:
 
 
 def task_id_from_path(path: Path) -> int | None:
-    match = re.search(r"_(\d+)_methane_(?:sweep|resume_selected|l3_b256)(?:_[A-Za-z0-9-]+)?\.out$", path.name)
+    match = re.search(
+        r"_(\d+)(?:_w\d+)?_methane_(?:sweep|resume_selected|l3_b256|l4_titanv)(?:_[A-Za-z0-9-]+)?\.out$",
+        path.name,
+    )
     return int(match.group(1)) if match else None
 
 
@@ -1123,7 +1136,10 @@ def main() -> None:
             path
             for pattern in log_patterns
             for path in args.log_dir.glob(pattern)
-            if re.search(r"_\d+_methane_(?:sweep|resume_selected|l3_b256)(?:_[A-Za-z0-9-]+)?\.out$", path.name)
+            if re.search(
+                r"_\d+(?:_w\d+)?_methane_(?:sweep|resume_selected|l3_b256)(?:_[A-Za-z0-9-]+)?\.out$",
+                path.name,
+            )
         }
     )
     if not log_paths:
@@ -1141,12 +1157,27 @@ def main() -> None:
             data_size = rows[0].get("data_size")
             if data_size in ("", None) or int(data_size) != args.data_size:
                 continue
+        if args.hiphop_l_max is not None:
+            hiphop_l_max = rows[0].get("hiphop_l_max")
+            if hiphop_l_max in ("", None) or int(hiphop_l_max) != args.hiphop_l_max:
+                continue
+        if args.hiphop_n_max is not None:
+            hiphop_n_max = rows[0].get("hiphop_n_max")
+            if hiphop_n_max in ("", None) or int(hiphop_n_max) != args.hiphop_n_max:
+                continue
         runs[str(rows[0]["run"])].extend(rows)
 
     all_rows, runs = deduplicate_epochs(runs)
 
     if not all_rows:
-        filter_message = f" with data_size={args.data_size}" if args.data_size is not None else ""
+        filters = []
+        if args.data_size is not None:
+            filters.append(f"data_size={args.data_size}")
+        if args.hiphop_l_max is not None:
+            filters.append(f"hiphop_l_max={args.hiphop_l_max}")
+        if args.hiphop_n_max is not None:
+            filters.append(f"hiphop_n_max={args.hiphop_n_max}")
+        filter_message = f" with {', '.join(filters)}" if filters else ""
         raise SystemExit(f"No epochs parsed from {args.log_dir}{filter_message}")
 
     csv_path = args.output_dir / "metrics.csv"
