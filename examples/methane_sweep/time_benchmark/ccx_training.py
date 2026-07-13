@@ -109,6 +109,10 @@ def load_db(db_info, en_name, force_name, seed, anidata_location, n_workers):
         allow_unfound=True,
         **db_info
     )
+    database.arr_dict = {
+        k: v.detach().cpu().numpy() if torch.is_tensor(v) else v
+        for k, v in database.arr_dict.items()
+    }
 
     # compute (approximate) atomization energy by subtracting self energies
     self_energy = np.vectorize(SELF_ENERGY_APPROX.__getitem__)(database.arr_dict['atomic_numbers'])
@@ -137,6 +141,10 @@ def load_db(db_info, en_name, force_name, seed, anidata_location, n_workers):
     #found_indices = ~np.isnan(database.arr_dict[en_name])
     found_indices = both_found
     database.arr_dict = {k: v[found_indices] for k, v in database.arr_dict.items()}
+    database.arr_dict = {
+        k: torch.as_tensor(v) if not torch.is_tensor(v) else v
+        for k, v in database.arr_dict.items()
+    }
 
     database.make_trainvalidtest_split(valid_size=0.04,test_size=0.01)
     return database
