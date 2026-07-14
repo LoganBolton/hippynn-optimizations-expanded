@@ -1,0 +1,80 @@
+/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/layers/hiplayers/tensors.py:56: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /pytorch/aten/src/ATen/Context.cpp:760.)
+  xform = torch.sparse_coo_tensor(ind_comb, torch.ones(len(out_order)), dtype=torch.int64).to_dense()
+all configs [{'tensor_model': 'HOP', 'tensor_order': 3, 'tensor_factors': 4}, {'tensor_model': 'HOP', 'tensor_order': 3, 'tensor_factors': 3}, {'tensor_model': 'HOP', 'tensor_order': 3, 'tensor_factors': 2}, {'tensor_model': 'HOP', 'tensor_order': 2, 'tensor_factors': 4}, {'tensor_model': 'HOP', 'tensor_order': 2, 'tensor_factors': 3}, {'tensor_model': 'HOP', 'tensor_order': 2, 'tensor_factors': 2}, {'tensor_model': 'HOP', 'tensor_order': 1, 'tensor_factors': 2}, {'tensor_model': 'TS', 'tensor_order': 1, 'tensor_factors': 0}, {'tensor_model': 'TS', 'tensor_order': 2, 'tensor_factors': 0}, {'tensor_model': 'NONE', 'tensor_order': 0, 'tensor_factors': 0}, {'tensor_model': 'HOP', 'tensor_order': 4, 'tensor_factors': 3}, {'tensor_model': 'HOP', 'tensor_order': 4, 'tensor_factors': 4}]
+Loading arrays from /vast/home/logan_bolton/Github/hippynn-optimizations-expanded/datasets/ani1x-release.h5
+Arrays found:  ['atomic_numbers', 'ccsd(t)_cbs.energy', 'coordinates', 'wb97x_dz.energy', 'wb97x_dz.forces', 'sys_number']
+Data types:
+{'atomic_numbers': dtype('uint8'), 'ccsd(t)_cbs.energy': dtype('float64'), 'coordinates': dtype('float32'), 'wb97x_dz.energy': dtype('float64'), 'wb97x_dz.forces': dtype('float32')}
+All arrays:
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('uint8')     | (4956005, 63)                |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (4956005,)                   |
+| coordinates                    | dtype('float32')   | (4956005, 63, 3)             |
+| wb97x_dz.energy                | dtype('float64')   | (4956005,)                   |
+| wb97x_dz.forces                | dtype('float32')   | (4956005, 63, 3)             |
+--------------------------------------------------------------------------------------
+Finished checking input and target arrays; all necessary arrays were found.
+Database: Using auto-generated data indices
+Adding split indices for split: test
+Arrays for split: test
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (48957, 63)                  |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (48957,)                     |
+| coordinates                    | dtype('float32')   | (48957, 63, 3)               |
+| wb97x_dz.energy                | dtype('float32')   | (48957,)                     |
+| wb97x_dz.forces                | dtype('float32')   | (48957, 63, 3)               |
+| indices                        | dtype('int64')     | (48957,)                     |
+| split_indices                  | dtype('int64')     | (48957,)                     |
+--------------------------------------------------------------------------------------
+Adding split indices for split: valid
+Arrays for split: valid
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (48957, 63)                  |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (48957,)                     |
+| coordinates                    | dtype('float32')   | (48957, 63, 3)               |
+| wb97x_dz.energy                | dtype('float32')   | (48957,)                     |
+| wb97x_dz.forces                | dtype('float32')   | (48957, 63, 3)               |
+| indices                        | dtype('int64')     | (48957,)                     |
+| split_indices                  | dtype('int64')     | (48957,)                     |
+--------------------------------------------------------------------------------------
+Adding split indices for split: train
+Arrays for split: train
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (391657, 63)                 |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (391657,)                    |
+| coordinates                    | dtype('float32')   | (391657, 63, 3)              |
+| wb97x_dz.energy                | dtype('float32')   | (391657,)                    |
+| wb97x_dz.forces                | dtype('float32')   | (391657, 63, 3)              |
+| indices                        | dtype('int64')     | (391657,)                    |
+| split_indices                  | dtype('int64')     | (391657,)                    |
+--------------------------------------------------------------------------------------
+Database: Splitting complete.
+/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/databases/database.py:181: UserWarning: Pin memory was set, but target device requested is not CPU. Setting pin_memory=False.
+  warnings.warn("Pin memory was set, but target device requested is not CPU. Setting pin_memory=False.")
+/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/networks/hiphop.py:12: UserWarning: HIP-HOP-NN is still in a beta state: Details, defaults, and API are still subject to change.
+  warnings.warn("HIP-HOP-NN is still in a beta state: " "Details, defaults, and API are still subject to change.")
+Configuration: {'tensor_model': 'HOP', 'tensor_order': 3, 'tensor_factors': 4}
+/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/networks/hiphop.py:12: UserWarning: HIP-HOP-NN is still in a beta state: Details, defaults, and API are still subject to change.
+  warnings.warn("HIP-HOP-NN is still in a beta state: " "Details, defaults, and API are still subject to change.")
+Configuration: {'tensor_model': 'HOP', 'tensor_order': 3, 'tensor_factors': 3}
+Configuration: {'tensor_model': 'HOP', 'tensor_order': 3, 'tensor_factors': 2}
+Configuration: {'tensor_model': 'HOP', 'tensor_order': 2, 'tensor_factors': 4}
+Configuration: {'tensor_model': 'HOP', 'tensor_order': 2, 'tensor_factors': 3}
+Configuration: {'tensor_model': 'HOP', 'tensor_order': 2, 'tensor_factors': 2}
+Configuration: {'tensor_model': 'HOP', 'tensor_order': 1, 'tensor_factors': 2}
+/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/networks/hipnn.py:188: UserWarning: Network initialized with unused kwargs={'l_max': 1, 'n_max': 2, 'group_norm': True}
+  warnings.warn(f"Network initialized with unused {kwargs=}")
+Configuration: {'tensor_model': 'TS', 'tensor_order': 1, 'tensor_factors': 0}
+Configuration: {'tensor_model': 'TS', 'tensor_order': 2, 'tensor_factors': 0}
+Configuration: {'tensor_model': 'NONE', 'tensor_order': 0, 'tensor_factors': 0}
+Configuration: {'tensor_model': 'HOP', 'tensor_order': 4, 'tensor_factors': 3}
+Configuration: {'tensor_model': 'HOP', 'tensor_order': 4, 'tensor_factors': 4}
+{'metrics': {(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 3), ('batch_size', 1024)): [4.865962982177734, 4.871298313140869, 5.140335321426392, 4.875244140625, 4.877137184143066], (('tensor_factors', 3), ('tensor_model', 'HOP'), ('tensor_order', 3), ('batch_size', 1024)): [3.5022335052490234, 3.500710964202881, 3.5068836212158203, 3.5049493312835693, 3.502197504043579], (('tensor_factors', 2), ('tensor_model', 'HOP'), ('tensor_order', 3), ('batch_size', 1024)): [3.280540704727173, 3.2855923175811768, 3.285938024520874, 3.285059690475464, 3.287832736968994], (('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 2), ('batch_size', 1024)): [2.283296823501587, 2.284653663635254, 2.2836029529571533, 2.283508062362671, 2.284226894378662], (('tensor_factors', 3), ('tensor_model', 'HOP'), ('tensor_order', 2), ('batch_size', 1024)): [2.1967427730560303, 2.1942827701568604, 2.1979503631591797, 2.195634126663208, 2.196021556854248], (('tensor_factors', 2), ('tensor_model', 'HOP'), ('tensor_order', 2), ('batch_size', 1024)): [2.105245590209961, 2.104088306427002, 2.1072986125946045, 2.106346607208252, 2.103641986846924], (('tensor_factors', 2), ('tensor_model', 'HOP'), ('tensor_order', 1), ('batch_size', 1024)): [1.2035760879516602, 1.202625036239624, 1.2031729221343994, 1.2034213542938232, 1.2029006481170654], (('tensor_factors', 0), ('tensor_model', 'TS'), ('tensor_order', 1), ('batch_size', 1024)): [1.1836309432983398, 1.1851491928100586, 1.186124324798584, 1.1849555969238281, 1.1881897449493408], (('tensor_factors', 0), ('tensor_model', 'TS'), ('tensor_order', 2), ('batch_size', 1024)): [2.2190349102020264, 2.2129781246185303, 2.2121005058288574, 2.2080652713775635, 2.209685802459717], (('tensor_factors', 0), ('tensor_model', 'NONE'), ('tensor_order', 0), ('batch_size', 1024)): [0.46236753463745117, 0.4629020690917969, 0.4627983570098877, 0.462069034576416, 0.4641561508178711], (('tensor_factors', 3), ('tensor_model', 'HOP'), ('tensor_order', 4), ('batch_size', 1024)): [8.061434984207153, 8.057802438735962, 8.06740140914917, 8.04895830154419, 8.05977177619934], (('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 4), ('batch_size', 1024)): [19.5485782623291, 19.55888056755066, 19.559180974960327, 19.565430641174316, 19.565200805664062]}, 'device_name': 'NVIDIA A100-PCIE-40GB', 'n_configs': 48957}

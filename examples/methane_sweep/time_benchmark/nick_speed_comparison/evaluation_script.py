@@ -1,7 +1,11 @@
 from training_script import load_db, make_model
 import hippynn
 hippynn.settings.WARN_LOW_DISTANCES=False
-from tqdm.auto import tqdm
+try:
+    from tqdm.auto import tqdm
+except ImportError:
+    def tqdm(iterable, **_kwargs):
+        return iterable
 import os
 import time
 
@@ -14,17 +18,25 @@ import torch
 if __name__ == "__main__":
 
     n_reps_per_config = 5 # suggest 5 for production
+    n_warmup_reps = 2
 
-    batch_size_list = [32,64,128,256]
-    batch_size_list = [2048]
+    batch_size_list = [int(os.environ.get("BATCH_SIZE", "2048"))]
     
     config_list=[
         dict(tensor_model="HOP", tensor_order=ell, tensor_factors=en) for ell in [3,2,1] for en in [4,3,2] if not (ell==1 and en > 2)
         ] + \
-        [
-        dict(tensor_model="TS", tensor_order=ell, tensor_factors=0) for ell in [1,2]
-        ] + \
         [dict(tensor_model="NONE", tensor_order=0, tensor_factors=0)]
+
+    if os.environ.get("HOP_CONFIGS"):
+        config_list = [
+            dict(tensor_model="HOP", tensor_order=int(spec.split(":")[0]), tensor_factors=int(spec.split(":")[1]))
+            for spec in os.environ["HOP_CONFIGS"].split()
+        ]
+    elif os.environ.get("INCLUDE_L4_CONFIGS", "False").lower() in ("true", "1", "yes"):
+        config_list += [
+            dict(tensor_model="HOP", tensor_order=4, tensor_factors=3),
+            dict(tensor_model="HOP", tensor_order=4, tensor_factors=4),
+        ]
 
     #config_list = config_list[-1:] # only test last config
 
@@ -47,7 +59,7 @@ if __name__ == "__main__":
     force_name ="wb97x_dz.forces"
     db_info = dict(inputs=["atomic_numbers","coordinates"],targets=[en_name,force_name])
     seed = 0
-    anidata_location = "/vast/home/nlubbers/hippynn_tests/release/datasets/ani1x_release/ani1x-release.h5"
+    anidata_location = "/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/datasets/ani1x-release.h5"
     n_workers=0   
     db = load_db(db_info, en_name, force_name, seed, anidata_location, n_workers, use_ccx_subset)
     db.send_to_device("cuda:0")
@@ -67,15 +79,17 @@ if __name__ == "__main__":
 
         # build predictor
 
-        predictor = hippynn.Predictor([species,coords],[henergy.main_output, force],model_device='cuda:0',return_device='cuda:0')
+        predictor_outputs = [henergy.main_output, force]
+        if os.environ.get("INCLUDE_FORCES", "True").lower() in ("false", "0", "no"):
+            predictor_outputs = [henergy.main_output]
+        predictor = hippynn.Predictor([species,coords],predictor_outputs,model_device='cuda:0',return_device='cuda:0')
 
         print("Configuration:",config)
         # warm up on first batch?
             
         for batch_size in tqdm(batch_size_list,desc='batch_sizes'):
             timing_list = []
-            warm=False
-            for rep in tqdm(range(n_reps_per_config+1),desc='reps'):
+            for rep in tqdm(range(n_reps_per_config+n_warmup_reps),desc='reps'):
                 torch.cuda.synchronize()
                 time_start = time.time()
                 # get time for predictor
@@ -83,8 +97,7 @@ if __name__ == "__main__":
                 torch.cuda.synchronize()
                 time_end = time.time()
                 this_time = time_end - time_start
-                if not warm:
-                    warm=True
+                if rep < n_warmup_reps:
                     continue
                 timing_list.append(this_time)
             
@@ -97,4 +110,5 @@ if __name__ == "__main__":
 
     print(info)
 
-    torch.save(info,"speed_eval.pt")
+    default_output = os.path.join(os.path.dirname(__file__), "..", "results", "nick", "speed_eval.pt")
+    torch.save(info, os.environ.get("SPEED_EVAL_OUTPUT", default_output))

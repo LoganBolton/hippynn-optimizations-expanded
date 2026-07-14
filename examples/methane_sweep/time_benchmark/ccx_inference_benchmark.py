@@ -308,7 +308,11 @@ if __name__ == "__main__":
     parser.add_argument("--max_configs", type=int, default=None)
     parser.add_argument("--warmup_passes", type=int, default=2)
     parser.add_argument("--timed_passes", type=int, default=5)
-    parser.add_argument("--output_csv", type=str, default="random_init_inference_results.csv")
+    parser.add_argument(
+        "--output_csv",
+        type=str,
+        default=str(Path(__file__).resolve().parent / "results/csv/random_init_inference_results.csv"),
+    )
     parser.add_argument(
         "--use_triton_message_passing",
         action="store_true",

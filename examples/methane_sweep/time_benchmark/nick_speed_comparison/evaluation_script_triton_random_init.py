@@ -9,6 +9,7 @@ load model weights.
 import argparse
 import json
 import time
+from pathlib import Path
 
 import hippynn
 import torch
@@ -211,6 +212,7 @@ def main(args):
 
 
 if __name__ == "__main__":
+    results_dir = Path(__file__).resolve().parent.parent / "results/nick"
     parser = argparse.ArgumentParser()
     parser.add_argument("--gpu", type=int, default=0)
     parser.add_argument("--seed", type=int, default=0)
@@ -247,6 +249,6 @@ if __name__ == "__main__":
     parser.add_argument("--include_forces", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--kernel_mode", choices=["upstream", "pytorch", "triton"], default="upstream")
     parser.add_argument("--use_triton_message_passing", action=argparse.BooleanOptionalAction, default=True)
-    parser.add_argument("--output", type=str, default="triton_random_init_speed_eval.pt")
-    parser.add_argument("--output_json", type=str, default="triton_random_init_speed_eval.json")
+    parser.add_argument("--output", type=str, default=results_dir / "triton_random_init_speed_eval.pt")
+    parser.add_argument("--output_json", type=str, default=results_dir / "triton_random_init_speed_eval.json")
     main(parser.parse_args())

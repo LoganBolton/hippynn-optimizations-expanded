@@ -1,0 +1,104 @@
+/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/layers/hiplayers/tensors.py:56: UserWarning: Sparse invariant checks are implicitly disabled. Memory errors (e.g. SEGFAULT) will occur when operating on a sparse tensor which violates the invariants, but checks incur performance overhead. To silence this warning, explicitly opt in or out. See `torch.sparse.check_sparse_tensor_invariants.__doc__` for guidance.  (Triggered internally at /pytorch/aten/src/ATen/Context.cpp:760.)
+  xform = torch.sparse_coo_tensor(ind_comb, torch.ones(len(out_order)), dtype=torch.int64).to_dense()
+all configs [{'tensor_model': 'HOP', 'tensor_order': 4, 'tensor_factors': 3}, {'tensor_model': 'HOP', 'tensor_order': 4, 'tensor_factors': 4}]
+Loading arrays from /vast/home/logan_bolton/Github/hippynn-optimizations-expanded/datasets/ani1x-release.h5
+Arrays found:  ['atomic_numbers', 'ccsd(t)_cbs.energy', 'coordinates', 'wb97x_dz.energy', 'wb97x_dz.forces', 'sys_number']
+Data types:
+{'atomic_numbers': dtype('uint8'), 'ccsd(t)_cbs.energy': dtype('float64'), 'coordinates': dtype('float32'), 'wb97x_dz.energy': dtype('float64'), 'wb97x_dz.forces': dtype('float32')}
+All arrays:
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('uint8')     | (4956005, 63)                |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (4956005,)                   |
+| coordinates                    | dtype('float32')   | (4956005, 63, 3)             |
+| wb97x_dz.energy                | dtype('float64')   | (4956005,)                   |
+| wb97x_dz.forces                | dtype('float32')   | (4956005, 63, 3)             |
+--------------------------------------------------------------------------------------
+Finished checking input and target arrays; all necessary arrays were found.
+Database: Using auto-generated data indices
+Adding split indices for split: test
+Arrays for split: test
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (48957, 63)                  |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (48957,)                     |
+| coordinates                    | dtype('float32')   | (48957, 63, 3)               |
+| wb97x_dz.energy                | dtype('float32')   | (48957,)                     |
+| wb97x_dz.forces                | dtype('float32')   | (48957, 63, 3)               |
+| indices                        | dtype('int64')     | (48957,)                     |
+| split_indices                  | dtype('int64')     | (48957,)                     |
+--------------------------------------------------------------------------------------
+Adding split indices for split: valid
+Arrays for split: valid
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (48957, 63)                  |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (48957,)                     |
+| coordinates                    | dtype('float32')   | (48957, 63, 3)               |
+| wb97x_dz.energy                | dtype('float32')   | (48957,)                     |
+| wb97x_dz.forces                | dtype('float32')   | (48957, 63, 3)               |
+| indices                        | dtype('int64')     | (48957,)                     |
+| split_indices                  | dtype('int64')     | (48957,)                     |
+--------------------------------------------------------------------------------------
+Adding split indices for split: train
+Arrays for split: train
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (391657, 63)                 |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (391657,)                    |
+| coordinates                    | dtype('float32')   | (391657, 63, 3)              |
+| wb97x_dz.energy                | dtype('float32')   | (391657,)                    |
+| wb97x_dz.forces                | dtype('float32')   | (391657, 63, 3)              |
+| indices                        | dtype('int64')     | (391657,)                    |
+| split_indices                  | dtype('int64')     | (391657,)                    |
+--------------------------------------------------------------------------------------
+Database: Splitting complete.
+/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/databases/database.py:181: UserWarning: Pin memory was set, but target device requested is not CPU. Setting pin_memory=False.
+  warnings.warn("Pin memory was set, but target device requested is not CPU. Setting pin_memory=False.")
+/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/networks/hiphop.py:12: UserWarning: HIP-HOP-NN is still in a beta state: Details, defaults, and API are still subject to change.
+  warnings.warn("HIP-HOP-NN is still in a beta state: " "Details, defaults, and API are still subject to change.")
+Configuration: {'tensor_model': 'HOP', 'tensor_order': 4, 'tensor_factors': 3}
+Traceback (most recent call last):
+  File "/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/examples/methane_sweep/time_benchmark/nick_speed_comparison/evaluation_script.py", line 92, in <module>
+    predictor.apply_to_database(db,batch_size=batch_size)
+  File "/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/graphs/predictor.py", line 193, in apply_to_database
+    results[split_name] = self(**dict_inputs, **kwargs)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/graphs/predictor.py", line 156, in __call__
+    out = self.predict_batched(node_values, batch_size)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/graphs/predictor.py", line 178, in predict_batched
+    batched_outputs = [self.predict_all(b) for b in progress_bar(batched_inputs, desc=self.name, unit="batch")]
+                       ^^^^^^^^^^^^^^^^^^^
+  File "/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/graphs/predictor.py", line 203, in predict_all
+    out_values = self.graph(*input_values)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vast/home/logan_bolton/.local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vast/home/logan_bolton/.local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/graphs/graph.py", line 142, in forward
+    computed[this_node] = self.get_module(this_node)(*(computed[inkey] for inkey in inputs_for_this_node))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vast/home/logan_bolton/.local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vast/home/logan_bolton/.local/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/layers/physics/derivatives.py", line 17, in forward
+    return self.sign * torch.autograd.grad(molecular_energies.sum(), positions, create_graph=True)[0]
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/vast/home/logan_bolton/.local/lib/python3.12/site-packages/torch/autograd/__init__.py", line 530, in grad
+    result = _engine_run_backward(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/vast/home/logan_bolton/.local/lib/python3.12/site-packages/torch/autograd/graph.py", line 882, in _engine_run_backward
+    return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 9.51 GiB. GPU 0 has a total capacity of 39.52 GiB of which 7.69 GiB is free. Including non-PyTorch memory, this process has 31.82 GiB memory in use. Of the allocated memory 16.53 GiB is allocated by PyTorch, and 14.80 GiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://docs.pytorch.org/docs/stable/notes/cuda.html#optimizing-memory-usage-with-pytorch-cuda-alloc-conf)
