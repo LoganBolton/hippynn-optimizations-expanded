@@ -22,7 +22,11 @@ def main(args):
     upstream_energy = load_benchmark_pt(args.upstream_energy_pt, args.batch_size, args.n_atoms)
     upstream_total = load_benchmark_pt(args.upstream_energy_forces_pt, args.batch_size, args.n_atoms)
     triton_energy = load_benchmark_pt(args.triton_energy_pt, args.batch_size, args.n_atoms)
+    for extra_path in args.extra_triton_energy_pt:
+        triton_energy.update(load_benchmark_pt(extra_path, args.batch_size, args.n_atoms))
     triton_total = load_benchmark_pt(args.triton_energy_forces_pt, args.batch_size, args.n_atoms)
+    for extra_path in args.extra_triton_energy_forces_pt:
+        triton_total.update(load_benchmark_pt(extra_path, args.batch_size, args.n_atoms))
 
     configs = sorted(
         {
@@ -32,6 +36,13 @@ def main(args):
         },
         key=config_sort_key,
     )
+    excluded_configs = {
+        (model, int(tensor_order), int(tensor_factors))
+        for model, tensor_order, tensor_factors in (
+            value.split(":") for value in args.exclude_config
+        )
+    }
+    configs = [config for config in configs if config not in excluded_configs]
     if not configs:
         raise ValueError("The four result files have no configurations in common")
 
@@ -130,15 +141,21 @@ def main(args):
                 color="#666666",
             )
 
+    l3n4 = ("HOP", 3, 4)
+    l3n5 = ("HOP", 3, 5)
+    if l3n4 in configs and l3n5 in configs:
+        divider_x = (configs.index(l3n4) + configs.index(l3n5)) / 2
+        ax.axvline(divider_x, color="#999999", linestyle=":", linewidth=1.2, alpha=0.75)
+
     legend_handles = [
-        Patch(facecolor=upstream_color, label="Upstream energy"),
-        Patch(facecolor=upstream_color, alpha=0.42, label="Upstream force calculation"),
+        Patch(facecolor=upstream_color, label="Default energy"),
+        Patch(facecolor=upstream_color, alpha=0.42, label="Default force calculation"),
         Patch(facecolor=triton_color, label="Triton energy"),
         Patch(facecolor=triton_color, alpha=0.42, label="Triton force calculation"),
     ]
     ax.legend(handles=legend_handles, ncols=2)
     ax.set_title("HIP-HOP-NN Energy and Force Inference Time per Atom")
-    ax.set_xlabel(r"Model architecture; HIP-HOP labels show $(\ell_{max}, n_{max})$")
+    ax.set_xlabel(r"HIP-HOP settings: $(\ell_{max}, n_{max})$")
     ax.set_ylabel("Time/atom (us)")
     ax.set_xticks(x, labels)
     ax.grid(axis="y", alpha=0.25)
@@ -155,7 +172,19 @@ if __name__ == "__main__":
     parser.add_argument("--upstream_energy_pt", required=True)
     parser.add_argument("--upstream_energy_forces_pt", required=True)
     parser.add_argument("--triton_energy_pt", required=True)
+    parser.add_argument(
+        "--extra_triton_energy_pt",
+        action="append",
+        default=[],
+        help="Additional Triton energy-only result file; may be supplied more than once",
+    )
     parser.add_argument("--triton_energy_forces_pt", required=True)
+    parser.add_argument(
+        "--extra_triton_energy_forces_pt",
+        action="append",
+        default=[],
+        help="Additional Triton energy-and-force result file; may be supplied more than once",
+    )
     parser.add_argument("--batch_size", type=int, default=2048)
     parser.add_argument("--n_atoms", type=int, default=676395)
     parser.add_argument(
@@ -163,4 +192,11 @@ if __name__ == "__main__":
         default=script_dir / "plots/energy_force_breakdown_inference_time_per_atom.png",
     )
     parser.add_argument("--dpi", type=int, default=200)
+    parser.add_argument(
+        "--exclude_config",
+        action="append",
+        default=[],
+        metavar="MODEL:LMAX:NMAX",
+        help="Configuration to omit; may be supplied more than once",
+    )
     main(parser.parse_args())

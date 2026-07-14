@@ -5,7 +5,6 @@ from .tensors import calc_invariants, cmaps
 from packaging import version
 from ... import settings
 
-import itertools
 import string
 
 """
@@ -164,54 +163,29 @@ def computeInvariantPolynomial(tensor_bases, invariant_input_offsets, invariant_
     einsum_string = einsum_front[1:] + "->" + einsum_back
     coef_tensor = torch.einsum(einsum_string, *tensors_to_contract)
 
-    # Will store the monomials. The keys will be a list of all of the indices (sorted), and the values
-    # will be the corresponding coefficients. We sort the indices so that "like terms" are combined e.g.
-    # x1*x2 is treated as the same as x2*x1 (both are represented by the list [1,2]).
-    coefs = {}
+    # Keep only nonzero contractions before combining equivalent monomials. This
+    # is important for high-degree invariants, whose dense coefficient tensors
+    # are overwhelmingly zero.
+    nonzero_basis_choices = torch.nonzero(coef_tensor, as_tuple=False)
+    nonzero_coefs = coef_tensor[tuple(nonzero_basis_choices.T)]
 
-    # Create an iterator that can be used to iterate through every index of the coef_tensor
-    iter_range = []
-    for dim in coef_tensor.shape:
-        iter_range.append(range(dim))
+    feature_offsets = torch.tensor(
+        [invariant_input_offsets[invar_tensors[dim]] for dim in range(num_terms)],
+        dtype=nonzero_basis_choices.dtype,
+        device=nonzero_basis_choices.device,
+    )
+    monomial_terms = nonzero_basis_choices + feature_offsets
 
-    tensor_idxs = itertools.product(*iter_range)
+    # Sort each product's factors and merge duplicate monomials.
+    monomial_terms = torch.sort(monomial_terms, dim=1).values
+    unique_terms, duplicate_map = torch.unique(monomial_terms, dim=0, return_inverse=True)
+    unique_coefs = nonzero_coefs.new_zeros(unique_terms.shape[0])
+    unique_coefs.scatter_add_(0, duplicate_map, nonzero_coefs)
 
-    # Iterate through coef_tensor to fill out the coefs dictionary.
-    for coordinates in tensor_idxs:
-
-        coef = coef_tensor[*coordinates]
-        if coef != 0:
-
-            # Based on the coordinates in coef_tensor, find the terms in the monomial that correspond
-            # using the input offsets.
-            key_list = []
-            for dim,coord in enumerate(coordinates):
-                key_list.append( invariant_input_offsets[ invar_tensors[dim] ] + coord )
-
-            key_list.sort()
-            key = tuple(key_list)
-            if key in coefs:
-                coefs[key] += coef
-            else:
-                coefs[key] = coef
-
-    # remove all monomials whose coefficient is zero.
-    delete = []
-    for c in coefs:
-        if coefs[c] == 0:
-            delete.append(c)
-    
-    for c in delete:
-        del coefs[c]
-
-    # create the tensor of coefficients
-    coefs_tensor = torch.zeros(len(coefs),dtype=torch.float32)
-    terms_tensor = torch.zeros((len(coefs),num_terms),dtype=torch.int32)
-    
-    for row, coef in enumerate(coefs):
-        coefs_tensor[row] = coefs[coef]
-        for col,entry in enumerate(coef):
-            terms_tensor[row,col] = entry
+    # Duplicate terms can cancel exactly after merging.
+    nonzero_terms = unique_coefs != 0
+    coefs_tensor = unique_coefs[nonzero_terms].to(dtype=torch.float32, device="cpu")
+    terms_tensor = unique_terms[nonzero_terms].to(dtype=torch.int32, device="cpu")
 
     return coefs_tensor, terms_tensor
 

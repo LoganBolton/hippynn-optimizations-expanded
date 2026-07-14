@@ -106,7 +106,7 @@ def config_label(config):
     if model == "NONE":
         return "HIP-NN"
     if model == "TS":
-        return rf"$({tensor_order}, 2)$"
+        return rf"TS $\ell = {tensor_order}$"
     return rf"$({tensor_order}, {tensor_factors})$"
 
 
@@ -127,8 +127,8 @@ def main(args):
         labels = [config_label(config) for config in configs]
         baseline = [baseline_grouped.get(key, math.nan) for key in configs]
         timed = [optimized_grouped.get(key, math.nan) for key in configs]
-        baseline_label = "Upstream HIP-NN kernels"
-        optimized_label = "Expanded Triton kernels"
+        baseline_label = "Default energy"
+        optimized_label = "Triton energy"
     elif args.baseline_json or args.optimized_json:
         if not args.baseline_json or not args.optimized_json:
             raise ValueError("Both --baseline_json and --optimized_json are required")
@@ -179,7 +179,7 @@ def main(args):
         baseline_x,
         baseline,
         width=width,
-        color="#f4b6b6",
+        color="#e99f9f",
         label=baseline_label,
     )
     optimized_bars = ax.bar(
@@ -208,7 +208,7 @@ def main(args):
         )
 
     ax.set_title("HIP-HOP-NN Inference Time per Atom")
-    ax.set_xlabel(r"Model architecture; HIP-HOP labels show $(\ell_{max}, n_{max})$")
+    ax.set_xlabel(r"HIP-HOP settings: $(\ell_{max}, n_{max})$")
     ax.set_ylabel("Time/atom (us)")
     ax.set_xticks(x, labels)
     ax.grid(axis="y", alpha=0.25)

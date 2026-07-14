@@ -30,6 +30,13 @@ def test_polynomial_invariant_count_lmax3_nmax5():
     assert len(polynomial_sizes) == _invariant_counts[5, 3]
 
 
+def test_polynomial_invariant_count_lmax4_nmax7():
+    polyCollection = compute_invariant_polynomial_collection(7, 4)
+    _, _, polynomial_sizes, _ = polyCollection.get_polynomials()
+
+    assert len(polynomial_sizes) == _invariant_counts[7, 4]
+
+
 def test_hop_invariant_layer_metadata_tracks_counts_and_sizes():
     invariant_layer = HopInvariantLayer(n_max=4, l_max=4)
     metadata = invariant_layer.invariant_metadata()
@@ -96,6 +103,7 @@ def test_polynomial_invariants():
 
         configurations = [(l_max, n_max) for l_max in range(5) for n_max in range(1, 5)]
         configurations.append((3, 5))
+        configurations.append((4, 7))
         for l_max, n_max in configurations:
             n_tensor_comp = (l_max+1)**2
             tensor_features = torch.randn((n_point, n_tensor_comp), requires_grad=True, device='cuda')
@@ -132,6 +140,7 @@ def test_invariants_wrapper():
     configurations = [(l_max, n_max) for l_max in range(5) for n_max in range(1, 5)]
     if triton_available and torch.cuda.is_available():
         configurations.append((3, 5))
+        configurations.append((4, 7))
 
     for l_max, n_max in configurations:
         n_tensor_comp = (l_max+1)**2
