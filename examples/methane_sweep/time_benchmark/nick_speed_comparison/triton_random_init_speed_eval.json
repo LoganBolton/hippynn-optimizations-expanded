@@ -1,0 +1,193 @@
+{
+  "metrics": {
+    "(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 3), ('batch_size', 2048))": [
+      4.786815643310547,
+      4.786989688873291,
+      4.7911107540130615,
+      4.796115398406982,
+      4.799532175064087
+    ],
+    "(('tensor_factors', 3), ('tensor_model', 'HOP'), ('tensor_order', 3), ('batch_size', 2048))": [
+      3.4446909427642822,
+      3.440563201904297,
+      3.443222761154175,
+      3.4472317695617676,
+      3.4481921195983887
+    ],
+    "(('tensor_factors', 2), ('tensor_model', 'HOP'), ('tensor_order', 3), ('batch_size', 2048))": [
+      3.2319843769073486,
+      3.223215341567993,
+      3.226137638092041,
+      3.2318596839904785,
+      3.2257277965545654
+    ],
+    "(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 2), ('batch_size', 2048))": [
+      2.2158875465393066,
+      2.22218918800354,
+      2.215101480484009,
+      2.2228124141693115,
+      2.21862530708313
+    ],
+    "(('tensor_factors', 3), ('tensor_model', 'HOP'), ('tensor_order', 2), ('batch_size', 2048))": [
+      2.1316871643066406,
+      2.1330373287200928,
+      2.1317262649536133,
+      2.1322925090789795,
+      2.1325223445892334
+    ],
+    "(('tensor_factors', 2), ('tensor_model', 'HOP'), ('tensor_order', 2), ('batch_size', 2048))": [
+      2.043170213699341,
+      2.045668125152588,
+      2.0431132316589355,
+      2.0409891605377197,
+      2.0428385734558105
+    ],
+    "(('tensor_factors', 2), ('tensor_model', 'HOP'), ('tensor_order', 1), ('batch_size', 2048))": [
+      1.1407513618469238,
+      1.1400277614593506,
+      1.1436407566070557,
+      1.1426613330841064,
+      1.1425044536590576
+    ],
+    "(('tensor_factors', 0), ('tensor_model', 'TS'), ('tensor_order', 1), ('batch_size', 2048))": [
+      1.128756046295166,
+      1.1292173862457275,
+      1.128054141998291,
+      1.1298749446868896,
+      1.1292319297790527
+    ],
+    "(('tensor_factors', 0), ('tensor_model', 'TS'), ('tensor_order', 2), ('batch_size', 2048))": [
+      2.0967791080474854,
+      2.0996854305267334,
+      2.1052725315093994,
+      2.1044750213623047,
+      2.09667706489563
+    ],
+    "(('tensor_factors', 0), ('tensor_model', 'NONE'), ('tensor_order', 0), ('batch_size', 2048))": [
+      0.3803262710571289,
+      0.3809318542480469,
+      0.3799419403076172,
+      0.37891411781311035,
+      0.3792562484741211
+    ]
+  },
+  "metrics_jsonable": {
+    "(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 3), ('batch_size', 2048))": [
+      4.786815643310547,
+      4.786989688873291,
+      4.7911107540130615,
+      4.796115398406982,
+      4.799532175064087
+    ],
+    "(('tensor_factors', 3), ('tensor_model', 'HOP'), ('tensor_order', 3), ('batch_size', 2048))": [
+      3.4446909427642822,
+      3.440563201904297,
+      3.443222761154175,
+      3.4472317695617676,
+      3.4481921195983887
+    ],
+    "(('tensor_factors', 2), ('tensor_model', 'HOP'), ('tensor_order', 3), ('batch_size', 2048))": [
+      3.2319843769073486,
+      3.223215341567993,
+      3.226137638092041,
+      3.2318596839904785,
+      3.2257277965545654
+    ],
+    "(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 2), ('batch_size', 2048))": [
+      2.2158875465393066,
+      2.22218918800354,
+      2.215101480484009,
+      2.2228124141693115,
+      2.21862530708313
+    ],
+    "(('tensor_factors', 3), ('tensor_model', 'HOP'), ('tensor_order', 2), ('batch_size', 2048))": [
+      2.1316871643066406,
+      2.1330373287200928,
+      2.1317262649536133,
+      2.1322925090789795,
+      2.1325223445892334
+    ],
+    "(('tensor_factors', 2), ('tensor_model', 'HOP'), ('tensor_order', 2), ('batch_size', 2048))": [
+      2.043170213699341,
+      2.045668125152588,
+      2.0431132316589355,
+      2.0409891605377197,
+      2.0428385734558105
+    ],
+    "(('tensor_factors', 2), ('tensor_model', 'HOP'), ('tensor_order', 1), ('batch_size', 2048))": [
+      1.1407513618469238,
+      1.1400277614593506,
+      1.1436407566070557,
+      1.1426613330841064,
+      1.1425044536590576
+    ],
+    "(('tensor_factors', 0), ('tensor_model', 'TS'), ('tensor_order', 1), ('batch_size', 2048))": [
+      1.128756046295166,
+      1.1292173862457275,
+      1.128054141998291,
+      1.1298749446868896,
+      1.1292319297790527
+    ],
+    "(('tensor_factors', 0), ('tensor_model', 'TS'), ('tensor_order', 2), ('batch_size', 2048))": [
+      2.0967791080474854,
+      2.0996854305267334,
+      2.1052725315093994,
+      2.1044750213623047,
+      2.09667706489563
+    ],
+    "(('tensor_factors', 0), ('tensor_model', 'NONE'), ('tensor_order', 0), ('batch_size', 2048))": [
+      0.3803262710571289,
+      0.3809318542480469,
+      0.3799419403076172,
+      0.37891411781311035,
+      0.3792562484741211
+    ]
+  },
+  "parameter_counts": {
+    "(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 3))": 1019987,
+    "(('tensor_factors', 3), ('tensor_model', 'HOP'), ('tensor_order', 3))": 820307,
+    "(('tensor_factors', 2), ('tensor_model', 'HOP'), ('tensor_order', 3))": 720467,
+    "(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 2))": 786838,
+    "(('tensor_factors', 3), ('tensor_model', 'HOP'), ('tensor_order', 2))": 753558,
+    "(('tensor_factors', 2), ('tensor_model', 'HOP'), ('tensor_order', 2))": 686998,
+    "(('tensor_factors', 2), ('tensor_model', 'HOP'), ('tensor_order', 1))": 653673,
+    "(('tensor_factors', 0), ('tensor_model', 'TS'), ('tensor_order', 1))": 587359,
+    "(('tensor_factors', 0), ('tensor_model', 'TS'), ('tensor_order', 2))": 587615,
+    "(('tensor_factors', 0), ('tensor_model', 'NONE'), ('tensor_order', 0))": 587103
+  },
+  "device_name": "NVIDIA A100-PCIE-40GB",
+  "n_configs": 48957,
+  "n_atoms": 676395,
+  "batch_sizes": [
+    2048
+  ],
+  "reps": 5,
+  "warmups": 2,
+  "seed": 0,
+  "split_seed": 0,
+  "include_forces": true,
+  "network_parameters": {
+    "possible_species": [
+      0,
+      1,
+      6,
+      7,
+      8
+    ],
+    "n_features": 128,
+    "n_sensitivities": 20,
+    "dist_soft_min": 0.75,
+    "dist_soft_max": 5.5,
+    "dist_hard_max": 6.5,
+    "n_interaction_layers": 2,
+    "n_atom_layers": 3
+  },
+  "kernel_info": {
+    "kernel_mode": "triton",
+    "custom_kernels": "triton",
+    "triton_version": "3.7.1",
+    "triton_file": "/vast/home/logan_bolton/.conda/envs/hippynn-expanded-lmax/lib/python3.12/site-packages/triton/__init__.py",
+    "use_polynomial_invariants": true,
+    "use_tensor_message_passing": true
+  }
+}

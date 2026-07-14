@@ -117,7 +117,7 @@ def set_custom_kernels(active: Union[bool, str] = True) -> str:
     """
     populate_custom_kernel_availability()
 
-    global envsum, sensesum, featsum, messagePassing, CUSTOM_KERNELS_ACTIVE
+    global envsum, sensesum, featsum, messagePassing, CUSTOM_KERNELS_ACTIVE, kernel_active
 
     if active is False:
         active = "pytorch"
@@ -165,6 +165,7 @@ def set_custom_kernels(active: Union[bool, str] = True) -> str:
     featsum = kernel_implementation.featsum
 
     CUSTOM_KERNELS_ACTIVE = active
+    kernel_active = active
 
     return active
 
