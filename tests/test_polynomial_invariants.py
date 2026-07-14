@@ -23,6 +23,13 @@ def test_polynomial_invariant_counts_match_interaction_lmax4():
         assert len(polynomial_sizes) == _invariant_counts[n_max, 4]
 
 
+def test_polynomial_invariant_count_lmax3_nmax5():
+    polyCollection = compute_invariant_polynomial_collection(5, 3)
+    _, _, polynomial_sizes, _ = polyCollection.get_polynomials()
+
+    assert len(polynomial_sizes) == _invariant_counts[5, 3]
+
+
 def test_hop_invariant_layer_metadata_tracks_counts_and_sizes():
     invariant_layer = HopInvariantLayer(n_max=4, l_max=4)
     metadata = invariant_layer.invariant_metadata()
@@ -87,24 +94,24 @@ def test_polynomial_invariants():
 
         from hippynn.custom_kernels.poly_triton import EvaluatePolynomials
 
-        for l_max in range(5):
-            for n_max in range(1, 5):
+        configurations = [(l_max, n_max) for l_max in range(5) for n_max in range(1, 5)]
+        configurations.append((3, 5))
+        for l_max, n_max in configurations:
+            n_tensor_comp = (l_max+1)**2
+            tensor_features = torch.randn((n_point, n_tensor_comp), requires_grad=True, device='cuda')
 
-                n_tensor_comp = (l_max+1)**2
-                tensor_features = torch.randn((n_point, n_tensor_comp), requires_grad=True, device='cuda')
+            polyCollection = compute_invariant_polynomial_collection(n_max, l_max)
+            polyCollection.set_device('cuda')
+            invars_poly = EvaluatePolynomials.apply(tensor_features, polyCollection)
 
-                polyCollection = compute_invariant_polynomial_collection(n_max, l_max)
-                polyCollection.set_device('cuda')
-                invars_poly = EvaluatePolynomials.apply(tensor_features, polyCollection)
+            invars_torch = evaluate_polynomial_collection_torch(tensor_features, polyCollection)
 
-                invars_torch = evaluate_polynomial_collection_torch(tensor_features, polyCollection)
+            assert torch.allclose(invars_poly, invars_torch, rtol=1e-4, atol=1e-4)
 
-                assert torch.allclose(invars_poly, invars_torch, rtol=1e-4, atol=1e-4)
+            tensor_features = tensor_features.to(torch.float64)
 
-                tensor_features = tensor_features.to(torch.float64)
-
-                assert torch.autograd.gradcheck(EvaluatePolynomials.apply, (tensor_features, polyCollection))
-                assert torch.autograd.gradgradcheck(EvaluatePolynomials.apply, (tensor_features, polyCollection))
+            assert torch.autograd.gradcheck(EvaluatePolynomials.apply, (tensor_features, polyCollection))
+            assert torch.autograd.gradgradcheck(EvaluatePolynomials.apply, (tensor_features, polyCollection))
 
 def test_invariants_wrapper():
 
@@ -122,35 +129,34 @@ def test_invariants_wrapper():
     except:
         triton_available = False
 
-    n_max_values = range(1, 6) if triton_available and torch.cuda.is_available() else range(1, 5)
+    configurations = [(l_max, n_max) for l_max in range(5) for n_max in range(1, 5)]
+    if triton_available and torch.cuda.is_available():
+        configurations.append((3, 5))
 
-    for l_max in range(5):
-        for n_max in n_max_values:
+    for l_max, n_max in configurations:
+        n_tensor_comp = (l_max+1)**2
+        tensor_features = torch.randn((n_point, n_tensor_comp), requires_grad=True, device=device)
 
-            n_tensor_comp = (l_max+1)**2
-            tensor_features = torch.randn((n_point, n_tensor_comp), requires_grad=True, device=device)
+        invariantLayer = HopInvariantLayer(n_max, l_max)
+        invariantLayer = invariantLayer.to(device)
+        invars_poly = invariantLayer(tensor_features)
 
-            invariantLayer = HopInvariantLayer(n_max, l_max)
-            invariantLayer = invariantLayer.to(device)
-            invars_poly = invariantLayer(tensor_features)
+        if triton_available and torch.cuda.is_available():
+            polyCollection = compute_invariant_polynomial_collection(n_max, l_max)
+            polyCollection.set_device(device)
+            invars_torch = evaluate_polynomial_collection_torch(tensor_features, polyCollection)
+        else:
+            torchInvariantLayer = HopInvariantLayerTorch(n_max, l_max)
+            torchInvariantLayer = torchInvariantLayer.to(device)
+            invars_torch = torchInvariantLayer(tensor_features)
 
-            if triton_available and torch.cuda.is_available():
-                polyCollection = compute_invariant_polynomial_collection(n_max, l_max)
-                polyCollection.set_device(device)
-                invars_torch = evaluate_polynomial_collection_torch(tensor_features, polyCollection)
-            else:
-                torchInvariantLayer = HopInvariantLayerTorch(n_max, l_max)
-                torchInvariantLayer = torchInvariantLayer.to(device)
-                invars_torch = torchInvariantLayer(tensor_features)
+        assert torch.allclose(invars_poly, invars_torch, rtol=1e-4, atol=1e-4)
 
-            assert torch.allclose(invars_poly, invars_torch, rtol=1e-4, atol=1e-4)
+        # During this check tensor features need to be float32 because the old
+        # HopInvariantLayerTorch only supports float32. Thus, gradcheck is only
+        # available when Triton is active.
+        if triton_available and torch.cuda.is_available():
+            tensor_features = tensor_features.to(torch.float64)
 
-            # during this check we need tensor features to be float32 because the 
-            # old HopInvariantLayerTorch only supports float32
-            # Thus, we can only gradcheck if triton is available
-
-            if triton_available and torch.cuda.is_available():
-                tensor_features = tensor_features.to(torch.float64)
-
-                assert torch.autograd.gradcheck(invariantLayer, (tensor_features,))
-                assert torch.autograd.gradgradcheck(invariantLayer, (tensor_features,))
+            assert torch.autograd.gradcheck(invariantLayer, (tensor_features,))
+            assert torch.autograd.gradgradcheck(invariantLayer, (tensor_features,))

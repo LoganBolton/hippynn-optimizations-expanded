@@ -247,6 +247,8 @@ class InteractLayerQuad(InteractLayerVec):
 
 # n_max, l_max: warning counts for invariants.
 _invariant_counts = {
+    (7, 4): 24,
+    (5, 3): 14,
     (4, 4): 23,
     (4, 3): 13,
     (4, 2): 6,
@@ -281,7 +283,7 @@ class HOPInteractionLayer(InteractLayer):
 
         if n_max <= 0:
             raise ValueError(f"{n_max=} must be a positive integer.")
-        if n_max > 4:
+        if n_max > 7:
             raise ValueError(f"{n_max=} implementation not presently available.")
         elif n_max == 1:
             if l_max > 0:

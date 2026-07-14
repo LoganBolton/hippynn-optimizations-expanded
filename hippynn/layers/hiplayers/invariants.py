@@ -36,6 +36,9 @@ except:
 # tensor ordering and list of invariants for the default invariants.
 default_tensor_ordering = ["zero", "one", "two", "three", "four"]
 
+_LMAX3_NMAX5_INVARIANT = "ijk,lmn,il,jm,kn->,three,three,two,two,two"
+_LMAX4_NMAX7_INVARIANT = "abc,def,ghi,jkl,ihck,gfda,lebj->,three,three,three,three,four,four,four"
+
 default_invariants_list = [
     "->,zero",
     "i,i->,one,one",
@@ -59,7 +62,9 @@ default_invariants_list = [
     "ijk,ijl,abk,abl->,three,three,three,three",
     "ijk,ijl,abkm,ablm->,three,three,four,four",
     "ijk,ilm,jkab,lmab->,three,three,four,four",
-    "ijk,abc,ijkl,abcl->,three,three,four,four"
+    "ijk,abc,ijkl,abcl->,three,three,four,four",
+    _LMAX3_NMAX5_INVARIANT,
+    _LMAX4_NMAX7_INVARIANT,
 ]
 
 
@@ -297,6 +302,11 @@ def compute_invariant_polynomial_metadata(n_max, l_max, tensor_bases=cmaps, inva
     # Cut invariants out of the list based on n_max and l_max.
     invariants_kept = []
     for invar in invariants:
+        # This extra degree-5 invariant belongs specifically to the l3n5 basis.
+        # Do not implicitly add it to the independently defined l4n7 basis.
+        if invar == _LMAX3_NMAX5_INVARIANT and l_max != 3:
+            continue
+
         _, invar_tensors = split_invariant(invar)
         n = len(invar_tensors)
         l = max( [tensor_orders[t] for t in invar_tensors] )
