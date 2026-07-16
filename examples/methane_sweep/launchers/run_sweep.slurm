@@ -1,29 +1,32 @@
 #!/bin/bash
-#SBATCH --job-name=methane_sweep_2gpu
-#SBATCH --output=./logs/%j_methane_sweep_2gpu.out
-#SBATCH --error=./logs/%j_methane_sweep_2gpu.err
-#SBATCH --time=2-00:00:00
+#SBATCH --job-name=methane_sweep
+#SBATCH --output=./logs/%j_methane_sweep.out
+#SBATCH --error=./logs/%j_methane_sweep.err
+#SBATCH --time=2-00:00:00          # Max for Darwin long QoS
 #SBATCH --qos=long
 #SBATCH --requeue
 #SBATCH --signal=B:USR1@600
 #SBATCH --open-mode=append
-#SBATCH --partition=shared-gpu-ampere
-#SBATCH --constraint=gpu1_model:NVIDIA_A100-PCIE-40GB&gpu_count:2
-#SBATCH --cpus-per-task=16
-#SBATCH --mem=64G
+#SBATCH --partition=shared-gpu-ampere  # GPU partition name (check with: sinfo)
+# All nodes in this partition are A100 nodes; accept either the 2- or 4-GPU models.
+#SBATCH --constraint=gpu_cc:8.0
+#SBATCH --cpus-per-task=32         # Shared by the local GPU workers
+#SBATCH --mem=96G                  # Shared by the local GPU workers
 
-# Usage:
-#   RESUME=0 MODEL_SUFFIX=b256_fresh TASK_IDS="8 9 10 11 12 13 14 15" sbatch run_sweep_2gpu.slurm
+# Run from examples/methane_sweep.
+# Usage: sbatch launchers/run_sweep.slurm
+#        TASK_IDS="0 1 2 3 4 5 6 7" sbatch launchers/run_sweep.slurm
+#        RESUME=0 MODEL_SUFFIX=b256_fresh TASK_IDS="0 1 2 3 4 5 6 7" sbatch launchers/run_sweep.slurm
 #
-# This is the 2-GPU A100 variant of run_sweep.slurm. It is useful when the
-# 4-GPU SXM node is busy but 2-GPU A100-PCIE nodes are available.
+# This is a local/offline replacement for `wandb agent`. W&B offline mode logs
+# each run locally, but it cannot pull sweep jobs from the online W&B backend.
 
-SCRIPT_DIR="${SLURM_SUBMIT_DIR:-$(pwd)}"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-TRAINING_SCRIPT="$SCRIPT_DIR/methane_configurations.py"
-SWEEP_CONFIG="$SCRIPT_DIR/methane-l4-n4.yml"
-CONDA_ENV="hippynn-expanded-lmax"
-MAX_PARALLEL=2
+METHANE_DIR="${SLURM_SUBMIT_DIR:-$(pwd)}"
+PROJECT_ROOT="$(cd "$METHANE_DIR/../.." && pwd)"
+TRAINING_SCRIPT="$METHANE_DIR/training/methane_configurations.py"
+SWEEP_CONFIG="$METHANE_DIR/configs/methane-l4-n4.yml"
+CONDA_ENV="hippynn-expanded-lmax"       # Your conda environment name
+MAX_PARALLEL="${MAX_PARALLEL:-}"
 TASK_IDS="${TASK_IDS:-}"
 CHECKPOINT_EVERY="${CHECKPOINT_EVERY:-10}"
 WANDB_MODE="${WANDB_MODE:-offline}"
@@ -61,7 +64,7 @@ esac
 
 if [ "$#" -ne 0 ]; then
     echo "Error: this local sweep does not take a W&B sweep ID"
-    echo "Usage: sbatch run_sweep_2gpu.slurm"
+    echo "Usage: sbatch launchers/run_sweep.slurm"
     exit 1
 fi
 
@@ -92,7 +95,7 @@ echo "Restart count: ${SLURM_RESTART_COUNT:-0}"
 echo "Node:          $(hostname)"
 echo "Partition:     $SLURM_JOB_PARTITION"
 echo "Working dir:   $(pwd)"
-echo "Script dir:    $SCRIPT_DIR"
+echo "Methane dir:   $METHANE_DIR"
 echo "Start time:    $(date)"
 echo "=========================================="
 echo ""
@@ -100,6 +103,15 @@ echo ""
 echo "Checking GPU availability..."
 nvidia-smi
 echo ""
+
+AVAILABLE_GPUS="$(nvidia-smi --query-gpu=index --format=csv,noheader | wc -l)"
+if [ -z "$MAX_PARALLEL" ]; then
+    MAX_PARALLEL="$AVAILABLE_GPUS"
+fi
+if ! [[ "$MAX_PARALLEL" =~ ^[1-9][0-9]*$ ]] || [ "$MAX_PARALLEL" -gt "$AVAILABLE_GPUS" ]; then
+    echo "Error: MAX_PARALLEL must be between 1 and the $AVAILABLE_GPUS available GPUs, got '$MAX_PARALLEL'"
+    exit 1
+fi
 
 echo "Loading conda environment..."
 module load miniconda3
@@ -208,7 +220,7 @@ run_task_on_gpu() {
             --checkpoint_every "$CHECKPOINT_EVERY" \
             "${resume_args[@]}" \
             "${suffix_args[@]}"
-    ) > "logs/${SLURM_JOB_ID}_r${ATTEMPT_ID}_${task_id}_w${worker_id}_methane_sweep_2gpu.out" 2> "logs/${SLURM_JOB_ID}_r${ATTEMPT_ID}_${task_id}_w${worker_id}_methane_sweep_2gpu.err"
+    ) > "logs/${SLURM_JOB_ID}_r${ATTEMPT_ID}_${task_id}_w${worker_id}_methane_sweep.out" 2> "logs/${SLURM_JOB_ID}_r${ATTEMPT_ID}_${task_id}_w${worker_id}_methane_sweep.err"
 }
 
 worker_loop() {
@@ -249,7 +261,7 @@ for pid in "${children[@]}"; do
     fi
 done
 
-echo "Local 2-GPU sweep finished at: $(date)"
+echo "Local sweep finished at: $(date)"
 echo "Exit code: $EXIT_CODE"
 
 exit "$EXIT_CODE"

@@ -1,13 +1,13 @@
 #!/bin/bash
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+METHANE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+REPO_ROOT="$(cd "$METHANE_DIR/../.." && pwd)"
 ENV_NAME="${ENV_NAME:-hippynn-expanded-lmax}"
 
-echo "Creating conda environment '$ENV_NAME' from environment.yml..."
+echo "Creating conda environment '$ENV_NAME' from configs/environment.yml..."
 cd "$REPO_ROOT"
-conda env create -f "$SCRIPT_DIR/environment.yml" -n "$ENV_NAME"
+conda env create -f "$METHANE_DIR/configs/environment.yml" -n "$ENV_NAME"
 
 echo "Activating environment..."
 source "$(conda info --base)/etc/profile.d/conda.sh"

@@ -1,30 +1,30 @@
 #!/bin/bash
-#SBATCH --job-name=methane_sweep
-#SBATCH --output=./logs/%j_methane_sweep.out
-#SBATCH --error=./logs/%j_methane_sweep.err
-#SBATCH --time=2-00:00:00          # Max for Darwin long QoS
+#SBATCH --job-name=methane_sweep_2gpu
+#SBATCH --output=./logs/%j_methane_sweep_2gpu.out
+#SBATCH --error=./logs/%j_methane_sweep_2gpu.err
+#SBATCH --time=2-00:00:00
 #SBATCH --qos=long
 #SBATCH --requeue
 #SBATCH --signal=B:USR1@600
 #SBATCH --open-mode=append
-#SBATCH --partition=shared-gpu-ampere  # GPU partition name (check with: sinfo)
-#SBATCH --constraint=gpu1_model:NVIDIA_A100-SXM4-40GB&gpu_count:4
-#SBATCH --cpus-per-task=32         # CPUs for four local workers
-#SBATCH --mem=96G                  # RAM for four local workers
+#SBATCH --partition=shared-gpu-ampere
+#SBATCH --constraint=gpu1_model:NVIDIA_A100-PCIE-40GB&gpu_count:2
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=64G
 
-# Usage: sbatch run_sweep.slurm
-#        TASK_IDS="0 1 2 3 4 5 6 7" sbatch run_sweep.slurm
-#        RESUME=0 MODEL_SUFFIX=b256_fresh TASK_IDS="0 1 2 3 4 5 6 7" sbatch run_sweep.slurm
+# Run from examples/methane_sweep.
+# Usage:
+#   RESUME=0 MODEL_SUFFIX=b256_fresh TASK_IDS="8 9 10 11 12 13 14 15" sbatch launchers/run_sweep_2gpu.slurm
 #
-# This is a local/offline replacement for `wandb agent`. W&B offline mode logs
-# each run locally, but it cannot pull sweep jobs from the online W&B backend.
+# This is the 2-GPU A100 variant of run_sweep.slurm. It is useful when the
+# 4-GPU SXM node is busy but 2-GPU A100-PCIE nodes are available.
 
-SCRIPT_DIR="${SLURM_SUBMIT_DIR:-$(pwd)}"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-TRAINING_SCRIPT="$SCRIPT_DIR/methane_configurations.py"
-SWEEP_CONFIG="$SCRIPT_DIR/methane-l4-n4.yml"
-CONDA_ENV="hippynn-expanded-lmax"       # Your conda environment name
-MAX_PARALLEL=4
+METHANE_DIR="${SLURM_SUBMIT_DIR:-$(pwd)}"
+PROJECT_ROOT="$(cd "$METHANE_DIR/../.." && pwd)"
+TRAINING_SCRIPT="$METHANE_DIR/training/methane_configurations.py"
+SWEEP_CONFIG="$METHANE_DIR/configs/methane-l4-n4.yml"
+CONDA_ENV="hippynn-expanded-lmax"
+MAX_PARALLEL=2
 TASK_IDS="${TASK_IDS:-}"
 CHECKPOINT_EVERY="${CHECKPOINT_EVERY:-10}"
 WANDB_MODE="${WANDB_MODE:-offline}"
@@ -62,7 +62,7 @@ esac
 
 if [ "$#" -ne 0 ]; then
     echo "Error: this local sweep does not take a W&B sweep ID"
-    echo "Usage: sbatch run_sweep.slurm"
+    echo "Usage: sbatch launchers/run_sweep_2gpu.slurm"
     exit 1
 fi
 
@@ -93,7 +93,7 @@ echo "Restart count: ${SLURM_RESTART_COUNT:-0}"
 echo "Node:          $(hostname)"
 echo "Partition:     $SLURM_JOB_PARTITION"
 echo "Working dir:   $(pwd)"
-echo "Script dir:    $SCRIPT_DIR"
+echo "Methane dir:   $METHANE_DIR"
 echo "Start time:    $(date)"
 echo "=========================================="
 echo ""
@@ -209,7 +209,7 @@ run_task_on_gpu() {
             --checkpoint_every "$CHECKPOINT_EVERY" \
             "${resume_args[@]}" \
             "${suffix_args[@]}"
-    ) > "logs/${SLURM_JOB_ID}_r${ATTEMPT_ID}_${task_id}_w${worker_id}_methane_sweep.out" 2> "logs/${SLURM_JOB_ID}_r${ATTEMPT_ID}_${task_id}_w${worker_id}_methane_sweep.err"
+    ) > "logs/${SLURM_JOB_ID}_r${ATTEMPT_ID}_${task_id}_w${worker_id}_methane_sweep_2gpu.out" 2> "logs/${SLURM_JOB_ID}_r${ATTEMPT_ID}_${task_id}_w${worker_id}_methane_sweep_2gpu.err"
 }
 
 worker_loop() {
@@ -250,7 +250,7 @@ for pid in "${children[@]}"; do
     fi
 done
 
-echo "Local sweep finished at: $(date)"
+echo "Local 2-GPU sweep finished at: $(date)"
 echo "Exit code: $EXIT_CODE"
 
 exit "$EXIT_CODE"

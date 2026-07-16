@@ -70,44 +70,52 @@ def main(args):
     upstream_color = "#e99f9f"
     triton_color = "#3b73b9"
 
-    ax.bar(upstream_x, upstream_energy_values, width=width, color=upstream_color)
-    ax.bar(
-        upstream_x,
-        upstream_force_values,
-        width=width,
-        bottom=upstream_energy_values,
-        color=upstream_color,
-        alpha=0.42,
-    )
-    triton_energy_bars = ax.bar(
-        triton_x, triton_energy_values, width=width, color=triton_color
-    )
-    triton_total_bars = ax.bar(
-        triton_x,
-        triton_force_values,
-        width=width,
-        bottom=triton_energy_values,
-        color=triton_color,
-        alpha=0.42,
-    )
-
-    for bar, upstream_value, triton_value in zip(
-        triton_energy_bars, upstream_energy_values, triton_energy_values
-    ):
-        if not math.isfinite(upstream_value) or not math.isfinite(triton_value):
-            continue
-        if upstream_value <= 0 or triton_value <= 0:
-            continue
-        label, color = comparison_label(upstream_value, triton_value)
-        ax.text(
-            bar.get_x() + bar.get_width() / 2,
-            triton_value,
-            label,
-            ha="center",
-            va="bottom",
-            fontsize=7,
-            color=color,
+    if args.total_only:
+        ax.bar(upstream_x, upstream_total_values, width=width, color=upstream_color)
+        triton_total_bars = ax.bar(
+            triton_x, triton_total_values, width=width, color=triton_color
         )
+        triton_energy_bars = []
+    else:
+        ax.bar(upstream_x, upstream_energy_values, width=width, color=upstream_color)
+        ax.bar(
+            upstream_x,
+            upstream_force_values,
+            width=width,
+            bottom=upstream_energy_values,
+            color=upstream_color,
+            alpha=0.42,
+        )
+        triton_energy_bars = ax.bar(
+            triton_x, triton_energy_values, width=width, color=triton_color
+        )
+        triton_total_bars = ax.bar(
+            triton_x,
+            triton_force_values,
+            width=width,
+            bottom=triton_energy_values,
+            color=triton_color,
+            alpha=0.42,
+        )
+
+    if not args.total_only:
+        for bar, upstream_value, triton_value in zip(
+            triton_energy_bars, upstream_energy_values, triton_energy_values
+        ):
+            if not math.isfinite(upstream_value) or not math.isfinite(triton_value):
+                continue
+            if upstream_value <= 0 or triton_value <= 0:
+                continue
+            label, color = comparison_label(upstream_value, triton_value)
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                triton_value,
+                label,
+                ha="center",
+                va="bottom",
+                fontsize=7,
+                color=color,
+            )
 
     for bar, upstream_value, triton_value in zip(
         triton_total_bars, upstream_total_values, triton_total_values
@@ -127,19 +135,20 @@ def main(args):
             color=color,
         )
 
-    for bar, energy_value, total_value in zip(
-        triton_energy_bars, triton_energy_values, triton_total_values
-    ):
-        if math.isfinite(energy_value) and not math.isfinite(total_value):
-            ax.text(
-                bar.get_x() + bar.get_width() / 2,
-                energy_value,
-                "force N/A",
-                ha="center",
-                va="bottom",
-                fontsize=7,
-                color="#666666",
-            )
+    if not args.total_only:
+        for bar, energy_value, total_value in zip(
+            triton_energy_bars, triton_energy_values, triton_total_values
+        ):
+            if math.isfinite(energy_value) and not math.isfinite(total_value):
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    energy_value,
+                    "force N/A",
+                    ha="center",
+                    va="bottom",
+                    fontsize=7,
+                    color="#666666",
+                )
 
     l3n4 = ("HOP", 3, 4)
     l3n5 = ("HOP", 3, 5)
@@ -147,14 +156,22 @@ def main(args):
         divider_x = (configs.index(l3n4) + configs.index(l3n5)) / 2
         ax.axvline(divider_x, color="#999999", linestyle=":", linewidth=1.2, alpha=0.75)
 
-    legend_handles = [
-        Patch(facecolor=upstream_color, label="Default energy"),
-        Patch(facecolor=upstream_color, alpha=0.42, label="Default force calculation"),
-        Patch(facecolor=triton_color, label="Triton energy"),
-        Patch(facecolor=triton_color, alpha=0.42, label="Triton force calculation"),
-    ]
+    if args.total_only:
+        legend_handles = [
+            Patch(facecolor=upstream_color, label="Default energy + forces"),
+            Patch(facecolor=triton_color, label="Triton energy + forces"),
+        ]
+        title = "HIP-HOP-NN Energy + Forces Inference Time per Atom"
+    else:
+        legend_handles = [
+            Patch(facecolor=upstream_color, label="Default energy"),
+            Patch(facecolor=upstream_color, alpha=0.42, label="Default force calculation"),
+            Patch(facecolor=triton_color, label="Triton energy"),
+            Patch(facecolor=triton_color, alpha=0.42, label="Triton force calculation"),
+        ]
+        title = "HIP-HOP-NN Energy and Force Inference Time per Atom"
     ax.legend(handles=legend_handles, ncols=2)
-    ax.set_title("HIP-HOP-NN Energy and Force Inference Time per Atom")
+    ax.set_title(title)
     ax.set_xlabel(r"HIP-HOP settings: $(\ell_{max}, n_{max})$")
     ax.set_ylabel("Time/atom (us)")
     ax.set_xticks(x, labels)
@@ -192,6 +209,11 @@ if __name__ == "__main__":
         default=script_dir / "plots/energy_force_breakdown_inference_time_per_atom.png",
     )
     parser.add_argument("--dpi", type=int, default=200)
+    parser.add_argument(
+        "--total_only",
+        action="store_true",
+        help="Plot one energy-plus-forces bar per implementation instead of a stacked breakdown",
+    )
     parser.add_argument(
         "--exclude_config",
         action="append",

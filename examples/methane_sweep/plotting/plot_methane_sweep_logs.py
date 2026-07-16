@@ -67,7 +67,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--sweep-config",
-        default=Path("examples/methane_sweep/methane-l4-n4.yml"),
+        default=Path("examples/methane_sweep/configs/methane-l4-n4.yml"),
         type=Path,
         help="Sweep YAML used to map task ids to hyperparameters.",
     )
@@ -420,6 +420,16 @@ def finite_pairs(run_rows: list[dict[str, float | int | str]], metric: str) -> t
     return xs, ys
 
 
+def model_plot_style(values: dict[str, float | int | str]) -> dict[str, str]:
+    """Keep model architecture visually distinct in every plot."""
+    n_max = str(values.get("hiphop_n_max", ""))
+    if n_max == "3":
+        return {"linestyle": "-", "marker": "o"}
+    if n_max == "4":
+        return {"linestyle": "--", "marker": "D"}
+    return {"linestyle": ":", "marker": "s"}
+
+
 def should_use_log_y(metric: str, runs: dict[str, list[dict[str, float | int | str]]]) -> bool:
     if metric.endswith("_time_s"):
         return False
@@ -502,7 +512,8 @@ def plot_metric(metric: str, runs: dict[str, list[dict[str, float | int | str]]]
         xs, ys = finite_pairs(run_rows, metric)
         if not xs:
             continue
-        ax.plot(xs, ys, linewidth=1.8, label=label)
+        style = model_plot_style(run_rows[0])
+        ax.plot(xs, ys, linewidth=1.8, linestyle=style["linestyle"], label=label)
         plotted = True
 
     if not plotted:
@@ -536,7 +547,8 @@ def plot_dashboard(metrics: list[str], runs: dict[str, list[dict[str, float | in
         for label, run_rows in sorted(runs.items()):
             xs, ys = finite_pairs(run_rows, metric)
             if xs:
-                ax.plot(xs, ys, linewidth=1.2, label=label)
+                style = model_plot_style(run_rows[0])
+                ax.plot(xs, ys, linewidth=1.2, linestyle=style["linestyle"], label=label)
         ax.set_title(metric_title(metric), fontsize=10)
         ax.set_xlabel("Epoch")
         log_scale = should_use_log_y(metric, runs)
@@ -738,11 +750,12 @@ def plot_force_accuracy_pareto(
         force_value = float(point["best_checkpoint_valid_F-MAE"])
         energy_value = float(point["best_checkpoint_valid_T-MAE"])
         color = colors[index % len(colors)]
+        marker = model_plot_style(point)["marker"]
         ax.scatter(
             x_value,
             force_value,
             s=95,
-            marker="o",
+            marker=marker,
             color=color,
             zorder=10,
         )
@@ -750,7 +763,7 @@ def plot_force_accuracy_pareto(
             x_value,
             energy_value,
             s=85,
-            marker="o",
+            marker=marker,
             color=color,
             zorder=10,
         )
@@ -946,10 +959,11 @@ def plot_best_metric_pareto(
         if point not in force_points:
             continue
         color = color_by_task[model_group_key(point)]
+        marker = model_plot_style(point)["marker"]
         x_value = float(point["best_force_training_time_h"])
         y_value = float(point["best_valid_F-MAE"])
         is_rightmost = x_value == rightmost_force_x
-        ax.scatter(x_value, y_value, s=95, marker="o", color=color, zorder=10)
+        ax.scatter(x_value, y_value, s=95, marker=marker, color=color, zorder=10)
         ax.annotate(
             f"l={point['hiphop_l_max']} n={point['hiphop_n_max']} F best_epoch={point['best_force_epoch']}",
             (x_value, y_value),
@@ -965,10 +979,11 @@ def plot_best_metric_pareto(
         if point not in energy_points:
             continue
         color = color_by_task[model_group_key(point)]
+        marker = model_plot_style(point)["marker"]
         x_value = float(point["best_energy_training_time_h"])
         y_value = float(point["best_valid_T-MAE"])
         is_rightmost = x_value == rightmost_energy_x
-        energy_ax.scatter(x_value, y_value, s=85, marker="s", color=color, zorder=10)
+        energy_ax.scatter(x_value, y_value, s=85, marker=marker, color=color, zorder=10)
         energy_ax.annotate(
             f"E best_epoch={point['best_energy_epoch']}",
             (x_value, y_value),
@@ -1092,7 +1107,7 @@ def plot_paper_style_energy_comparison(
     for point in points:
         x_value = float(point["training_set_size"])
         y_value = float(point["best_valid_energy_RMSE_over_STD"])
-        ax.scatter(x_value, y_value, s=95, zorder=3)
+        ax.scatter(x_value, y_value, s=95, marker=model_plot_style(point)["marker"], zorder=3)
         setup_label = f"l={point['hiphop_l_max']} n={point['hiphop_n_max']}"
         if point.get("data_size") not in ("", None):
             setup_label += f" d={format_data_size(point['data_size'])}"

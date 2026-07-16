@@ -127,8 +127,9 @@ def main(args):
         labels = [config_label(config) for config in configs]
         baseline = [baseline_grouped.get(key, math.nan) for key in configs]
         timed = [optimized_grouped.get(key, math.nan) for key in configs]
-        baseline_label = "Default energy"
-        optimized_label = "Triton energy"
+        workload_label = "energy + forces" if args.include_forces else "energy"
+        baseline_label = f"Default {workload_label}"
+        optimized_label = f"Triton {workload_label}"
     elif args.baseline_json or args.optimized_json:
         if not args.baseline_json or not args.optimized_json:
             raise ValueError("Both --baseline_json and --optimized_json are required")
@@ -231,6 +232,11 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=2048)
     parser.add_argument("--n_atoms", type=int, default=676395)
     parser.add_argument("--include_paper", action="store_true")
+    parser.add_argument(
+        "--include_forces",
+        action="store_true",
+        help="Label benchmark bars as combined energy-and-force inference",
+    )
     parser.add_argument("--output", default=script_dir / "plots/inference_time_per_atom.png")
     parser.add_argument("--dpi", type=int, default=200)
     main(parser.parse_args())

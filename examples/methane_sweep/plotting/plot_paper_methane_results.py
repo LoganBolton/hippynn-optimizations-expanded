@@ -68,19 +68,19 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--input",
-        default=Path("examples/methane_sweep/methane_results.json"),
+        default=Path("examples/methane_sweep/results/paper/methane_results.json"),
         type=Path,
         help="JSON file containing methane RMSE replicate results.",
     )
     parser.add_argument(
         "--output",
-        default=Path("examples/methane_sweep/paper_methane_plot_batch256.png"),
+        default=Path("examples/methane_sweep/results/paper/paper_methane_plot_batch256.png"),
         type=Path,
         help="Output image path for the batch_size=256 overlay.",
     )
     parser.add_argument(
         "--other-output",
-        default=Path("examples/methane_sweep/paper_methane_plot_batch16k_plus.png"),
+        default=Path("examples/methane_sweep/results/paper/paper_methane_plot_batch16k_plus.png"),
         type=Path,
         help="Output image path for non-256 batch-size overlays.",
     )
@@ -93,7 +93,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--training-summary-output",
-        default=Path("examples/methane_sweep/paper_methane_plot_overlay_points.csv"),
+        default=Path("examples/methane_sweep/results/paper/paper_methane_plot_overlay_points.csv"),
         type=Path,
         help="CSV recording the selected best overlay points.",
     )

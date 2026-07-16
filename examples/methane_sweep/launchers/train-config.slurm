@@ -7,7 +7,8 @@
 #SBATCH --cpus-per-task=16         # CPUs per task
 #SBATCH --mem=64G                  # RAM
 
-TRAINING_SCRIPT="methane_configurations.py"
+METHANE_DIR="${SLURM_SUBMIT_DIR:-$(pwd)}"
+TRAINING_SCRIPT="$METHANE_DIR/training/methane_configurations.py"
 CONDA_ENV="hippynn-expanded-lmax"
 SEED=2025
 HIPHOP_L_MAX=4

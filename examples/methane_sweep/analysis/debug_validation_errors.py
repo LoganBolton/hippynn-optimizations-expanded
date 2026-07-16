@@ -8,7 +8,6 @@ from pathlib import Path
 
 os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib-cache")
 
-import ase.io
 import numpy as np
 import torch
 
@@ -39,6 +38,7 @@ def parse_args():
     parser.add_argument("--run_dir", type=Path)
     parser.add_argument("--data_src", type=Path)
     parser.add_argument("--out_dir", type=Path)
+    parser.add_argument("--reuse_targets", action="store_true")
     return parser.parse_args()
 
 
@@ -57,6 +57,8 @@ def require_triton_if_cuda(device):
 
 
 def prepare_data(data_src, train_size, test_size):
+    import ase.io
+
     train_dict = {"numbers": [], "positions": [], "forces": [], "energy": []}
     test_dict = {"numbers": [], "positions": [], "forces": [], "energy": []}
     for idx, frame in enumerate(ase.io.iread(data_src)):
@@ -154,10 +156,29 @@ def evaluate_checkpoint(model, checkpoint_path, valid, device, batch_size):
     for start in range(0, len(numbers), batch_size):
         stop = min(start + batch_size, len(numbers))
         positions = positions_all[start:stop].detach().clone().requires_grad_(True)
+        input_values = {
+            "numbers": numbers[start:stop],
+            "positions": positions,
+        }
+        model_inputs = tuple(input_values[node.db_name] for node in model.input_nodes)
         with torch.enable_grad():
-            outputs = model(numbers[start:stop], positions)
-        pred_force_chunks.append(outputs[1].detach().cpu().numpy())
-        pred_energy_chunks.append(outputs[2].detach().cpu().numpy().reshape(-1))
+            outputs = model(*model_inputs)
+        # assemble_for_training does not guarantee a stable output order, so
+        # identify predictions by shape rather than tuple position.
+        force_outputs = [output for output in outputs if output.shape == positions.shape]
+        energy_outputs = [
+            output
+            for output in outputs
+            if output.shape != positions.shape and output.numel() == stop - start
+        ]
+        if len(force_outputs) != 1 or len(energy_outputs) != 1:
+            shapes = [tuple(output.shape) for output in outputs]
+            raise RuntimeError(
+                "Could not uniquely identify force and energy model outputs; "
+                f"output shapes were {shapes}"
+            )
+        pred_force_chunks.append(force_outputs[0].detach().cpu().numpy())
+        pred_energy_chunks.append(energy_outputs[0].detach().cpu().numpy().reshape(-1))
 
     pred_energy = np.concatenate(pred_energy_chunks)
     pred_forces = np.concatenate(pred_force_chunks)
@@ -216,7 +237,7 @@ def write_ranked_csv(path, valid, result, epoch):
 
 def main():
     args = parse_args()
-    repo_root = Path(__file__).parents[2]
+    repo_root = Path(__file__).resolve().parents[3]
     data_src = args.data_src or repo_root / "datasets" / "methane.extxyz"
     run_dir = args.run_dir or repo_root / "examples" / (
         f"TEST_METHANE_MODEL_l{args.hiphop_l_max}_n{args.hiphop_n_max}_d{args.data_size}_seed{args.seed}-b256_fresh"
@@ -228,21 +249,28 @@ def main():
     require_triton_if_cuda(device)
     torch.random.manual_seed(args.seed)
 
-    print(f"Loading data from {data_src}", flush=True)
-    train_dict, _ = prepare_data(data_src, args.data_size, args.test_set_size)
-    print("Building model and deterministic validation split", flush=True)
+    targets_path = out_dir / "validation_targets.npz"
+    print("Building model", flush=True)
     model, henergy, db_info = build_model(args, device)
-    train_database = make_train_database(train_dict, db_info, args.seed)
-    set_e0_values(henergy, train_database, trainable_after=False)
-    valid_indices = train_database.splits["valid"]["indices"].cpu().numpy()
-    valid = {
-        "source_indices": valid_indices,
-        "numbers": train_dict["numbers"][valid_indices],
-        "positions": train_dict["positions"][valid_indices],
-        "forces": train_dict["forces"][valid_indices],
-        "energy": train_dict["energy"][valid_indices],
-    }
-    np.savez_compressed(out_dir / "validation_targets.npz", **valid)
+    if args.reuse_targets and targets_path.exists():
+        print(f"Reusing cached validation targets from {targets_path}", flush=True)
+        with np.load(targets_path) as cached:
+            valid = {key: cached[key] for key in cached.files}
+    else:
+        print(f"Loading data from {data_src}", flush=True)
+        train_dict, _ = prepare_data(data_src, args.data_size, args.test_set_size)
+        print("Building deterministic validation split", flush=True)
+        train_database = make_train_database(train_dict, db_info, args.seed)
+        set_e0_values(henergy, train_database, trainable_after=False)
+        valid_indices = train_database.splits["valid"]["indices"].cpu().numpy()
+        valid = {
+            "source_indices": valid_indices,
+            "numbers": train_dict["numbers"][valid_indices],
+            "positions": train_dict["positions"][valid_indices],
+            "forces": train_dict["forces"][valid_indices],
+            "energy": train_dict["energy"][valid_indices],
+        }
+        np.savez_compressed(targets_path, **valid)
 
     summary_rows = []
     for epoch in args.epochs:

@@ -12,6 +12,7 @@ import numpy as np
 ELEMENTS = {1: "H", 6: "C"}
 RADII = {"H": 0.16, "C": 0.26}
 COLORS = {"H": "#f4f4f4", "C": "#222222"}
+EDGE_CUTOFF = 10.3
 
 
 def parse_args():
@@ -38,11 +39,12 @@ def load_epoch(debug_dir, epoch):
 
 
 def pair_bonds(numbers, positions):
+    """Return the unique undirected edges used by the model's pair graph."""
     bonds = []
     for i in range(len(numbers)):
         for j in range(i + 1, len(numbers)):
             distance = float(np.linalg.norm(positions[i] - positions[j]))
-            if distance < 1.8:
+            if distance < EDGE_CUTOFF:
                 bonds.append({"i": i, "j": j, "distance": distance})
     return bonds
 
@@ -246,7 +248,7 @@ function draw() {{
 
   ctx.fillStyle = "#1f2328";
   ctx.font = "13px system-ui";
-  ctx.fillText("Drag to rotate, wheel to zoom. Red = force error, blue = target force. Bond labels are Angstrom.", 18, canvas.clientHeight - 18);
+  ctx.fillText("Drag to rotate, wheel to zoom. Red = force error, blue = target force. Lines are model pair edges; labels are Angstrom.", 18, canvas.clientHeight - 18);
 }}
 
 canvas.addEventListener("mousedown", e => {{ dragging = true; lastX = e.clientX; lastY = e.clientY; }});
