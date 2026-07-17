@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=methane_sweep_2gpu
-#SBATCH --output=./logs/%j_methane_sweep_2gpu.out
-#SBATCH --error=./logs/%j_methane_sweep_2gpu.err
+#SBATCH --output=./logs/submissions/%j_methane_sweep_2gpu.out
+#SBATCH --error=./logs/submissions/%j_methane_sweep_2gpu.err
 #SBATCH --time=2-00:00:00
 #SBATCH --qos=long
 #SBATCH --requeue
@@ -121,7 +121,7 @@ echo ""
 export PYTHONPATH="$PROJECT_ROOT"
 export WANDB_DIR="${WANDB_DIR:-$(pwd)/wandb}"
 mkdir -p "$WANDB_DIR"
-mkdir -p logs
+mkdir -p logs "logs/runs/${SLURM_JOB_ID}"
 
 SWEEP_COUNT="$(python - "$SWEEP_CONFIG" <<'PY'
 import itertools
@@ -209,7 +209,7 @@ run_task_on_gpu() {
             --checkpoint_every "$CHECKPOINT_EVERY" \
             "${resume_args[@]}" \
             "${suffix_args[@]}"
-    ) > "logs/${SLURM_JOB_ID}_r${ATTEMPT_ID}_${task_id}_w${worker_id}_methane_sweep_2gpu.out" 2> "logs/${SLURM_JOB_ID}_r${ATTEMPT_ID}_${task_id}_w${worker_id}_methane_sweep_2gpu.err"
+    ) > "logs/runs/${SLURM_JOB_ID}/${SLURM_JOB_ID}_r${ATTEMPT_ID}_${task_id}_w${worker_id}_methane_sweep_2gpu.out" 2> "logs/runs/${SLURM_JOB_ID}/${SLURM_JOB_ID}_r${ATTEMPT_ID}_${task_id}_w${worker_id}_methane_sweep_2gpu.err"
 }
 
 worker_loop() {

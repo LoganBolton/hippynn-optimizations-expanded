@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=methane_sweep
-#SBATCH --output=./logs/%j_methane_sweep.out
-#SBATCH --error=./logs/%j_methane_sweep.err
+#SBATCH --output=./logs/submissions/%j_methane_sweep.out
+#SBATCH --error=./logs/submissions/%j_methane_sweep.err
 #SBATCH --time=2-00:00:00          # Max for Darwin long QoS
 #SBATCH --qos=long
 #SBATCH --requeue
@@ -132,7 +132,7 @@ echo ""
 export PYTHONPATH="$PROJECT_ROOT"
 export WANDB_DIR="${WANDB_DIR:-$(pwd)/wandb}"
 mkdir -p "$WANDB_DIR"
-mkdir -p logs
+mkdir -p logs "logs/runs/${SLURM_JOB_ID}"
 
 SWEEP_COUNT="$(python - "$SWEEP_CONFIG" <<'PY'
 import itertools
@@ -220,7 +220,7 @@ run_task_on_gpu() {
             --checkpoint_every "$CHECKPOINT_EVERY" \
             "${resume_args[@]}" \
             "${suffix_args[@]}"
-    ) > "logs/${SLURM_JOB_ID}_r${ATTEMPT_ID}_${task_id}_w${worker_id}_methane_sweep.out" 2> "logs/${SLURM_JOB_ID}_r${ATTEMPT_ID}_${task_id}_w${worker_id}_methane_sweep.err"
+    ) > "logs/runs/${SLURM_JOB_ID}/${SLURM_JOB_ID}_r${ATTEMPT_ID}_${task_id}_w${worker_id}_methane_sweep.out" 2> "logs/runs/${SLURM_JOB_ID}/${SLURM_JOB_ID}_r${ATTEMPT_ID}_${task_id}_w${worker_id}_methane_sweep.err"
 }
 
 worker_loop() {

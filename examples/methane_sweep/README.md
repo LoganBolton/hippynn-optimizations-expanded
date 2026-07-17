@@ -11,7 +11,10 @@ their existing locations.
 - `analysis/`: validation, invariant, and outlier diagnostics
 - `plotting/`: plot-generation and model-comparison scripts
 - `results/paper/`: checked-in paper data and figures
-- `logs/`: live and archived training logs and generated metric plots
+- `logs/runs/<job-id>/`: worker and historical launcher logs grouped by originating Slurm job
+- `logs/submissions/`: top-level Slurm launcher output for new submissions
+- `logs/archive/`: older archived experiment sets
+- `logs/plots_*` and `logs/metric_plots*`: generated metric plots
 - `wandb*/`: offline W&B run data
 - `time_benchmark/`: the self-contained timing benchmark workflow
 
@@ -34,6 +37,7 @@ MODEL_SUFFIX=b256_fresh RESUME=1 sbatch launchers/run_sweep.slurm
 # Refresh the 1M comparison plots.
 python plotting/plot_methane_sweep_logs.py \
   --log-dir logs \
+  --log-pattern 'runs/**/*_methane_*.out' \
   --output-dir logs/plots_compare_data_1M_b256_fresh \
   --sweep-config configs/methane-l4-n4.yml \
   --data-size 1000000
@@ -41,6 +45,7 @@ python plotting/plot_methane_sweep_logs.py \
 # Refresh the 100k comparison plots.
 python plotting/plot_methane_sweep_logs.py \
   --log-dir logs \
+  --log-pattern 'runs/**/*_methane_*.out' \
   --output-dir logs/plots_compare_data_100k_b256_fresh \
   --sweep-config configs/methane-l4-n4.yml \
   --data-size 100000

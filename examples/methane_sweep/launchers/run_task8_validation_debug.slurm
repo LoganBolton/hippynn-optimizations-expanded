@@ -9,8 +9,8 @@
 #SBATCH --mem=64G
 #SBATCH --time=08:00:00
 #SBATCH --constraint=gpu_cc:8.0
-#SBATCH --output=logs/%j_task8_valid_debug.out
-#SBATCH --error=logs/%j_task8_valid_debug.err
+#SBATCH --output=logs/submissions/%j_task8_valid_debug.out
+#SBATCH --error=logs/submissions/%j_task8_valid_debug.err
 
 set -euo pipefail
 

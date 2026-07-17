@@ -109,13 +109,16 @@ def best_training_points(paths: list[Path]) -> list[dict[str, str | int | float]
         batch_sizes = batch_sizes_by_run(METRICS_BY_RESULT_CSV.get(path))
         with path.open("r", newline="", encoding="utf-8") as handle:
             for row in csv.DictReader(handle):
-                if not row.get("best_valid_T-RMSE"):
+                test_rmse = row.get("test_T-RMSE_mean") or row.get("test_T-RMSE")
+                test_std = row.get("test_energy_std_kcal_per_mol")
+                if not test_rmse or not test_std:
                     continue
                 l_max = int(row["hiphop_l_max"])
                 n_max = int(row["hiphop_n_max"])
                 batch_size = batch_sizes.get(row["run"], row.get("batch_size") or "")
                 training_size = int(row["training_set_size"])
-                rmse = float(row["best_valid_T-RMSE"])
+                rmse = float(test_rmse)
+                energy_std = float(test_std)
                 key = (batch_size, accelerator, l_max, n_max, training_size)
                 candidate = {
                     "hiphop_l_max": l_max,
@@ -123,15 +126,18 @@ def best_training_points(paths: list[Path]) -> list[dict[str, str | int | float]
                     "batch_size": batch_size,
                     "accelerator": accelerator,
                     "training_set_size": training_size,
-                    "best_valid_T-RMSE": rmse,
-                    "normalized_energy_RMSE": rmse / ENERGY_STD_KCAL_MOL,
+                    "test_T-RMSE": rmse,
+                    "test_energy_std_kcal_per_mol": energy_std,
+                    "normalized_energy_RMSE": float(
+                        row.get("test_energy_RMSE_over_STD_mean") or rmse / energy_std
+                    ),
                     "source_csv": str(path),
-                    "run": row["run"],
-                    "sweep_task_id": row["sweep_task_id"],
-                    "logged_epochs": int(row["logged_epochs"]),
-                    "best_epoch": int(row["best_epoch"]),
+                    "run": row.get("run", f"combined l={l_max} n={n_max} d={training_size}"),
+                    "sweep_task_id": row.get("sweep_task_id", ""),
+                    "logged_epochs": int(row.get("logged_epochs") or 0),
+                    "selected_checkpoint_epoch": int(row.get("selected_checkpoint_epoch") or 0),
                 }
-                if key not in best or rmse < float(best[key]["best_valid_T-RMSE"]):
+                if key not in best or rmse < float(best[key]["test_T-RMSE"]):
                     best[key] = candidate
     return [
         best[key]
@@ -167,13 +173,14 @@ def write_overlay_summary(path: Path, points: list[dict[str, str | int | float]]
         "batch_size",
         "accelerator",
         "training_set_size",
-        "best_valid_T-RMSE",
+        "test_T-RMSE",
+        "test_energy_std_kcal_per_mol",
         "normalized_energy_RMSE",
         "source_csv",
         "run",
         "sweep_task_id",
         "logged_epochs",
-        "best_epoch",
+        "selected_checkpoint_epoch",
     ]
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=columns)

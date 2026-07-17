@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import csv
 import itertools
+import json
 import math
 import os
 import re
@@ -19,6 +20,7 @@ METRIC_RE = re.compile(r"^([A-Za-z0-9][A-Za-z0-9 -]*?)\s*:")
 TOTAL_COUNT_RE = re.compile(r"Total Count:\s*(\d+)")
 LR_RE = re.compile(r"Learning rate:\s*(%s)" % FLOAT_RE.pattern)
 BATCH_RE = re.compile(r"Batch Size:\s*(\d+)")
+REQUESTED_BATCH_RE = re.compile(r"Batch config:\s*requested_train_batch=(\d+)")
 TIME_RE = re.compile(r"(Training time|Total epoch time):\s*(%s)\s*s" % FLOAT_RE.pattern)
 BEST_RE = re.compile(r"Best T-MAE so far:\s*(%s)" % FLOAT_RE.pattern)
 SINCE_BEST_RE = re.compile(r"Epochs since last best:\s*(\d+)")
@@ -30,6 +32,7 @@ FINAL_EVALUATION_MARKERS = (
     "Testing model...",
     "Training complete.",
 )
+TEST_STATISTICS_RE = re.compile(r"^TEST_SET_STATISTICS_JSON:\s*(\{.*\})$")
 
 
 METRIC_NAMES = {
@@ -50,7 +53,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--log-dir", default="logs", type=Path, help="Directory containing .out logs.")
     parser.add_argument(
         "--log-pattern",
-        default="*_methane_*.out",
+        default="runs/**/*_methane_*.out",
         help="Glob pattern, relative to --log-dir, for selecting logs to parse.",
     )
     parser.add_argument(
@@ -90,6 +93,18 @@ def parse_args() -> argparse.Namespace:
         "--pareto-seed",
         type=int,
         help="Only include this seed in the force/energy Pareto plots. Defaults to the best seed for each model/data-size setup.",
+    )
+    parser.add_argument(
+        "--test-statistics-dir",
+        default=Path("examples/methane_sweep/data_statistics"),
+        type=Path,
+        help="Directory containing persisted held-out test target statistics.",
+    )
+    parser.add_argument("--test-set-size", default=80_000, type=int)
+    parser.add_argument(
+        "--requested-train-batch-size",
+        type=int,
+        help="Only include runs whose earliest log requested this starting training batch size.",
     )
     return parser.parse_args()
 
@@ -173,7 +188,7 @@ def format_data_size(value: object) -> str:
 
 def task_id_from_path(path: Path) -> int | None:
     match = re.search(
-        r"_(\d+)(?:_w\d+)?_methane_(?:sweep|resume_selected|l3_b256|l4_titanv)(?:_[A-Za-z0-9-]+)?\.out$",
+        r"_(\d+)(?:_w\d+)?_methane_(?:sweep|resume_selected|l3_b256|l3n5|l4_titanv)(?:_[A-Za-z0-9-]+)?\.out$",
         path.name,
     )
     return int(match.group(1)) if match else None
@@ -230,10 +245,35 @@ def parse_log(
     rows: list[dict[str, float | int | str]] = []
     current: dict[str, float | int | str] | None = None
     total_count: int | None = None
+    test_statistics: dict[str, object] = {}
+    final_test_metrics: dict[str, float] = {}
+    testing_sections = 0
+    requested_train_batch_size: int | None = None
 
     with path.open("r", encoding="utf-8", errors="replace") as handle:
         for line in handle:
             line = line.rstrip("\n")
+
+            if match := REQUESTED_BATCH_RE.search(line):
+                requested_train_batch_size = int(match.group(1))
+                continue
+
+            if match := TEST_STATISTICS_RE.match(line):
+                test_statistics = json.loads(match.group(1))
+                continue
+
+            if line == "Testing model...":
+                testing_sections += 1
+                continue
+
+            # The explicit post-training test_model call prints a one-column
+            # metric table. The earlier training summary has three columns.
+            if testing_sections >= 1:
+                name_match = METRIC_RE.match(line)
+                if name_match and name_match.group(1).strip() in METRIC_NAMES:
+                    values = [float(value) for value in FLOAT_RE.findall(line[name_match.end() :])]
+                    if len(values) == 1:
+                        final_test_metrics[name_match.group(1).strip()] = values[0]
 
             if match := TOTAL_COUNT_RE.search(line):
                 total_count = int(match.group(1))
@@ -292,6 +332,13 @@ def parse_log(
             row.update(task_params)
         if total_count is not None:
             row["total_params"] = total_count
+        if requested_train_batch_size is not None:
+            row["requested_train_batch_size"] = requested_train_batch_size
+        if "energy_std_kcal_per_mol" in test_statistics:
+            row["test_energy_std_kcal_per_mol"] = float(test_statistics["energy_std_kcal_per_mol"])
+            row["test_statistics_path"] = str(test_statistics.get("path", ""))
+        for metric, value in final_test_metrics.items():
+            row[f"test_{metric}"] = value
 
     return rows, total_count
 
@@ -306,6 +353,7 @@ def write_csv(rows: list[dict[str, float | int | str]], path: Path) -> list[str]
         "hiphop_n_max",
         "data_size",
         "total_params",
+        "requested_train_batch_size",
         "epoch",
         "learning_rate",
         "batch_size",
@@ -405,6 +453,24 @@ def deduplicate_epochs(
         all_rows.extend(deduplicated_rows)
 
     return all_rows, deduplicated_runs
+
+
+def add_stored_test_statistics(
+    runs: dict[str, list[dict[str, float | int | str]]], statistics_dir: Path, test_set_size: int
+) -> None:
+    """Add directly calculated test target statistics to old and new logs."""
+    for run_rows in runs.values():
+        first = run_rows[0]
+        if "test_energy_std_kcal_per_mol" in first or "data_size" not in first:
+            continue
+        path = statistics_dir / f"test_energy_d{int(first['data_size'])}_n{test_set_size}_sequential.json"
+        if not path.exists():
+            continue
+        with path.open("r", encoding="utf-8") as handle:
+            statistics = json.load(handle)
+        for row in run_rows:
+            row["test_energy_std_kcal_per_mol"] = float(statistics["energy_std_kcal_per_mol"])
+            row["test_statistics_path"] = str(path)
 
 
 def finite_pairs(run_rows: list[dict[str, float | int | str]], metric: str) -> tuple[list[int], list[float]]:
@@ -1026,25 +1092,6 @@ def median(values: list[float]) -> float:
     return 0.5 * (sorted_values[midpoint - 1] + sorted_values[midpoint])
 
 
-def energy_std_from_rows(rows: list[dict[str, float | int | str]]) -> float:
-    estimates = []
-    for row in rows:
-        if "valid_T-RMSE" not in row or "valid_T-RSQ" not in row:
-            continue
-        rmse = float(row["valid_T-RMSE"])
-        rsq = float(row["valid_T-RSQ"])
-        if rmse > 0 and 0 < rsq < 1:
-            estimates.append(rmse / math.sqrt(1 - rsq))
-    if not estimates:
-        raise ValueError("Could not estimate energy standard deviation from T-RMSE/T-RSQ.")
-    return median(estimates)
-
-
-def best_energy_row(rows: list[dict[str, float | int | str]]) -> dict[str, float | int | str]:
-    candidates = [row for row in rows if "valid_T-RMSE" in row and row["valid_T-RMSE"] != ""]
-    return min(candidates, key=lambda row: float(row["valid_T-RMSE"]))
-
-
 def plot_paper_style_energy_comparison(
     runs: dict[str, list[dict[str, float | int | str]]],
     output: Path,
@@ -1053,47 +1100,91 @@ def plot_paper_style_energy_comparison(
     import matplotlib.pyplot as plt
     import matplotlib.ticker as ticker
 
-    all_rows = [row for run_rows in runs.values() for row in run_rows]
-    energy_std = energy_std_from_rows(all_rows)
-
-    points = []
+    seed_points = []
     for label, run_rows in sorted(runs.items()):
         if not run_rows:
             continue
-        best = best_energy_row(run_rows)
         first = run_rows[0]
+        final_test_rows = [row for row in run_rows if row.get("test_T-RMSE", "") != ""]
+        if not final_test_rows or "test_energy_std_kcal_per_mol" not in first:
+            print(f"Skipping {label}: final test RMSE or stored test-set STD is unavailable.")
+            continue
+        final_test_row = max(final_test_rows, key=lambda row: int(row["epoch"]))
         training_set_size = int(first.get("data_size", 1_000_000))
-        rmse = float(best["valid_T-RMSE"])
-        points.append(
+        selected = min(
+            (row for row in run_rows if row.get("valid_T-MAE", "") != ""),
+            key=lambda row: float(row["valid_T-MAE"]),
+            default=None,
+        )
+        rmse = float(final_test_row["test_T-RMSE"])
+        energy_std = float(first["test_energy_std_kcal_per_mol"])
+        seed_points.append(
             {
                 "run": label,
                 "sweep_task_id": first.get("sweep_task_id", ""),
+                "seed": first.get("seed", ""),
                 "hiphop_l_max": first.get("hiphop_l_max", ""),
                 "hiphop_n_max": first.get("hiphop_n_max", ""),
                 "data_size": first.get("data_size", ""),
                 "training_set_size": training_set_size,
                 "logged_epochs": len(run_rows),
                 "max_logged_epoch": int(run_rows[-1]["epoch"]),
-                "best_epoch": best["epoch"],
-                "best_valid_T-RMSE": rmse,
-                "energy_std_estimate": energy_std,
-                "best_valid_energy_RMSE_over_STD": rmse / energy_std,
+                "selected_checkpoint_epoch": selected["epoch"] if selected is not None else "",
+                "test_T-RMSE": rmse,
+                "test_energy_std_kcal_per_mol": energy_std,
+                "test_energy_RMSE_over_STD": rmse / energy_std,
+            }
+        )
+
+    grouped: dict[tuple[object, object, object], list[dict[str, object]]] = defaultdict(list)
+    for point in seed_points:
+        grouped[(point["hiphop_l_max"], point["hiphop_n_max"], point["data_size"])].append(point)
+
+    points = []
+    for (l_max, n_max, data_size), members in sorted(grouped.items()):
+        normalized = [float(member["test_energy_RMSE_over_STD"]) for member in members]
+        rmses = [float(member["test_T-RMSE"]) for member in members]
+        count = len(members)
+        mean_normalized = sum(normalized) / count
+        mean_rmse = sum(rmses) / count
+        normalized_std = (
+            math.sqrt(sum((value - mean_normalized) ** 2 for value in normalized) / (count - 1))
+            if count > 1
+            else 0.0
+        )
+        rmse_std = (
+            math.sqrt(sum((value - mean_rmse) ** 2 for value in rmses) / (count - 1))
+            if count > 1
+            else 0.0
+        )
+        points.append(
+            {
+                "hiphop_l_max": l_max,
+                "hiphop_n_max": n_max,
+                "data_size": data_size,
+                "training_set_size": int(members[0]["training_set_size"]),
+                "completed_seed_count": count,
+                "seeds": " ".join(str(member.get("seed", "")) for member in members),
+                "test_T-RMSE_mean": mean_rmse,
+                "test_T-RMSE_std": rmse_std,
+                "test_energy_std_kcal_per_mol": float(members[0]["test_energy_std_kcal_per_mol"]),
+                "test_energy_RMSE_over_STD_mean": mean_normalized,
+                "test_energy_RMSE_over_STD_std": normalized_std,
             }
         )
 
     columns = [
-        "run",
-        "sweep_task_id",
         "hiphop_l_max",
         "hiphop_n_max",
         "data_size",
         "training_set_size",
-        "logged_epochs",
-        "max_logged_epoch",
-        "best_epoch",
-        "best_valid_T-RMSE",
-        "energy_std_estimate",
-        "best_valid_energy_RMSE_over_STD",
+        "completed_seed_count",
+        "seeds",
+        "test_T-RMSE_mean",
+        "test_T-RMSE_std",
+        "test_energy_std_kcal_per_mol",
+        "test_energy_RMSE_over_STD_mean",
+        "test_energy_RMSE_over_STD_std",
     ]
     with csv_output.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=columns)
@@ -1106,9 +1197,24 @@ def plot_paper_style_energy_comparison(
     fig, ax = plt.subplots(figsize=(7.2, 5.2), constrained_layout=True)
     for point in points:
         x_value = float(point["training_set_size"])
-        y_value = float(point["best_valid_energy_RMSE_over_STD"])
-        ax.scatter(x_value, y_value, s=95, marker=model_plot_style(point)["marker"], zorder=3)
-        setup_label = f"l={point['hiphop_l_max']} n={point['hiphop_n_max']}"
+        y_value = float(point["test_energy_RMSE_over_STD_mean"])
+        y_error = float(point["test_energy_RMSE_over_STD_std"])
+        ax.errorbar(
+            x_value,
+            y_value,
+            yerr=y_error,
+            fmt=model_plot_style(point)["marker"],
+            markersize=9,
+            capsize=5,
+            elinewidth=1.5,
+            markeredgecolor="black",
+            zorder=3,
+        )
+        seed_label = "seed" if int(point["completed_seed_count"]) == 1 else "seeds"
+        setup_label = (
+            f"l={point['hiphop_l_max']} n={point['hiphop_n_max']} "
+            f"({point['completed_seed_count']} {seed_label})"
+        )
         if point.get("data_size") not in ("", None):
             setup_label += f" d={format_data_size(point['data_size'])}"
         ax.annotate(
@@ -1125,16 +1231,10 @@ def plot_paper_style_energy_comparison(
     ax.set_ylim(3e-3, 2.5e-1)
     ax.set_xlabel("Training set size")
     ax.set_ylabel("Energy RMSE / STD")
-    ax.set_title("Paper-Style Energy Error Comparison, Best Checkpoint")
+    ax.set_title("Held-Out Test Energy Error, Mean ± Seed STD")
     ax.grid(True, which="both", alpha=0.25)
 
-    secondary = ax.secondary_yaxis(
-        "right",
-        functions=(lambda normalized: normalized * energy_std, lambda kcal: kcal / energy_std),
-    )
-    secondary.set_ylabel("Energy RMSE (kcal/mol)")
     ax.yaxis.set_major_locator(ticker.LogLocator(base=10, numticks=4))
-    secondary.yaxis.set_major_locator(ticker.LogLocator(base=10, numticks=4))
 
     fig.savefig(output, dpi=180)
     plt.close(fig)
@@ -1152,7 +1252,7 @@ def main() -> None:
             for pattern in log_patterns
             for path in args.log_dir.glob(pattern)
             if re.search(
-                r"_\d+(?:_w\d+)?_methane_(?:sweep|resume_selected|l3_b256)(?:_[A-Za-z0-9-]+)?\.out$",
+                r"_\d+(?:_w\d+)?_methane_(?:sweep|resume_selected|l3_b256|l3n5)(?:_[A-Za-z0-9-]+)?\.out$",
                 path.name,
             )
         }
@@ -1161,6 +1261,7 @@ def main() -> None:
         raise SystemExit(f"No array-task methane sweep .out files found in {args.log_dir}")
 
     runs: dict[str, list[dict[str, float | int | str]]] = defaultdict(list)
+    original_requested_batch: dict[str, int] = {}
     jobs = sweep_jobs(args.sweep_config)
     for path in log_paths:
         task_id = task_id_from_path(path)
@@ -1180,9 +1281,27 @@ def main() -> None:
             hiphop_n_max = rows[0].get("hiphop_n_max")
             if hiphop_n_max in ("", None) or int(hiphop_n_max) != args.hiphop_n_max:
                 continue
-        runs[str(rows[0]["run"])].extend(rows)
+        label = str(rows[0]["run"])
+        requested_batch = rows[0].get("requested_train_batch_size")
+        if requested_batch not in ("", None):
+            original_requested_batch.setdefault(label, int(requested_batch))
+        runs[label].extend(rows)
+
+    if args.requested_train_batch_size is not None:
+        runs = defaultdict(
+            list,
+            {
+                label: run_rows
+                for label, run_rows in runs.items()
+                if original_requested_batch.get(label) == args.requested_train_batch_size
+            },
+        )
+    for label, run_rows in runs.items():
+        for row in run_rows:
+            row["original_requested_train_batch_size"] = original_requested_batch.get(label, "")
 
     all_rows, runs = deduplicate_epochs(runs)
+    add_stored_test_statistics(runs, args.test_statistics_dir, args.test_set_size)
 
     if not all_rows:
         filters = []
@@ -1208,6 +1327,8 @@ def main() -> None:
         "hiphop_n_max",
         "data_size",
         "total_params",
+        "requested_train_batch_size",
+        "original_requested_train_batch_size",
         "epochs",
     ]
     with run_summary_path.open("w", newline="", encoding="utf-8") as handle:

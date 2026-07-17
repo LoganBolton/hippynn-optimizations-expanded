@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=methane_l4_n4
-#SBATCH --output=./logs/%j_methane_l4_n4.out
+#SBATCH --output=./logs/submissions/%j_methane_l4_n4.out
 #SBATCH --time=10:00:00            # Job duration
 #SBATCH --partition=volta-x86      # GPU partition name
 #SBATCH --gres=gpu:1               # Number of GPUs

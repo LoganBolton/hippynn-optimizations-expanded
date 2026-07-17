@@ -1,0 +1,13 @@
+{
+  "count": 80000,
+  "data_source": "/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/datasets/methane.extxyz",
+  "energy_mean_kcal_per_mol": 0.26170568737899197,
+  "energy_shift_kcal_per_mol": -25042.327220945674,
+  "energy_std_kcal_per_mol": 74.56298840053141,
+  "energy_units": "kcal/mol",
+  "seed": null,
+  "selection": "sequential",
+  "std_ddof": 0,
+  "test_size": 80000,
+  "training_size": 100000
+}

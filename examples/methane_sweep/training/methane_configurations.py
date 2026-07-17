@@ -640,6 +640,31 @@ def prepare_data(data_src, train_size, test_size, random_subset=random_subset):
             test_dict[key] = np.array(test_dict[key], dtype=np.float32)
     return train_dict, test_dict
 
+
+def load_or_store_test_energy_statistics(test_energies, statistics_path, metadata):
+    """Calculate the held-out target statistics once, then reuse the stored values."""
+    statistics_path.parent.mkdir(parents=True, exist_ok=True)
+    if statistics_path.exists():
+        with statistics_path.open("r", encoding="utf-8") as handle:
+            statistics = json.load(handle)
+    else:
+        energies = np.asarray(test_energies, dtype=np.float64).reshape(-1)
+        statistics = {
+            **metadata,
+            "count": int(energies.size),
+            "energy_mean_kcal_per_mol": float(np.mean(energies)),
+            # Population standard deviation: the test split is the complete
+            # evaluation population, rather than a sample used to estimate it.
+            "energy_std_kcal_per_mol": float(np.std(energies, ddof=0)),
+            "std_ddof": 0,
+        }
+        temporary_path = statistics_path.with_suffix(statistics_path.suffix + f".{os.getpid()}.tmp")
+        with temporary_path.open("w", encoding="utf-8") as handle:
+            json.dump(statistics, handle, indent=2, sort_keys=True)
+            handle.write("\n")
+        temporary_path.replace(statistics_path)
+    return statistics
+
 # ----- Construct model -----
 torch.random.manual_seed(seed)
 
@@ -755,6 +780,38 @@ wandb_run.summary.update(gpu_info)
 train_dict, test_dict = prepare_data(data_src, 
                                      data_size,
                                      TEST_SET_SIZE)
+
+test_statistics_path = (
+    PROJECT_ROOT
+    / "examples/methane_sweep/data_statistics"
+    / f"test_energy_d{data_size}_n{TEST_SET_SIZE}_{'random_seed' + str(seed) if random_subset else 'sequential'}.json"
+)
+test_energy_statistics = load_or_store_test_energy_statistics(
+    test_dict["energy"],
+    test_statistics_path,
+    {
+        "data_source": str(data_src),
+        "training_size": data_size,
+        "test_size": TEST_SET_SIZE,
+        "selection": "random" if random_subset else "sequential",
+        "seed": seed if random_subset else None,
+        "energy_units": "kcal/mol",
+        "energy_shift_kcal_per_mol": ENERGY_MEAN,
+    },
+)
+print(
+    "TEST_SET_STATISTICS_JSON: "
+    + json.dumps({"path": str(test_statistics_path), **test_energy_statistics}, sort_keys=True),
+    flush=True,
+)
+wandb_run.summary.update(
+    {
+        "test_set/energy_std_kcal_per_mol": test_energy_statistics["energy_std_kcal_per_mol"],
+        "test_set/energy_mean_kcal_per_mol": test_energy_statistics["energy_mean_kcal_per_mol"],
+        "test_set/count": test_energy_statistics["count"],
+        "test_set/statistics_path": str(test_statistics_path),
+    }
+)
 
 train_database = hippynn.databases.Database(
     arr_dict=train_dict,

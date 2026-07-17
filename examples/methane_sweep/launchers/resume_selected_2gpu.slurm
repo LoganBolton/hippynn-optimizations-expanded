@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=methane_resume_selected
-#SBATCH --output=./logs/%j_methane_resume_selected.out
-#SBATCH --error=./logs/%j_methane_resume_selected.err
+#SBATCH --output=./logs/submissions/%j_methane_resume_selected.out
+#SBATCH --error=./logs/submissions/%j_methane_resume_selected.err
 #SBATCH --time=2-00:00:00
 #SBATCH --qos=long
 #SBATCH --requeue
@@ -106,7 +106,7 @@ echo ""
 export PYTHONPATH="$PROJECT_ROOT"
 export WANDB_DIR="${WANDB_DIR:-$(pwd)/wandb}"
 mkdir -p "$WANDB_DIR"
-mkdir -p logs
+mkdir -p logs "logs/runs/${SLURM_JOB_ID}"
 
 read -r -a task_ids <<< "$TASK_IDS"
 EXIT_CODE=0
@@ -135,7 +135,7 @@ for ((TASK_START = 0; TASK_START < ${#task_ids[@]}; TASK_START += MAX_PARALLEL))
                 --wandb_mode "$WANDB_MODE" \
                 --resume \
                 --checkpoint_every "$CHECKPOINT_EVERY"
-        ) > "logs/${SLURM_JOB_ID}_r${ATTEMPT_ID}_${TASK_ID}_methane_resume_selected.out" 2> "logs/${SLURM_JOB_ID}_r${ATTEMPT_ID}_${TASK_ID}_methane_resume_selected.err" &
+        ) > "logs/runs/${SLURM_JOB_ID}/${SLURM_JOB_ID}_r${ATTEMPT_ID}_${TASK_ID}_methane_resume_selected.out" 2> "logs/runs/${SLURM_JOB_ID}/${SLURM_JOB_ID}_r${ATTEMPT_ID}_${TASK_ID}_methane_resume_selected.err" &
         pids+=("$!")
         children+=("$!")
     done
