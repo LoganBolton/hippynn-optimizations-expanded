@@ -100,3 +100,45 @@ have already loaded their source. The allocation-step launcher attaches only a
 new process to the allocation; it does not attach a profiler to the training
 process itself. The busy-GPU check prevents that process from intentionally
 sharing a GPU with a running job.
+
+### Plot the architectural breakdown
+
+After profiling the four configurations, generate an architecture-level
+comparison with:
+
+```bash
+python plot_profile_architecture.py
+```
+
+This reads the `profile_trace.json` files already on disk and writes a stacked
+timing plot, a CSV table, and an interpretation report under `plots/`. It does
+not use a GPU or submit a Slurm job. The categories are mutually exclusive GPU
+kernel times, so nested profiler ranges do not double-count work. Although the
+trace was recorded around a training step, the plot includes only kernels in
+the `model::` forward ranges. Loss, backward, optimizer, and force-calculation
+work are excluded to show the energy forward pass only. Because these traces
+use shuffled batch-64 training data, their absolute times are not directly
+comparable to the dedicated batch-1024 inference benchmark or its per-atom
+energy-and-force plot.
+
+### Exact inference architecture profile
+
+To reproduce the dedicated benchmark workload for `(l_max, n_max) = (4,4)`
+while recording an architecture breakdown, run it inside an idle GPU of an
+existing allocation:
+
+```bash
+JOB_ID=12345678 GPU_ID=1 bash profile_inference_in_allocation.sh
+```
+
+This uses the same fixed CCX test split, batch size `1024`, seed `0`, 128
+features, three atom layers, two interaction layers, cutoffs, and A100 GPU
+validation as `nick_speed_comparison/evaluation_script.py`. It profiles both
+energy-only inference and energy-plus-force inference after two warmup passes.
+The force workload differentiates molecular energy with respect to atomic
+coordinates; it does not run a loss, parameter backward pass, or optimizer.
+
+Results are written under `inference_profile_l4_n4/`, including separate
+Chrome traces and `architecture_breakdown.png`/`.csv` in microseconds of GPU
+kernel time per atom. The launcher is an overlapping step in an existing Slurm
+allocation, not a newly submitted job, and refuses to use a busy GPU.

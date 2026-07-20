@@ -1,0 +1,33 @@
+l_max,n_max,profiled_batches,category,gpu_ms_per_batch,percent
+2,4,5,Neighbor list & geometry,0.417979,6.451
+2,4,5,Tensor message passing,0.611181,9.433
+2,4,5,Invariant polynomials,0.277466,4.282
+2,4,5,Feature mixing & atom layers,3.404532,52.544
+2,4,5,Invariant normalization,0.085574,1.321
+2,4,5,Energy readout,0.358310,5.530
+2,4,5,Other model tensor ops,1.274875,19.676
+2,4,5,Memory transfer/init,0.049485,0.764
+4,3,5,Neighbor list & geometry,0.420883,3.287
+4,3,5,Tensor message passing,1.323431,10.336
+4,3,5,Invariant polynomials,1.523981,11.903
+4,3,5,Feature mixing & atom layers,7.169441,55.996
+4,3,5,Invariant normalization,0.127046,0.992
+4,3,5,Energy readout,0.327744,2.560
+4,3,5,Other model tensor ops,1.860283,14.529
+4,3,5,Memory transfer/init,0.050695,0.396
+3,5,5,Neighbor list & geometry,0.397381,3.671
+3,5,5,Tensor message passing,0.610963,5.645
+3,5,5,Invariant polynomials,3.432365,31.712
+3,5,5,Feature mixing & atom layers,4.624660,42.727
+3,5,5,Invariant normalization,0.133165,1.230
+3,5,5,Energy readout,0.305959,2.827
+3,5,5,Other model tensor ops,1.273070,11.762
+3,5,5,Memory transfer/init,0.046073,0.426
+4,4,5,Neighbor list & geometry,0.238849,1.988
+4,4,5,Tensor message passing,0.754836,6.281
+4,4,5,Invariant polynomials,4.877571,40.588
+4,4,5,Feature mixing & atom layers,4.400066,36.615
+4,4,5,Invariant normalization,0.154892,1.289
+4,4,5,Energy readout,0.209126,1.740
+4,4,5,Other model tensor ops,1.350913,11.241
+4,4,5,Memory transfer/init,0.031003,0.258

@@ -1,0 +1,29 @@
+workload,category,gpu_us_per_atom,percent
+Energy only,Force: invariant derivatives,0.00000000,0.0000
+Energy only,Force: message derivatives,0.00000000,0.0000
+Energy only,Invariant construction,2.53664258,49.0044
+Energy only,Force: dense-layer derivatives,0.00000000,0.0000
+Energy only,Force: remaining coordinate gradient,0.00000000,0.0000
+Energy only,Interaction feature mixing,1.24958411,24.1402
+Energy only,Other energy model ops,0.61846380,11.9479
+Energy only,Tensor message passing,0.58536732,11.3085
+Energy only,Invariant normalization,0.08670640,1.6750
+Energy only,Atom-local neural layers,0.06383922,1.2333
+Energy only,Neighbor list & geometry,0.02177144,0.4206
+Energy only,Energy readout,0.00940446,0.1817
+Energy only,Radial sensitivities,0.00457746,0.0884
+Energy only,Tensor direction basis,0.00000000,0.0000
+Energy + forces,Force: invariant derivatives,17.04551857,59.4168
+Energy + forces,Force: message derivatives,3.79188709,13.2177
+Energy + forces,Invariant construction,2.51228224,8.7572
+Energy + forces,Force: dense-layer derivatives,1.42937295,4.9825
+Energy + forces,Force: remaining coordinate gradient,1.29349587,4.5088
+Energy + forces,Interaction feature mixing,1.23835440,4.3166
+Energy + forces,Other energy model ops,0.61183617,2.1327
+Energy + forces,Tensor message passing,0.58055422,2.0237
+Energy + forces,Invariant normalization,0.08647114,0.3014
+Energy + forces,Atom-local neural layers,0.06335222,0.2208
+Energy + forces,Neighbor list & geometry,0.02097270,0.0731
+Energy + forces,Energy readout,0.00943139,0.0329
+Energy + forces,Radial sensitivities,0.00451512,0.0157
+Energy + forces,Tensor direction basis,0.00000000,0.0000

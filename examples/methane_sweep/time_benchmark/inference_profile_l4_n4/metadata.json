@@ -1,0 +1,38 @@
+{
+  "l_max": 4,
+  "n_max": 4,
+  "batch_size": 1024,
+  "warmups": 2,
+  "n_structures": 48957,
+  "n_atoms": 676395,
+  "device_name": "NVIDIA A100-PCIE-40GB",
+  "network_parameters": {
+    "possible_species": [
+      0,
+      1,
+      6,
+      7,
+      8
+    ],
+    "n_features": 128,
+    "n_sensitivities": 20,
+    "dist_soft_min": 0.75,
+    "dist_soft_max": 5.5,
+    "dist_hard_max": 6.5,
+    "n_interaction_layers": 2,
+    "n_atom_layers": 3,
+    "l_max": 4,
+    "n_max": 4,
+    "group_norm": true
+  },
+  "profiles": {
+    "energy": {
+      "trace": "/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/examples/methane_sweep/time_benchmark/inference_profile_l4_n4/energy/profile_trace.json",
+      "profiled_wall_seconds": 4.21554914402077
+    },
+    "energy_forces": {
+      "trace": "/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/examples/methane_sweep/time_benchmark/inference_profile_l4_n4/energy_forces/profile_trace.json",
+      "profiled_wall_seconds": 20.655902345024515
+    }
+  }
+}
