@@ -11,10 +11,13 @@ from pathlib import Path
 import numpy as np
 
 
-ENERGY_STD_KCAL_MOL = 100.0
+# Population standard deviation over all 7,732,488 methane configurations.
+# The new results below use their own held-out slice's standard deviation;
+# this value normalizes the historical raw-RMSE replicates and labels the
+# secondary kcal/mol axis.
+ENERGY_STD_KCAL_MOL = 73.8287338435902
 
 SERIES = [
-    ("Hipnn", r"HIP-NN ($\ell=0, n=1$)", "#4c4c4c"),
     ("HipnnVec", r"HIP-NN-TS ($\ell=1, n=2$)", "#f2c14e"),
     ("HipnnQuad", r"HIP-NN-TS ($\ell=2, n=2$)", "#56b4e9"),
     ("HipHop_l2_n3", r"HIP-HOP-NN($\ell=2, n=3$)", "#e07a7a"),
@@ -49,6 +52,7 @@ ACCELERATOR_BY_RESULT_CSV = {
 BASIS_COLORS = {
     (3, 3): "#0b7285",
     (3, 4): "#862e9c",
+    (3, 5): "#2b8a3e",
     (4, 3): "#9b2226",
     (4, 4): "#f08c00",
 }
@@ -105,7 +109,6 @@ def best_training_points(paths: list[Path]) -> list[dict[str, str | int | float]
     for path in paths:
         if not path.exists():
             continue
-        accelerator = ACCELERATOR_BY_RESULT_CSV.get(path, path.parent.name)
         batch_sizes = batch_sizes_by_run(METRICS_BY_RESULT_CSV.get(path))
         with path.open("r", newline="", encoding="utf-8") as handle:
             for row in csv.DictReader(handle):
@@ -115,8 +118,16 @@ def best_training_points(paths: list[Path]) -> list[dict[str, str | int | float]
                     continue
                 l_max = int(row["hiphop_l_max"])
                 n_max = int(row["hiphop_n_max"])
-                batch_size = batch_sizes.get(row["run"], row.get("batch_size") or "")
-                training_size = int(row["training_set_size"])
+                accelerator = (
+                    row.get("accelerator")
+                    or ACCELERATOR_BY_RESULT_CSV.get(path)
+                    or ("A100" if row.get("completed_seed_count") else path.parent.name)
+                )
+                batch_size = batch_sizes.get(
+                    row.get("run", ""),
+                    row.get("batch_size") or ("256" if row.get("completed_seed_count") else ""),
+                )
+                training_size = int(row.get("training_set_size") or row["data_size"])
                 rmse = float(test_rmse)
                 energy_std = float(test_std)
                 key = (batch_size, accelerator, l_max, n_max, training_size)
@@ -128,9 +139,12 @@ def best_training_points(paths: list[Path]) -> list[dict[str, str | int | float]
                     "training_set_size": training_size,
                     "test_T-RMSE": rmse,
                     "test_energy_std_kcal_per_mol": energy_std,
-                    "normalized_energy_RMSE": float(
-                        row.get("test_energy_RMSE_over_STD_mean") or rmse / energy_std
-                    ),
+                    # Normalize each new result by the standard deviation of the
+                    # held-out dataset on which that result was evaluated.
+                    "normalized_energy_RMSE": rmse / energy_std,
+                    "normalized_energy_RMSE_std": float(row.get("test_T-RMSE_std") or 0.0)
+                    / energy_std,
+                    "completed_seed_count": int(row.get("completed_seed_count") or 1),
                     "source_csv": str(path),
                     "run": row.get("run", f"combined l={l_max} n={n_max} d={training_size}"),
                     "sweep_task_id": row.get("sweep_task_id", ""),
@@ -176,6 +190,8 @@ def write_overlay_summary(path: Path, points: list[dict[str, str | int | float]]
         "test_T-RMSE",
         "test_energy_std_kcal_per_mol",
         "normalized_energy_RMSE",
+        "normalized_energy_RMSE_std",
+        "completed_seed_count",
         "source_csv",
         "run",
         "sweep_task_id",
@@ -214,7 +230,7 @@ def plot_results(
     import matplotlib.pyplot as plt
     import matplotlib.ticker as ticker
 
-    fig, ax = plt.subplots(figsize=(10.8, 3.7), dpi=180)
+    fig, ax = plt.subplots(figsize=(13.2, 3.7), dpi=180)
 
     for key, label, color in SERIES:
         series = data[key]
@@ -235,22 +251,36 @@ def plot_results(
             elinewidth=1.0,
             linestyle="-",
             label=label,
-            alpha=0.95,
+            alpha=0.475,
         )
 
+    grouped_points: dict[tuple[str, int, int, str], list[dict[str, str | int | float]]] = {}
     for point in training_points:
-        l_max = int(point["hiphop_l_max"])
-        n_max = int(point["hiphop_n_max"])
-        accelerator = str(point.get("accelerator") or "")
+        key = (
+            str(point.get("accelerator") or ""),
+            int(point["hiphop_l_max"]),
+            int(point["hiphop_n_max"]),
+            str(point.get("batch_size") or "mixed"),
+        )
+        grouped_points.setdefault(key, []).append(point)
+
+    for (accelerator, l_max, n_max, _batch_size), points in sorted(grouped_points.items()):
+        points = sorted(points, key=lambda point: int(point["training_set_size"]))
         color = BASIS_COLORS.get((l_max, n_max), "#212529")
-        ax.scatter(
-            float(point["training_set_size"]),
-            float(point["normalized_energy_RMSE"]),
-            marker=ACCELERATOR_MARKERS.get(accelerator, "*"),
-            s=ACCELERATOR_MARKER_SIZES.get(accelerator, 95),
+        ax.errorbar(
+            [float(point["training_set_size"]) for point in points],
+            [float(point["normalized_energy_RMSE"]) for point in points],
+            yerr=[float(point.get("normalized_energy_RMSE_std") or 0.0) for point in points],
+            marker="_",
+            markersize=11,
             color=color,
-            edgecolor="black",
-            linewidth=0.45,
+            markeredgecolor=color,
+            markeredgewidth=1.8,
+            capsize=4,
+            capthick=1.3,
+            elinewidth=1.3,
+            linewidth=1.6,
+            linestyle="--" if len(points) > 1 else "none",
             zorder=8,
         )
 
@@ -268,20 +298,39 @@ def plot_results(
                 for point in training_points
             }
         ):
+            matching_points = [
+                point
+                for point in training_points
+                if str(point.get("accelerator") or "") == accelerator
+                and int(point["hiphop_l_max"]) == l_max
+                and int(point["hiphop_n_max"]) == n_max
+                and str(point.get("batch_size") or "mixed") == batch_size
+            ]
+            result_summary = "; ".join(
+                (
+                    f"{int(point['training_set_size']) // 1000}k: "
+                    f"{float(point['normalized_energy_RMSE']):.5f} "
+                    f"± {float(point.get('normalized_energy_RMSE_std') or 0.0):.5f} "
+                    f"(N={int(point.get('completed_seed_count') or 1)})"
+                )
+                for point in sorted(matching_points, key=lambda item: int(item["training_set_size"]))
+            )
             handles.append(
                 plt.Line2D(
                     [0],
                     [0],
-                    marker=ACCELERATOR_MARKERS.get(accelerator, "*"),
-                    linestyle="",
+                    marker="_",
+                    linestyle="--" if len(matching_points) > 1 else "",
                     color=BASIS_COLORS.get((l_max, n_max), "#212529"),
-                    markeredgecolor="black",
-                    markeredgewidth=0.45,
-                    markersize=8 if accelerator == "TitanV" else 9,
+                    markeredgecolor=BASIS_COLORS.get((l_max, n_max), "#212529"),
+                    markeredgewidth=1.8,
+                    markersize=10,
                 )
             )
-            label = rf"{accelerator}: $\ell={l_max}, n={n_max}$, batch_size={batch_size}"
-            if (l_max, n_max) == (4, 3):
+            label = rf"$\ell={l_max}, n={n_max}$ — {result_summary}"
+            if (l_max, n_max) == (4, 3) and not all(
+                int(point.get("completed_seed_count") or 1) > 1 for point in matching_points
+            ):
                 label += " (run ended early)"
             labels.append(label)
     else:
@@ -290,8 +339,8 @@ def plot_results(
 
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.set_xlim(7.0e2, 4.2e6)
-    ax.set_ylim(2.6e-3, 2.55e-1)
+    ax.set_xlim(5.0e4, 4.2e6)
+    ax.set_ylim(3.0e-3, 2.4e-2)
     ax.set_xlabel("Training set size")
     ax.set_ylabel("Energy RMSE/STD")
 
@@ -317,7 +366,7 @@ def plot_results(
         paper_handles + handles,
         paper_labels + labels,
         loc="upper left",
-        bbox_to_anchor=(0.66, 0.92),
+        bbox_to_anchor=(0.62, 0.92),
         frameon=True,
         fancybox=False,
         borderpad=0.45,
@@ -326,7 +375,7 @@ def plot_results(
     legend.get_frame().set_linewidth(0.8)
     legend.get_frame().set_edgecolor("#dddddd")
 
-    fig.subplots_adjust(left=0.085, right=0.55, bottom=0.22, top=0.95)
+    fig.subplots_adjust(left=0.10, right=0.55, bottom=0.22, top=0.95)
     output.parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(output, pad_inches=0.02)
     plt.close(fig)

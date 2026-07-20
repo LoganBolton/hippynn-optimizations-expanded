@@ -1,0 +1,28 @@
+{
+  "created_utc": "2026-07-20T15:21:54.802078+00:00",
+  "data_source": "/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/datasets/methane.extxyz",
+  "data_source_mtime_ns": 1783029045464534590,
+  "data_source_size_bytes": 4695252471,
+  "eligible_index_range": [
+    3080000,
+    7732488
+  ],
+  "excluded_index_range": [
+    0,
+    3080000
+  ],
+  "exclusion_reason": "Excludes sequential training pools through 3,000,000 frames and their adjacent 80,000-frame legacy test slice.",
+  "index_convention": "zero-based; eligible range is half-open [start, stop)",
+  "index_dtype": "int64",
+  "index_file": "methane_common_test_n80000_seed20260720.npy",
+  "index_file_sha256": "1fcaf27e541ee720ed542ad14c5123acf833fd80124b46c85c2a295a75f7d8af",
+  "maximum_index": 7732428,
+  "minimum_index": 3080000,
+  "numpy_version": "2.5.1",
+  "random_generator": "PCG64",
+  "sampling": "uniform without replacement, then sorted",
+  "seed": 20260720,
+  "test_size": 80000,
+  "total_num_samples": 7732488,
+  "unique_index_count": 80000
+}

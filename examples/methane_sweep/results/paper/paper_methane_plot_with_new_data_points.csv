@@ -1,0 +1,6 @@
+hiphop_l_max,hiphop_n_max,batch_size,accelerator,training_set_size,test_T-RMSE,test_energy_std_kcal_per_mol,normalized_energy_RMSE,normalized_energy_RMSE_std,completed_seed_count,source_csv,run,sweep_task_id,logged_epochs,selected_checkpoint_epoch
+3,3,256,A100,100000,0.67445,74.562988400531,0.009045372435678784,0.0,1,examples/methane_sweep/logs/plots_all_configs_b256_final_test/paper_style_all_configs_mean_std.csv,combined l=3 n=3 d=100000,,0,0
+3,4,256,A100,100000,0.70674,74.562988400531,0.009478429112894394,0.0,1,examples/methane_sweep/logs/plots_all_configs_b256_final_test/paper_style_all_configs_mean_std.csv,combined l=3 n=4 d=100000,,0,0
+3,5,256,A100,100000,0.7379871428571428,74.562988400531,0.009897499532782773,0.0012423499166785452,7,examples/methane_sweep/logs/plots_all_configs_b256_final_test/paper_style_all_configs_mean_std.csv,combined l=3 n=5 d=100000,,0,0
+3,5,256,A100,1000000,0.44438500000000003,73.682244318785,0.006031100221070571,2.5623203028395733e-05,2,examples/methane_sweep/logs/plots_all_configs_b256_final_test/paper_style_all_configs_mean_std.csv,combined l=3 n=5 d=1000000,,0,0
+4,3,256,A100,100000,0.7029449999999999,74.562988400531,0.009427532547702903,0.0007177946245999521,2,examples/methane_sweep/logs/plots_all_configs_b256_final_test/paper_style_all_configs_mean_std.csv,combined l=4 n=3 d=100000,,0,0

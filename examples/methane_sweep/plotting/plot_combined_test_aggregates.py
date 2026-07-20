@@ -90,6 +90,10 @@ def main() -> None:
             (point for point in points if (point["hiphop_l_max"], point["hiphop_n_max"]) == config),
             key=lambda point: point["data_size"],
         )
+        dataset_counts = "; ".join(
+            f"{int(point['data_size']) // 1000}k: N={int(point['completed_seed_count'])}"
+            for point in config_points
+        )
         x = [float(point["data_size"]) * offsets[config] for point in config_points]
         y = [float(point["test_energy_RMSE_over_STD_mean"]) for point in config_points]
         yerr = [float(point["test_energy_RMSE_over_STD_std"]) for point in config_points]
@@ -102,11 +106,7 @@ def main() -> None:
             capsize=5,
             linewidth=1.5,
             linestyle="-" if len(config_points) > 1 else "none",
-            label=(
-                f"l={config[0]}, n={config[1]}, "
-                f"d={int(config_points[0]['data_size']) // 1000}k "
-                f"(N={sum(int(point['completed_seed_count']) for point in config_points)})"
-            ),
+            label=f"l={config[0]}, n={config[1]} ({dataset_counts})",
         )
 
     ax.set_xscale("log")

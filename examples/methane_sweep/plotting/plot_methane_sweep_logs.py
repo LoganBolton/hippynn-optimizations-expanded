@@ -489,11 +489,14 @@ def finite_pairs(run_rows: list[dict[str, float | int | str]], metric: str) -> t
 def model_plot_style(values: dict[str, float | int | str]) -> dict[str, str]:
     """Keep model architecture visually distinct in every plot."""
     n_max = str(values.get("hiphop_n_max", ""))
-    if n_max == "3":
-        return {"linestyle": "-", "marker": "o"}
-    if n_max == "4":
-        return {"linestyle": "--", "marker": "D"}
-    return {"linestyle": ":", "marker": "s"}
+    # if n_max == "3":
+    #     return {"linestyle": "-", "marker": "o"}
+    # if n_max == "4":
+    #     return {"linestyle": "--", "marker": "D"}
+    # return {"linestyle": ":", "marker": "s"}
+    
+    # just plot each the same with a solid line
+    return {"linestyle": "-", "marker": "o"}
 
 
 def should_use_log_y(metric: str, runs: dict[str, list[dict[str, float | int | str]]]) -> bool:
