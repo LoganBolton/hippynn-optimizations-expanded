@@ -1095,6 +1095,158 @@ def median(values: list[float]) -> float:
     return 0.5 * (sorted_values[midpoint - 1] + sorted_values[midpoint])
 
 
+def plot_final_test_metrics_boxplot(
+    runs: dict[str, list[dict[str, float | int | str]]],
+    output: Path,
+    csv_output: Path,
+) -> None:
+    """Create box plots for final test metrics across all runs."""
+    import matplotlib.pyplot as plt
+
+    # Metrics to plot
+    test_metrics = [
+        "test_T-RMSE",
+        "test_T-MAE",
+        "test_T-RSQ",
+        "test_F-RMSE",
+        "test_F-MAE",
+        "test_F-RSQ",
+        "test_Loss",
+    ]
+
+    # Collect final test values for each run
+    run_data = []
+    for label, run_rows in sorted(runs.items()):
+        if not run_rows:
+            continue
+        first = run_rows[0]
+        
+        # Find rows with test metrics (should be at the end)
+        final_test_rows = [row for row in run_rows if any(row.get(f"test_{m}", "") != "" for m in ["T-RMSE", "T-MAE", "F-RMSE", "F-MAE"])]
+        if not final_test_rows:
+            continue
+        
+        # Get the last row with test metrics
+        final_test_row = max(final_test_rows, key=lambda row: int(row["epoch"]))
+        
+        run_info = {
+            "run": label,
+            "sweep_task_id": first.get("sweep_task_id", ""),
+            "seed": first.get("seed", ""),
+            "hiphop_l_max": first.get("hiphop_l_max", ""),
+            "hiphop_n_max": first.get("hiphop_n_max", ""),
+            "data_size": first.get("data_size", ""),
+            "total_params": first.get("total_params", ""),
+        }
+        
+        # Add test metrics
+        for metric in test_metrics:
+            value = final_test_row.get(metric, "")
+            if value != "":
+                run_info[metric] = float(value)
+            else:
+                run_info[metric] = None
+        
+        run_data.append(run_info)
+    
+    if not run_data:
+        print("No final test metrics found for box plot.")
+        return
+    
+    # Write CSV
+    columns = [
+        "run",
+        "sweep_task_id",
+        "seed",
+        "hiphop_l_max",
+        "hiphop_n_max",
+        "data_size",
+        "total_params",
+    ] + test_metrics
+    
+    with csv_output.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=columns)
+        writer.writeheader()
+        writer.writerows(run_data)
+    
+    # Prepare data for box plots
+    metric_data = {}
+    for metric in test_metrics:
+        values = [run[metric] for run in run_data if run.get(metric) is not None]
+        if values:
+            metric_data[metric] = values
+    
+    if not metric_data:
+        print("No valid test metric values for box plot.")
+        return
+    
+    # Create figure with subplots
+    n_metrics = len(metric_data)
+    ncols = 3
+    nrows = math.ceil(n_metrics / ncols)
+    
+    fig, axes = plt.subplots(nrows, ncols, figsize=(15, 4 * nrows), constrained_layout=True)
+    flat_axes = list(axes.flat if hasattr(axes, "flat") else [axes])
+    
+    for idx, (metric, values) in enumerate(sorted(metric_data.items())):
+        ax = flat_axes[idx]
+        
+        # Create box plot
+        bp = ax.boxplot(
+            [values],
+            patch_artist=True,
+            widths=0.6,
+        )
+        ax.set_xticklabels([metric.replace("test_", "")])
+        
+        # Style the box plot
+        for patch in bp["boxes"]:
+            patch.set_facecolor("#3498db")
+            patch.set_alpha(0.7)
+        
+        for whisker in bp["whiskers"]:
+            whisker.set(linewidth=1.5)
+        
+        for cap in bp["caps"]:
+            cap.set(linewidth=1.5)
+        
+        for median_line in bp["medians"]:
+            median_line.set(color="#e74c3c", linewidth=2)
+        
+        # Add individual points
+        y_positions = values
+        x_positions = [1] * len(values)
+        ax.scatter(x_positions, y_positions, alpha=0.4, s=50, color="#2c3e50", zorder=3)
+        
+        # Add statistics text
+        mean_val = sum(values) / len(values)
+        median_val = median(values)
+        std_val = math.sqrt(sum((v - mean_val) ** 2 for v in values) / len(values)) if len(values) > 1 else 0
+        
+        stats_text = f"n={len(values)}\nmean={mean_val:.4f}\nmedian={median_val:.4f}\nstd={std_val:.4f}"
+        ax.text(
+            0.98, 0.98, stats_text,
+            transform=ax.transAxes,
+            fontsize=9,
+            verticalalignment="top",
+            horizontalalignment="right",
+            bbox=dict(boxstyle="round", facecolor="wheat", alpha=0.5)
+        )
+        
+        ax.set_title(metric_title(metric), fontsize=11, fontweight="bold")
+        ax.grid(True, alpha=0.3, axis="y")
+        ax.set_ylabel("Value")
+        ax.set_xlabel(metric.replace("test_", ""))
+    
+    # Hide unused subplots
+    for idx in range(n_metrics, len(flat_axes)):
+        flat_axes[idx].axis("off")
+    
+    fig.suptitle("Final Test Metrics Across All Runs", fontsize=14, fontweight="bold")
+    fig.savefig(output, dpi=180)
+    plt.close(fig)
+
+
 def plot_paper_style_energy_comparison(
     runs: dict[str, list[dict[str, float | int | str]]],
     output: Path,
@@ -1383,6 +1535,11 @@ def main() -> None:
         args.output_dir / "paper_style_energy_comparison.png",
         args.output_dir / "paper_style_energy_comparison.csv",
     )
+    plot_final_test_metrics_boxplot(
+        runs,
+        args.output_dir / "final_test_metrics_boxplot.png",
+        args.output_dir / "final_test_metrics.csv",
+    )
 
     print(f"Parsed {len(all_rows)} epochs from {len(runs)} runs.")
     print(f"Wrote {csv_path}")
@@ -1394,6 +1551,8 @@ def main() -> None:
     print(f"Wrote {args.output_dir / 'force_mae_pareto.png'}")
     print(f"Wrote {args.output_dir / 'best_metric_pareto.png'}")
     print(f"Wrote {args.output_dir / 'paper_style_energy_comparison.png'}")
+    print(f"Wrote {args.output_dir / 'final_test_metrics_boxplot.png'}")
+    print(f"Wrote {args.output_dir / 'final_test_metrics.csv'}")
 
 
 if __name__ == "__main__":
