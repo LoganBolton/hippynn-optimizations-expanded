@@ -653,6 +653,34 @@ def setup_and_profile(
             if batch_idx >= batches_per_epoch:
                 break
             step_once(batch)    
+
+    def register_graph_ranges(graph_module, prefix):
+        """Add readable graph-node ranges to the profiler trace."""
+        handles = []
+        active_ranges = collections.defaultdict(list)
+
+        if not all(hasattr(graph_module, attr) for attr in ("forward_output_list", "names_dict", "moddict")):
+            return handles
+
+        for node in graph_module.forward_output_list:
+            module_key = graph_module.names_dict[node]
+            if module_key not in graph_module.moddict:
+                continue
+            module = graph_module.moddict[module_key]
+            label = f"{prefix}::{node.name} [{type(module).__name__}]"
+
+            def enter_range(current_module, inputs, *, range_label=label):
+                context = torch.profiler.record_function(range_label)
+                context.__enter__()
+                active_ranges[current_module].append(context)
+
+            def exit_range(current_module, inputs, output):
+                active_ranges[current_module].pop().__exit__(None, None, None)
+
+            handles.append(module.register_forward_pre_hook(enter_range))
+            handles.append(module.register_forward_hook(exit_range, always_call=True))
+
+        return handles
     
     print(f"Profiling {profile_epochs} epochs x {batches_per_epoch} batches on device '{device}'")
 
@@ -664,23 +692,35 @@ def setup_and_profile(
     activities = [torch.profiler.ProfilerActivity.CPU]
     if use_cuda:
         activities.append(torch.profiler.ProfilerActivity.CUDA)
-    with torch.profiler.profile(
-        activities=activities,
-        record_shapes=record_shapes,
-        profile_memory=profile_memory,
-        with_stack=with_stack,
-        with_flops=with_flops,
-        with_modules=with_modules,
-    ) as prof:
-        for epoch in tools.progress_bar(range(profile_epochs), desc="Profiling Epochs", unit="epoch"):
-            step_batches()
+    range_handles = [
+        *register_graph_ranges(model, "model"),
+        *register_graph_ranges(loss, "loss"),
+    ]
+    try:
+        with torch.profiler.profile(
+            activities=activities,
+            record_shapes=record_shapes,
+            profile_memory=profile_memory,
+            with_stack=with_stack,
+            with_flops=with_flops,
+            with_modules=with_modules,
+        ) as prof:
+            for epoch in tools.progress_bar(range(profile_epochs), desc="Profiling Epochs", unit="epoch"):
+                step_batches()
+    finally:
+        for handle in range_handles:
+            handle.remove()
             
     
     prof.export_chrome_trace(trace_file)
     
     print(f"\nProfile saved to: {trace_file}")
     print("Open chrome://tracing in Chrome to visualize.")
-    print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=15))
+    averages = prof.key_averages(group_by_input_shape=record_shapes)
+    if use_cuda:
+        print("\nTop CUDA operations and model stages:")
+        print(averages.table(sort_by="cuda_time_total", row_limit=30))
+    print("\nTop CPU operations and model stages:")
+    print(averages.table(sort_by="cpu_time_total", row_limit=30))
     
     return trace_file
-

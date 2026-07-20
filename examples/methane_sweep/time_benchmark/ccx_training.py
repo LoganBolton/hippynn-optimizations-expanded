@@ -264,12 +264,30 @@ def main(args):
                                             stopping_key=args.stopping_key,
                                             )
 
-            from hippynn.experiment import setup_and_train
+            if args.profile:
+                from hippynn.experiment import setup_and_profile
 
-            setup_and_train(training_modules=training_modules,
-                            database=database,
-                            setup_params=setup_params,
-                            )
+                setup_and_profile(
+                    training_modules=training_modules,
+                    database=database,
+                    setup_params=setup_params,
+                    profile_epochs=args.profile_epochs,
+                    batches_per_epoch=args.profile_batches,
+                    record_shapes=args.profile_record_shapes,
+                    profile_memory=args.profile_memory,
+                    with_stack=args.profile_with_stack,
+                    with_modules=True,
+                    with_flops=args.profile_with_flops,
+                    trace_file=args.profile_trace,
+                )
+            else:
+                from hippynn.experiment import setup_and_train
+
+                setup_and_train(
+                    training_modules=training_modules,
+                    database=database,
+                    setup_params=setup_params,
+                )
 
 
 if __name__ == "__main__":
@@ -305,6 +323,16 @@ if __name__ == "__main__":
 
     parser.add_argument("--noprogress", action='store_true', default=False, help='suppress progress bars')
     parser.add_argument("--n_workers", type=int, default=0, help='workers for pytorch dataloaders')
+
+    profile_group = parser.add_argument_group("short, opt-in training profile")
+    profile_group.add_argument("--profile", action="store_true", help="profile a short run instead of training")
+    profile_group.add_argument("--profile_epochs", type=int, default=1)
+    profile_group.add_argument("--profile_batches", type=int, default=5)
+    profile_group.add_argument("--profile_trace", type=str, default="profile_trace.json")
+    profile_group.add_argument("--profile_record_shapes", action="store_true")
+    profile_group.add_argument("--profile_memory", action="store_true")
+    profile_group.add_argument("--profile_with_stack", action="store_true")
+    profile_group.add_argument("--profile_with_flops", action="store_true")
     args = parser.parse_args()
     if args.seed <= 0:
         import time, os

@@ -1,0 +1,242 @@
+/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/networks/hiphop.py:12: UserWarning: HIP-HOP-NN is still in a beta state: Details, defaults, and API are still subject to change.
+  warnings.warn("HIP-HOP-NN is still in a beta state: " "Details, defaults, and API are still subject to change.")
+Determined Inputs: ["Positions(db_name='coordinates')", "Species(db_name='atomic_numbers')"]
+Determined Outputs: ['HEnergy.system_energy', 'HEnergy.batch_hier', 'HEnergy.hierarchicality']
+Determined Targets: ['HEnergy.system_energy']
+Device was not specified. Attempting to default to device: cuda:0
+Loading arrays from /vast/home/logan_bolton/Github/hippynn-optimizations-expanded/datasets/ani1x-release.h5
+Arrays found:  ['atomic_numbers', 'ccsd(t)_cbs.energy', 'coordinates', 'hf_dz.energy', 'hf_qz.energy', 'hf_tz.energy', 'mp2_dz.corr_energy', 'mp2_qz.corr_energy', 'mp2_tz.corr_energy', 'npno_ccsd(t)_dz.corr_energy', 'npno_ccsd(t)_tz.corr_energy', 'tpno_ccsd(t)_dz.corr_energy', 'wb97x_dz.cm5_charges', 'wb97x_dz.dipole', 'wb97x_dz.energy', 'wb97x_dz.forces', 'wb97x_dz.hirshfeld_charges', 'wb97x_dz.quadrupole', 'wb97x_tz.dipole', 'wb97x_tz.energy', 'wb97x_tz.forces', 'wb97x_tz.mbis_charges', 'wb97x_tz.mbis_dipoles', 'wb97x_tz.mbis_octupoles', 'wb97x_tz.mbis_quadrupoles', 'wb97x_tz.mbis_volumes', 'sys_number']
+Data types:
+{'atomic_numbers': dtype('uint8'), 'ccsd(t)_cbs.energy': dtype('float64'), 'coordinates': dtype('float32'), 'hf_dz.energy': dtype('float64'), 'hf_qz.energy': dtype('float64'), 'hf_tz.energy': dtype('float64'), 'mp2_dz.corr_energy': dtype('float64'), 'mp2_qz.corr_energy': dtype('float64'), 'mp2_tz.corr_energy': dtype('float64'), 'npno_ccsd(t)_dz.corr_energy': dtype('float64'), 'npno_ccsd(t)_tz.corr_energy': dtype('float64'), 'tpno_ccsd(t)_dz.corr_energy': dtype('float64'), 'wb97x_dz.cm5_charges': dtype('float32'), 'wb97x_dz.dipole': dtype('float32'), 'wb97x_dz.energy': dtype('float64'), 'wb97x_dz.forces': dtype('float32'), 'wb97x_dz.hirshfeld_charges': dtype('float32'), 'wb97x_dz.quadrupole': dtype('float32'), 'wb97x_tz.dipole': dtype('float32'), 'wb97x_tz.energy': dtype('float64'), 'wb97x_tz.forces': dtype('float32'), 'wb97x_tz.mbis_charges': dtype('float32'), 'wb97x_tz.mbis_dipoles': dtype('float32'), 'wb97x_tz.mbis_octupoles': dtype('float32'), 'wb97x_tz.mbis_quadrupoles': dtype('float32'), 'wb97x_tz.mbis_volumes': dtype('float32'), 'sys_number': dtype('int64')}
+All arrays:
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('uint8')     | (4956005, 63)                |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (4956005,)                   |
+| coordinates                    | dtype('float32')   | (4956005, 63, 3)             |
+| hf_dz.energy                   | dtype('float64')   | (4956005,)                   |
+| hf_qz.energy                   | dtype('float64')   | (4956005,)                   |
+| hf_tz.energy                   | dtype('float64')   | (4956005,)                   |
+| mp2_dz.corr_energy             | dtype('float64')   | (4956005,)                   |
+| mp2_qz.corr_energy             | dtype('float64')   | (4956005,)                   |
+| mp2_tz.corr_energy             | dtype('float64')   | (4956005,)                   |
+| npno_ccsd(t)_dz.corr_energy    | dtype('float64')   | (4956005,)                   |
+| npno_ccsd(t)_tz.corr_energy    | dtype('float64')   | (4956005,)                   |
+| tpno_ccsd(t)_dz.corr_energy    | dtype('float64')   | (4956005,)                   |
+| wb97x_dz.cm5_charges           | dtype('float32')   | (4956005, 63)                |
+| wb97x_dz.dipole                | dtype('float32')   | (4956005, 3)                 |
+| wb97x_dz.energy                | dtype('float64')   | (4956005,)                   |
+| wb97x_dz.forces                | dtype('float32')   | (4956005, 63, 3)             |
+| wb97x_dz.hirshfeld_charges     | dtype('float32')   | (4956005, 63)                |
+| wb97x_dz.quadrupole            | dtype('float32')   | (4956005, 6)                 |
+| wb97x_tz.dipole                | dtype('float32')   | (4956005, 3)                 |
+| wb97x_tz.energy                | dtype('float64')   | (4956005,)                   |
+| wb97x_tz.forces                | dtype('float32')   | (4956005, 63, 3)             |
+| wb97x_tz.mbis_charges          | dtype('float32')   | (4956005, 63)                |
+| wb97x_tz.mbis_dipoles          | dtype('float32')   | (4956005, 63)                |
+| wb97x_tz.mbis_octupoles        | dtype('float32')   | (4956005, 63)                |
+| wb97x_tz.mbis_quadrupoles      | dtype('float32')   | (4956005, 63)                |
+| wb97x_tz.mbis_volumes          | dtype('float32')   | (4956005, 63)                |
+| sys_number                     | dtype('int64')     | (4956005,)                   |
+--------------------------------------------------------------------------------------
+Database: Using auto-generated data indices
+Found ccsd: 489571
+Found wb97x_dz.energy: 4956005
+Found both 489571
+Adding split indices for split: test
+Arrays for split: test
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (4895, 63)                   |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (4895,)                      |
+| coordinates                    | dtype('float32')   | (4895, 63, 3)                |
+| hf_dz.energy                   | dtype('float64')   | (4895,)                      |
+| hf_qz.energy                   | dtype('float64')   | (4895,)                      |
+| hf_tz.energy                   | dtype('float64')   | (4895,)                      |
+| mp2_dz.corr_energy             | dtype('float64')   | (4895,)                      |
+| mp2_qz.corr_energy             | dtype('float64')   | (4895,)                      |
+| mp2_tz.corr_energy             | dtype('float64')   | (4895,)                      |
+| npno_ccsd(t)_dz.corr_energy    | dtype('float64')   | (4895,)                      |
+| npno_ccsd(t)_tz.corr_energy    | dtype('float64')   | (4895,)                      |
+| tpno_ccsd(t)_dz.corr_energy    | dtype('float64')   | (4895,)                      |
+| wb97x_dz.cm5_charges           | dtype('float32')   | (4895, 63)                   |
+| wb97x_dz.dipole                | dtype('float32')   | (4895, 3)                    |
+| wb97x_dz.energy                | dtype('float32')   | (4895,)                      |
+| wb97x_dz.forces                | dtype('float32')   | (4895, 63, 3)                |
+| wb97x_dz.hirshfeld_charges     | dtype('float32')   | (4895, 63)                   |
+| wb97x_dz.quadrupole            | dtype('float32')   | (4895, 6)                    |
+| wb97x_tz.dipole                | dtype('float32')   | (4895, 3)                    |
+| wb97x_tz.energy                | dtype('float64')   | (4895,)                      |
+| wb97x_tz.forces                | dtype('float32')   | (4895, 63, 3)                |
+| wb97x_tz.mbis_charges          | dtype('float32')   | (4895, 63)                   |
+| wb97x_tz.mbis_dipoles          | dtype('float32')   | (4895, 63)                   |
+| wb97x_tz.mbis_octupoles        | dtype('float32')   | (4895, 63)                   |
+| wb97x_tz.mbis_quadrupoles      | dtype('float32')   | (4895, 63)                   |
+| wb97x_tz.mbis_volumes          | dtype('float32')   | (4895, 63)                   |
+| sys_number                     | dtype('int64')     | (4895,)                      |
+| indices                        | dtype('int64')     | (4895,)                      |
+| split_indices                  | dtype('int64')     | (4895,)                      |
+--------------------------------------------------------------------------------------
+Adding split indices for split: valid
+Arrays for split: valid
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (19582, 63)                  |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (19582,)                     |
+| coordinates                    | dtype('float32')   | (19582, 63, 3)               |
+| hf_dz.energy                   | dtype('float64')   | (19582,)                     |
+| hf_qz.energy                   | dtype('float64')   | (19582,)                     |
+| hf_tz.energy                   | dtype('float64')   | (19582,)                     |
+| mp2_dz.corr_energy             | dtype('float64')   | (19582,)                     |
+| mp2_qz.corr_energy             | dtype('float64')   | (19582,)                     |
+| mp2_tz.corr_energy             | dtype('float64')   | (19582,)                     |
+| npno_ccsd(t)_dz.corr_energy    | dtype('float64')   | (19582,)                     |
+| npno_ccsd(t)_tz.corr_energy    | dtype('float64')   | (19582,)                     |
+| tpno_ccsd(t)_dz.corr_energy    | dtype('float64')   | (19582,)                     |
+| wb97x_dz.cm5_charges           | dtype('float32')   | (19582, 63)                  |
+| wb97x_dz.dipole                | dtype('float32')   | (19582, 3)                   |
+| wb97x_dz.energy                | dtype('float32')   | (19582,)                     |
+| wb97x_dz.forces                | dtype('float32')   | (19582, 63, 3)               |
+| wb97x_dz.hirshfeld_charges     | dtype('float32')   | (19582, 63)                  |
+| wb97x_dz.quadrupole            | dtype('float32')   | (19582, 6)                   |
+| wb97x_tz.dipole                | dtype('float32')   | (19582, 3)                   |
+| wb97x_tz.energy                | dtype('float64')   | (19582,)                     |
+| wb97x_tz.forces                | dtype('float32')   | (19582, 63, 3)               |
+| wb97x_tz.mbis_charges          | dtype('float32')   | (19582, 63)                  |
+| wb97x_tz.mbis_dipoles          | dtype('float32')   | (19582, 63)                  |
+| wb97x_tz.mbis_octupoles        | dtype('float32')   | (19582, 63)                  |
+| wb97x_tz.mbis_quadrupoles      | dtype('float32')   | (19582, 63)                  |
+| wb97x_tz.mbis_volumes          | dtype('float32')   | (19582, 63)                  |
+| sys_number                     | dtype('int64')     | (19582,)                     |
+| indices                        | dtype('int64')     | (19582,)                     |
+| split_indices                  | dtype('int64')     | (19582,)                     |
+--------------------------------------------------------------------------------------
+Adding split indices for split: train
+Arrays for split: train
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (465094, 63)                 |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (465094,)                    |
+| coordinates                    | dtype('float32')   | (465094, 63, 3)              |
+| hf_dz.energy                   | dtype('float64')   | (465094,)                    |
+| hf_qz.energy                   | dtype('float64')   | (465094,)                    |
+| hf_tz.energy                   | dtype('float64')   | (465094,)                    |
+| mp2_dz.corr_energy             | dtype('float64')   | (465094,)                    |
+| mp2_qz.corr_energy             | dtype('float64')   | (465094,)                    |
+| mp2_tz.corr_energy             | dtype('float64')   | (465094,)                    |
+| npno_ccsd(t)_dz.corr_energy    | dtype('float64')   | (465094,)                    |
+| npno_ccsd(t)_tz.corr_energy    | dtype('float64')   | (465094,)                    |
+| tpno_ccsd(t)_dz.corr_energy    | dtype('float64')   | (465094,)                    |
+| wb97x_dz.cm5_charges           | dtype('float32')   | (465094, 63)                 |
+| wb97x_dz.dipole                | dtype('float32')   | (465094, 3)                  |
+| wb97x_dz.energy                | dtype('float32')   | (465094,)                    |
+| wb97x_dz.forces                | dtype('float32')   | (465094, 63, 3)              |
+| wb97x_dz.hirshfeld_charges     | dtype('float32')   | (465094, 63)                 |
+| wb97x_dz.quadrupole            | dtype('float32')   | (465094, 6)                  |
+| wb97x_tz.dipole                | dtype('float32')   | (465094, 3)                  |
+| wb97x_tz.energy                | dtype('float64')   | (465094,)                    |
+| wb97x_tz.forces                | dtype('float32')   | (465094, 63, 3)              |
+| wb97x_tz.mbis_charges          | dtype('float32')   | (465094, 63)                 |
+| wb97x_tz.mbis_dipoles          | dtype('float32')   | (465094, 63)                 |
+| wb97x_tz.mbis_octupoles        | dtype('float32')   | (465094, 63)                 |
+| wb97x_tz.mbis_quadrupoles      | dtype('float32')   | (465094, 63)                 |
+| wb97x_tz.mbis_volumes          | dtype('float32')   | (465094, 63)                 |
+| sys_number                     | dtype('int64')     | (465094,)                    |
+| indices                        | dtype('int64')     | (465094,)                    |
+| split_indices                  | dtype('int64')     | (465094,)                    |
+--------------------------------------------------------------------------------------
+Database: Splitting complete.
+/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/pretraining.py:86: UserWarning: The function set_e0_values is depreciated. Please use the hierarchical_energy_initialization function instead.
+  warnings.warn("The function set_e0_values is depreciated. Please use the hierarchical_energy_initialization function instead.")
+Computed E0 energies: tensor([ -61.4207, -199.0315, -155.8624, -157.5608])
+/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/experiment/controllers.py:219: UserWarning: Parameter verbose no longer supported for schedulers. It will be ignored.
+  warnings.warn("Parameter verbose no longer supported for schedulers. It will be ignored.")
+Device was not specified. Attempting to default to device: cuda:0
+Using device:  cuda
+Profiling 1 epochs x 5 batches on device 'cuda'
+Running warmup batches.
+
+Profile saved to: profile_trace.json
+Open chrome://tracing in Chrome to visualize.
+
+Top CUDA operations and model stages:
+-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  --------------------------------------------------------------------------------  
+                                                   Name    Self CPU %      Self CPU   CPU total %     CPU total  CPU time avg     Self CUDA   Self CUDA %    CUDA total  CUDA time avg       CPU Mem  Self CPU Mem      CUDA Mem  Self CUDA Mem    # of Calls                                                                      Input Shapes  
+-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  --------------------------------------------------------------------------------  
+                    model::hipnn_model [HipHopNNModule]         0.00%       0.000us         0.00%       0.000us       0.000us      44.976ms        46.31%      44.976ms       8.995ms           0 b           0 b           0 b           0 b             5                                                                                []  
+                    model::hipnn_model [HipHopNNModule]         3.72%       6.749ms        19.26%      34.979ms       6.996ms       0.000us         0.00%      28.476ms       5.695ms         240 b         240 b       1.16 Gb    -286.34 Mb             5                                                                                []  
+       autograd::engine::evaluate_function: MmBackward0         0.12%     216.457us         1.23%       2.231ms      89.221us       0.000us         0.00%      23.375ms     934.994us           0 b           0 b     -59.80 Mb    -937.12 Mb            25                                                                                []  
+                                 tensor_products_kernel         0.00%       0.000us         0.00%       0.000us       0.000us      13.205ms        13.60%      13.205ms     660.254us           0 b           0 b           0 b           0 b            20                                                                                []  
+    autograd::engine::evaluate_function: AddmmBackward0         1.15%       2.081ms         8.99%      16.327ms     125.589us       0.000us         0.00%      12.432ms      95.632us           0 b           0 b     -74.02 Mb    -210.03 Mb           130                                                                                []  
+                                 ampere_sgemm_32x128_nn         0.00%       0.000us         0.00%       0.000us       0.000us      11.343ms        11.68%      11.343ms       2.269ms           0 b           0 b           0 b           0 b             5                                                                                []  
+autograd::engine::evaluate_function: TensorProductWr...         0.11%     190.754us         2.19%       3.977ms     397.731us       0.000us         0.00%      11.008ms       1.101ms           0 b           0 b    -785.69 Mb    -803.21 Mb            10                                                                                []  
+void cutlass::Kernel<cutlass_80_simt_sgemm_32x128_8x...         0.00%       0.000us         0.00%       0.000us       0.000us      10.381ms        10.69%      10.381ms       2.076ms           0 b           0 b           0 b           0 b             5                                                                                []  
+                                 ampere_sgemm_128x64_tn         0.00%       0.000us         0.00%       0.000us       0.000us      10.285ms        10.59%      10.285ms       2.057ms           0 b           0 b           0 b           0 b             5                                                                                []  
+                   model::PairIndexer [OpenPairIndexer]         0.00%       0.000us         0.00%       0.000us       0.000us       7.073ms         7.28%       7.073ms       1.415ms           0 b           0 b           0 b           0 b             5                                                                                []  
+                 model::PaddingIndexer [PaddingIndexer]         0.00%       0.000us         0.00%       0.000us       0.000us       6.164ms         6.35%       6.164ms       1.233ms           0 b           0 b           0 b           0 b             5                                                                                []  
+                               Optimizer.step#Adam.step         0.00%       0.000us         0.00%       0.000us       0.000us       4.963ms         5.11%       4.963ms     992.602us           0 b           0 b           0 b           0 b             5                                                                                []  
+                                            MmBackward0         0.01%      17.714us         0.09%     160.820us      80.410us       0.000us         0.00%       4.494ms       2.247ms           0 b           0 b     169.86 Mb           0 b             2                                                                     [[8307, 256]]  
+void at::native::reduce_kernel<128, 4, at::native::R...         0.00%       0.000us         0.00%       0.000us       0.000us       4.456ms         4.59%       4.456ms      31.826us           0 b           0 b           0 b           0 b           140                                                                                []  
+                                            MmBackward0         0.01%      17.362us         0.10%     189.314us      94.657us       0.000us         0.00%       4.257ms       2.128ms           0 b           0 b     161.83 Mb           0 b             2                                                                     [[7902, 256]]  
+                                            MmBackward0         0.01%      19.196us         0.10%     190.094us      95.047us       0.000us         0.00%       4.253ms       2.127ms           0 b           0 b     162.13 Mb           0 b             2                                                                     [[7884, 256]]  
+                                            MmBackward0         0.01%      16.713us         0.11%     195.877us      97.938us       0.000us         0.00%       4.163ms       2.081ms           0 b           0 b     158.89 Mb           0 b             2                                                                     [[7722, 256]]  
+                                            MmBackward0         0.01%      18.294us         0.10%     186.368us      93.184us       0.000us         0.00%       4.147ms       2.074ms           0 b           0 b     157.18 Mb           0 b             2                                                                     [[7668, 256]]  
+                            evaluate_polynomials_kernel         0.00%       0.000us         0.00%       0.000us       0.000us       4.094ms         4.22%       4.094ms     204.702us           0 b           0 b           0 b           0 b            20                                                                                []  
+    autograd::engine::evaluate_function: IndexBackward0         0.21%     382.125us         4.39%       7.965ms     227.568us       0.000us         0.00%       4.044ms     115.544us           0 b           0 b      -3.78 Mb     -17.29 Mb            35                                                                                []  
+                        ampere_sgemm_32x32_sliced1x4_tn         0.00%       0.000us         0.00%       0.000us       0.000us       3.983ms         4.10%       3.983ms      34.635us           0 b           0 b           0 b           0 b           115                                                                                []  
+autograd::engine::evaluate_function: EvaluatePolynom...         0.06%     107.216us         1.49%       2.702ms     270.184us       0.000us         0.00%       3.966ms     396.560us           0 b           0 b     -51.41 Mb    -128.53 Mb            10                                                                                []  
+                        ampere_sgemm_32x32_sliced1x4_nt         0.00%       0.000us         0.00%       0.000us       0.000us       3.390ms         3.49%       3.390ms      27.120us           0 b           0 b           0 b           0 b           125                                                                                []  
+                        ampere_sgemm_32x32_sliced1x4_nn         0.00%       0.000us         0.00%       0.000us       0.000us       2.992ms         3.08%       2.992ms      39.900us           0 b           0 b           0 b           0 b            75                                                                                []  
+void at::native::elementwise_kernel<128, 2, at::nati...         0.00%       0.000us         0.00%       0.000us       0.000us       2.414ms         2.49%       2.414ms      19.316us           0 b           0 b           0 b           0 b           125                                                                                []  
+                               model::HEnergy [HEnergy]         0.00%       0.000us         0.00%       0.000us       0.000us       2.366ms         2.44%       2.366ms     473.126us           0 b           0 b           0 b           0 b             5                                                                                []  
+                                               aten::mm         0.01%      25.621us         0.02%      43.143us      43.143us       2.328ms         2.40%       2.328ms       2.328ms           0 b           0 b       8.11 Mb       8.11 Mb             1                                                       [[8307, 5120], [5120, 256]]  
+                                               aten::mm         0.02%      28.715us         0.03%      48.023us      48.023us       2.323ms         2.39%       2.323ms       2.323ms           0 b           0 b       7.72 Mb       7.72 Mb             1                                                       [[7902, 5120], [5120, 256]]  
+                                               aten::mm         0.02%      29.469us         0.03%      49.586us      49.586us       2.323ms         2.39%       2.323ms       2.323ms           0 b           0 b       7.70 Mb       7.70 Mb             1                                                       [[7884, 5120], [5120, 256]]  
+void at::native::vectorized_elementwise_kernel<4, at...         0.00%       0.000us         0.00%       0.000us       0.000us       2.287ms         2.35%       2.287ms       9.148us           0 b           0 b           0 b           0 b           250                                                                                []  
+-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  --------------------------------------------------------------------------------  
+Self CPU time total: 181.613ms
+Self CUDA time total: 97.120ms
+
+
+Top CPU operations and model stages:
+-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  --------------------------------------------------------------------------------  
+                                                   Name    Self CPU %      Self CPU   CPU total %     CPU total  CPU time avg     Self CUDA   Self CUDA %    CUDA total  CUDA time avg       CPU Mem  Self CPU Mem      CUDA Mem  Self CUDA Mem    # of Calls                                                                      Input Shapes  
+-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  --------------------------------------------------------------------------------  
+enumerate(DataLoader)#_SingleProcessDataLoaderIter._...        11.66%      21.175ms        23.19%      42.116ms       7.019ms       0.000us         0.00%       0.000us       0.000us           0 b      -4.01 Mb           0 b           0 b             6                                                                                []  
+                    model::hipnn_model [HipHopNNModule]         3.72%       6.749ms        19.26%      34.979ms       6.996ms       0.000us         0.00%      28.476ms       5.695ms         240 b         240 b       1.16 Gb    -286.34 Mb             5                                                                                []  
+                                       cudaLaunchKernel        13.02%      23.639ms        13.02%      23.639ms       7.376us       0.000us         0.00%       0.000us       0.000us           0 b           0 b           0 b           0 b          3205                                                                                []  
+    autograd::engine::evaluate_function: AddmmBackward0         1.15%       2.081ms         8.99%      16.327ms     125.589us       0.000us         0.00%      12.432ms      95.632us           0 b           0 b     -74.02 Mb    -210.03 Mb           130                                                                                []  
+                               Optimizer.step#Adam.step         3.20%       5.812ms         6.61%      12.013ms       2.403ms       0.000us         0.00%       2.186ms     437.139us           0 b         -20 b           0 b     -72.25 Mb             5                                                                                []  
+    autograd::engine::evaluate_function: IndexBackward0         0.21%     382.125us         4.39%       7.965ms     227.568us       0.000us         0.00%       4.044ms     115.544us           0 b           0 b      -3.78 Mb     -17.29 Mb            35                                                                                []  
+                               model::HEnergy [HEnergy]         1.01%       1.828ms         4.20%       7.633ms       1.527ms       0.000us         0.00%       1.792ms     358.310us           0 b           0 b     217.50 Kb    -156.00 Kb             5                                                                                []  
+                   model::PairIndexer [OpenPairIndexer]         1.83%       3.320ms         4.11%       7.468ms       1.494ms       0.000us         0.00%       1.345ms     269.012us           0 b           0 b       1.82 Mb      -9.91 Mb             5                                                                                []  
+                                         aten::randperm         0.01%      12.044us         3.97%       7.215ms       7.215ms       0.000us         0.00%       0.000us       0.000us       3.55 Mb           0 b           0 b           0 b             1                                                          [[], [], [], [], [], []]  
+                                         aten::randperm         3.94%       7.159ms         3.94%       7.165ms       7.165ms       0.000us         0.00%       0.000us       0.000us           0 b          -8 b           0 b           0 b             1                                                                [[], [], [465094]]  
+                 model::PaddingIndexer [PaddingIndexer]         1.62%       2.947ms         3.65%       6.629ms       1.326ms       0.000us         0.00%     555.555us     111.111us           0 b           0 b     404.00 Kb    -355.50 Kb             5                                                                                []  
+                                            aten::stack         2.90%       5.272ms         3.59%       6.520ms     362.198us       0.000us         0.00%       0.000us       0.000us     474.00 Kb           0 b           0 b           0 b            18                                                                          [[], []]  
+                                            aten::zeros         0.36%     659.053us         2.49%       4.524ms      23.810us       0.000us         0.00%       1.734ms       9.126us           0 b           0 b     988.46 Mb           0 b           190                                                              [[], [], [], [], []]  
+      autograd::engine::evaluate_function: PowBackward0         0.25%     454.940us         2.44%       4.424ms      73.734us       0.000us         0.00%       1.111ms      18.509us           0 b           0 b      -9.57 Mb     -19.60 Mb            60                                                                                []  
+autograd::engine::evaluate_function: TensorProductWr...         0.11%     190.754us         2.19%       3.977ms     397.731us       0.000us         0.00%      11.008ms       1.101ms           0 b           0 b    -785.69 Mb    -803.21 Mb            10                                                                                []  
+                                       aten::pin_memory         0.02%      41.338us         2.00%       3.624ms     604.042us       0.000us         0.00%       0.000us       0.000us           0 b           0 b           0 b           0 b             6                                                                 [[64, 63, 3], []]  
+                                            aten::empty         1.89%       3.435ms         1.89%       3.435ms       5.383us       0.000us         0.00%       0.000us       0.000us       3.55 Mb       3.55 Mb       1.84 Gb       1.84 Gb           638                                                          [[], [], [], [], [], []]  
+autograd::engine::evaluate_function: torch::autograd...         0.76%       1.381ms         1.85%       3.353ms      10.161us       0.000us         0.00%     230.306us       0.698us           0 b           0 b    -638.00 Kb           0 b           330                                                                                []  
+      autograd::engine::evaluate_function: DivBackward0         0.20%     365.579us         1.70%       3.088ms      88.216us       0.000us         0.00%       1.274ms      36.398us         -80 b         -80 b      -8.85 Mb     -29.07 Mb            35                                                                                []  
+                                                aten::t         0.63%       1.147ms         1.51%       2.739ms       5.955us       0.000us         0.00%       0.000us       0.000us           0 b           0 b           0 b           0 b           460                                                                      [[256, 256]]  
+autograd::engine::evaluate_function: EvaluatePolynom...         0.06%     107.216us         1.49%       2.702ms     270.184us       0.000us         0.00%       3.966ms     396.560us           0 b           0 b     -51.41 Mb    -128.53 Mb            10                                                                                []  
+                                      aten::_pin_memory         1.19%       2.158ms         1.24%       2.261ms     376.816us       0.000us         0.00%       0.000us       0.000us           0 b           0 b           0 b           0 b             6                                                                 [[64, 63, 3], []]  
+       autograd::engine::evaluate_function: MmBackward0         0.12%     216.457us         1.23%       2.231ms      89.221us       0.000us         0.00%      23.375ms     934.994us           0 b           0 b     -59.80 Mb    -937.12 Mb            25                                                                                []  
+                                    EvaluatePolynomials         1.07%       1.940ms         1.17%       2.126ms       1.063ms     276.448us         0.28%     374.943us     187.471us           0 b           0 b      10.05 Mb     -26.81 Mb             2                                                                     [[219648, 9]]  
+     autograd::engine::evaluate_function: ViewBackward0         0.25%     449.518us         1.15%       2.087ms      24.550us       0.000us         0.00%     619.937us       7.293us           0 b           0 b           0 b    -179.94 Mb            85                                                                                []  
+                                    aten::_foreach_sqrt         0.34%     611.441us         1.13%       2.049ms     409.841us     292.257us         0.30%     292.257us      58.451us           0 b           0 b      72.25 Mb           0 b             5                                                                              [[]]  
+autograd::engine::evaluate_function: SoftplusBackwar...         0.25%     448.910us         1.05%       1.903ms      31.719us       0.000us         0.00%     508.383us       8.473us           0 b           0 b     -51.41 Mb    -102.82 Mb            60                                                                                []  
+                                         AddmmBackward0         0.13%     236.871us         1.04%       1.894ms      78.914us       0.000us         0.00%       1.597ms      66.532us           0 b           0 b      25.43 Mb           0 b            24                                                                      [[876, 256]]  
+                                         AddmmBackward0         0.13%     237.373us         1.04%       1.891ms      78.788us       0.000us         0.00%       1.595ms      66.467us           0 b           0 b      25.47 Mb           0 b            24                                                                      [[878, 256]]  
+                                         AddmmBackward0         0.13%     236.708us         1.04%       1.886ms      78.584us       0.000us         0.00%       1.615ms      67.289us           0 b           0 b      26.49 Mb           0 b            24                                                                      [[923, 256]]  
+-------------------------------------------------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  ------------  --------------------------------------------------------------------------------  
+Self CPU time total: 181.613ms
+Self CUDA time total: 97.120ms
+

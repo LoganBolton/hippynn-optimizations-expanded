@@ -2,6 +2,7 @@ import pytest
 
 import hippynn
 import ase
+import torch
 
 from conftest import skip_if_no_models, MODEL_DIR
 from conftest import ignore_cusp_warning, ignore_relocation, ignore_weights_only_warning
@@ -26,6 +27,43 @@ def test_build_training_modules(energy_node):
     validation_losses = {"MAE": mae}
 
     training_modules, db_info = hippynn.experiment.assemble_for_training(mae, validation_losses)
+
+
+def test_profile_training_modules_has_named_graph_ranges(energy_node, example_box, tmp_path):
+    mae = hippynn.loss.MAELoss.of_node(energy_node)
+    training_modules, db_info = hippynn.experiment.assemble_for_training(mae, {"MAE": mae})
+
+    n_systems = example_box["species"].shape[0]
+    database = hippynn.Database(
+        arr_dict={**example_box, "T": torch.zeros((n_systems, 1))},
+        inputs=db_info["inputs"],
+        targets=db_info["targets"],
+        seed=0,
+        test_size=1,
+        valid_size=1,
+        quiet=True,
+    )
+    setup_params = hippynn.experiment.SetupParams(
+        device="cpu",
+        stopping_key="MAE",
+        batch_size=2,
+        max_epochs=10,
+        learning_rate=1e-3,
+    )
+    trace_file = tmp_path / "profile_trace.json"
+
+    result = hippynn.experiment.setup_and_profile(
+        training_modules=training_modules,
+        database=database,
+        setup_params=setup_params,
+        profile_epochs=1,
+        batches_per_epoch=1,
+        record_shapes=True,
+        trace_file=str(trace_file),
+    )
+
+    assert result == str(trace_file)
+    assert '"name": "model::' in trace_file.read_text()
 
 
 # Mark as xfail because lammps python installations require manual steps.
