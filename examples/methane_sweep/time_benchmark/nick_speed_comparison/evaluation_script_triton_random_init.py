@@ -85,7 +85,7 @@ def configure_kernels(kernel_mode, use_triton_message_passing):
             "use_tensor_message_passing": hippynn.settings.USE_TENSOR_MESSAGE_PASSING,
         }
 
-    if kernel_mode == "triton":
+    if kernel_mode in ("triton", "triton_legacy"):
         hippynn.settings.USE_POLYNOMIAL_INVARIANTS = True
         hippynn.settings.USE_TENSOR_MESSAGE_PASSING = use_triton_message_passing
         active_kernel = hippynn.custom_kernels.set_custom_kernels("triton")
@@ -93,6 +93,14 @@ def configure_kernels(kernel_mode, use_triton_message_passing):
             raise RuntimeError(f"Expected Triton custom kernels, got {active_kernel!r}.")
 
         import triton
+
+        if kernel_mode == "triton_legacy":
+            import hippynn.layers.hiplayers.invariants as invariants_module
+            from hippynn.custom_kernels.poly_triton import _EvaluatePolynomialsLegacy
+
+            # HopInvariantLayer resolves this module global at call time. This
+            # keeps the model, data, and all non-polynomial kernels identical.
+            invariants_module.EvaluatePolynomials = _EvaluatePolynomialsLegacy
 
         return {
             "kernel_mode": kernel_mode,
@@ -247,7 +255,11 @@ if __name__ == "__main__":
     parser.add_argument("--n_workers", type=int, default=0)
     parser.add_argument("--group_norm", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--include_forces", action=argparse.BooleanOptionalAction, default=True)
-    parser.add_argument("--kernel_mode", choices=["upstream", "pytorch", "triton"], default="upstream")
+    parser.add_argument(
+        "--kernel_mode",
+        choices=["upstream", "pytorch", "triton", "triton_legacy"],
+        default="upstream",
+    )
     parser.add_argument("--use_triton_message_passing", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--output", type=str, default=results_dir / "triton_random_init_speed_eval.pt")
     parser.add_argument("--output_json", type=str, default=results_dir / "triton_random_init_speed_eval.json")

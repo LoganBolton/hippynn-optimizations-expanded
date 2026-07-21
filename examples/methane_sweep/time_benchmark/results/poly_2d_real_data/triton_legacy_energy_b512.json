@@ -1,0 +1,54 @@
+{
+  "metrics": {
+    "(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 4), ('batch_size', 512))": [
+      3.598649740219116,
+      3.606092691421509,
+      3.6124448776245117
+    ]
+  },
+  "metrics_jsonable": {
+    "(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 4), ('batch_size', 512))": [
+      3.598649740219116,
+      3.606092691421509,
+      3.6124448776245117
+    ]
+  },
+  "parameter_counts": {
+    "(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 4))": 1353516
+  },
+  "device_name": "NVIDIA A100-PCIE-40GB",
+  "n_configs": 48957,
+  "n_atoms": 676395,
+  "batch_sizes": [
+    512
+  ],
+  "reps": 3,
+  "warmups": 2,
+  "seed": 0,
+  "split_seed": 0,
+  "include_forces": false,
+  "network_parameters": {
+    "possible_species": [
+      0,
+      1,
+      6,
+      7,
+      8
+    ],
+    "n_features": 128,
+    "n_sensitivities": 20,
+    "dist_soft_min": 0.75,
+    "dist_soft_max": 5.5,
+    "dist_hard_max": 6.5,
+    "n_interaction_layers": 2,
+    "n_atom_layers": 3
+  },
+  "kernel_info": {
+    "kernel_mode": "triton_legacy",
+    "custom_kernels": "triton",
+    "triton_version": "3.7.1",
+    "triton_file": "/vast/home/logan_bolton/.conda/envs/hippynn-expanded-lmax/lib/python3.12/site-packages/triton/__init__.py",
+    "use_polynomial_invariants": true,
+    "use_tensor_message_passing": true
+  }
+}

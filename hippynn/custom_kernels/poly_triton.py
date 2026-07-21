@@ -49,7 +49,19 @@ class PolynomialCollection():
 
     def __init__(self, coefs, terms, polynomial_sizes, input_dimension):
         self.polynomials = {0 : (coefs, terms, polynomial_sizes, input_dimension)}
+        self.polynomial_offsets = {0: self._compute_offsets(polynomial_sizes)}
         self.max_derivative_level = 0
+
+    @staticmethod
+    def _compute_offsets(polynomial_sizes):
+        """Return the first monomial index for every polynomial."""
+        offsets = torch.empty_like(polynomial_sizes)
+        offsets[0] = 0
+        if len(polynomial_sizes) > 1:
+            torch.cumsum(
+                polynomial_sizes[:-1], dim=0, dtype=polynomial_sizes.dtype, out=offsets[1:]
+            )
+        return offsets
 
     def get_device(self):
         """
@@ -65,6 +77,7 @@ class PolynomialCollection():
             for i in range(self.max_derivative_level+1):
                 coefs, terms, polynomial_sizes, input_dimension = self.polynomials[i]
                 self.polynomials[i] = (coefs.to(device), terms.to(device), polynomial_sizes.to(device), input_dimension)
+                self.polynomial_offsets[i] = self.polynomial_offsets[i].to(device)
     
     def get_polynomials(self,derivative_level=0):
         """
@@ -84,8 +97,14 @@ class PolynomialCollection():
             previous_coefs, previous_terms, previous_polynomial_sizes, previous_input_dimension = previous_derivative_level
             derivative = compute_derivative(previous_coefs, previous_terms, previous_polynomial_sizes, previous_input_dimension)
             self.polynomials[derivative_level] = derivative
+            self.polynomial_offsets[derivative_level] = self._compute_offsets(derivative[2])
             self.max_derivative_level = derivative_level
             return derivative
+
+    def get_polynomial_offsets(self, derivative_level=0):
+        """Return cached starting monomial indices for one derivative level."""
+        self.get_polynomials(derivative_level)
+        return self.polynomial_offsets[derivative_level]
 
 def compute_derivative(coefs_,terms_,polynomial_sizes_,input_dimension):
     """
@@ -226,39 +245,7 @@ class EvaluatePolynomials(torch.autograd.Function):
         ctx.polynomials = polynomials
         ctx.derivative_level = derivative_level
 
-        coefs, terms, polynomial_sizes, _ = polynomials.get_polynomials(derivative_level)
-
-        num_polynomials = len(polynomial_sizes)
-
-        # compute all relevant dimensions for differentiable terms
-        num_points, input_dimension = x.shape
-        input_dimension_rounded_up = triton.next_power_of_2(input_dimension)
-
-        num_monomials, degree = terms.shape
-        degree_rounded_up = triton.next_power_of_2(degree)
-
-        # Pad the 2D tensors (X and terms) so that the number of columns is a power of 2
-        if input_dimension != input_dimension_rounded_up:
-            x = F.pad( x, (0, (input_dimension_rounded_up - input_dimension)) ).contiguous()
-
-        if degree != degree_rounded_up:
-            terms = F.pad( terms, (0, (degree_rounded_up - degree)), value=-1 ).contiguous()
-
-        # run the kernel
-        output = torch.zeros( (num_points,num_polynomials), dtype=x.dtype, device=x.device, requires_grad=True )
-
-        grid = lambda meta: (
-            triton.cdiv(num_points, meta['NUM_POINTS_TO_LOAD']),
-        )
-
-        if x.dtype == torch.float64:
-            kernel_dtype = tl.float64
-        else:
-            kernel_dtype = tl.float32
-
-        evaluate_polynomials_kernel[grid]( x, coefs, terms, polynomial_sizes, output, num_polynomials, num_monomials, input_dimension_rounded_up, num_points, degree_rounded_up, dtype=kernel_dtype )
-
-        return output
+        return _evaluate_polynomials_forward(x, polynomials, derivative_level, use_legacy=False)
 
     @staticmethod
     def backward(ctx, grad_output):
@@ -273,19 +260,91 @@ class EvaluatePolynomials(torch.autograd.Function):
 
         return derivative_calc_output, None, None
 
+
+class _EvaluatePolynomialsLegacy(torch.autograd.Function):
+    """Pre-2D implementation retained for correctness and performance comparisons."""
+
+    @staticmethod
+    def forward(ctx, x, polynomials, derivative_level=0):
+        ctx.save_for_backward(x)
+        ctx.polynomials = polynomials
+        ctx.derivative_level = derivative_level
+        return _evaluate_polynomials_forward(x, polynomials, derivative_level, use_legacy=True)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        x = ctx.saved_tensors[0]
+        d_x = torch.hstack((x, grad_output)).contiguous()
+        derivative_calc_output = _EvaluatePolynomialsLegacy.apply(
+            d_x, ctx.polynomials, ctx.derivative_level + 1
+        )
+        return derivative_calc_output, None, None
+
+
+def _evaluate_polynomials_forward(x, polynomials, derivative_level, use_legacy):
+    coefs, terms, polynomial_sizes, _ = polynomials.get_polynomials(derivative_level)
+    polynomial_offsets = polynomials.get_polynomial_offsets(derivative_level)
+    num_polynomials = len(polynomial_sizes)
+
+    num_points, input_dimension = x.shape
+    input_dimension_rounded_up = triton.next_power_of_2(input_dimension)
+    num_monomials, degree = terms.shape
+    degree_rounded_up = triton.next_power_of_2(degree)
+
+    if input_dimension != input_dimension_rounded_up:
+        x = F.pad(x, (0, input_dimension_rounded_up - input_dimension)).contiguous()
+    if degree != degree_rounded_up:
+        terms = F.pad(terms, (0, degree_rounded_up - degree), value=-1).contiguous()
+
+    output = torch.zeros(
+        (num_points, num_polynomials), dtype=x.dtype, device=x.device, requires_grad=True
+    )
+    kernel_dtype = tl.float64 if x.dtype == torch.float64 else tl.float32
+
+    if use_legacy:
+        grid = (triton.cdiv(num_points, 128),)
+        evaluate_polynomials_kernel_legacy[grid](
+            x, coefs, terms, polynomial_sizes, output, num_polynomials,
+            num_monomials, input_dimension_rounded_up, num_points,
+            degree_rounded_up, NUM_POINTS_TO_LOAD=128,
+            NUM_MONOMIALS_TO_LOAD=8, dtype=kernel_dtype, num_warps=2,
+            num_stages=2,
+        )
+    else:
+        grid = lambda meta: (
+            triton.cdiv(num_points, meta["NUM_POINTS_TO_LOAD"]), num_polynomials
+        )
+        evaluate_polynomials_kernel[grid](
+            x, coefs, terms, polynomial_sizes, polynomial_offsets, output,
+            num_polynomials, num_monomials, input_dimension_rounded_up,
+            num_points, degree_rounded_up,
+            point_bucket=triton.next_power_of_2(num_points), dtype=kernel_dtype,
+        )
+
+    return output
+
 def get_configs_polynomials():
     """
     Generates a list of combinations of hyperparameters to use when autotuning evaluate_polynomials_kernel.
     TODO: reduce the number of configurations to a more manageable size to decrease compile time.
     """
-    configs = []
-    for num_points_to_load in [128,256,512]:
-        for num_monomials_to_load in [8,16,32]:
-            for num_warps in [2,4,8,16,32]:
-                for num_stages in [2,3,4,5,6]:
-                    configs.append(triton.Config(kwargs={"NUM_POINTS_TO_LOAD" : num_points_to_load, "NUM_MONOMIALS_TO_LOAD" : num_monomials_to_load}, num_warps=num_warps, num_stages=num_stages))
-                    return configs
-    return configs
+    candidates = (
+        (32, 16, 4, 2),
+        (32, 32, 4, 2),
+        (64, 16, 4, 2),
+        (64, 32, 8, 2),
+    )
+    return [
+        triton.Config(
+            kwargs={
+                "NUM_POINTS_TO_LOAD": num_points,
+                "NUM_MONOMIALS_TO_LOAD": num_monomials,
+            },
+            num_warps=num_warps,
+            num_stages=num_stages,
+        )
+        for num_points, num_monomials, num_warps, num_stages in candidates
+    ]
 
 @triton.jit
 def prod(x,y):
@@ -295,9 +354,8 @@ def prod(x,y):
     """
     return x*y
 
-@triton.autotune(configs=get_configs_polynomials(), key=["num_monomials"])
 @triton.jit
-def evaluate_polynomials_kernel(
+def evaluate_polynomials_kernel_legacy(
     input_ptr,
     coefs_ptr,
     terms_ptr,
@@ -410,3 +468,80 @@ def evaluate_polynomials_kernel(
             which_batch += min( polynomial_size - monomial_idx * NUM_MONOMIALS_TO_LOAD, NUM_MONOMIALS_TO_LOAD )
 
         tl.store(output_ptr + output_offsets + poly, output, mask=point_mask)
+
+
+@triton.autotune(
+    configs=get_configs_polynomials(),
+    key=["point_bucket", "num_monomials", "num_polynomials"],
+)
+@triton.jit
+def evaluate_polynomials_kernel(
+    input_ptr,
+    coefs_ptr,
+    terms_ptr,
+    polynomial_sizes_ptr,
+    polynomial_offsets_ptr,
+    output_ptr,
+    num_polynomials: tl.constexpr,
+    num_monomials: tl.constexpr,
+    input_dimension_rounded_up: tl.constexpr,
+    num_points,
+    degree_rounded_up: tl.constexpr,
+    point_bucket: tl.constexpr,
+    NUM_POINTS_TO_LOAD: tl.constexpr,
+    NUM_MONOMIALS_TO_LOAD: tl.constexpr,
+    dtype: tl.constexpr = tl.float32,
+):
+    """Evaluate one polynomial per program over a small block of points."""
+    x_pid = tl.program_id(0)
+    poly = tl.program_id(1)
+
+    x_start = x_pid * NUM_POINTS_TO_LOAD * input_dimension_rounded_up
+    x_offsets = x_start + tl.arange(0, NUM_POINTS_TO_LOAD * input_dimension_rounded_up)
+    x_mask = x_offsets < num_points * input_dimension_rounded_up
+    x = tl.load(input_ptr + x_offsets, mask=x_mask)
+    x = x.reshape((NUM_POINTS_TO_LOAD, input_dimension_rounded_up))
+
+    point_offsets = x_pid * NUM_POINTS_TO_LOAD + tl.arange(0, NUM_POINTS_TO_LOAD)
+    point_mask = point_offsets < num_points
+
+    polynomial_size = tl.load(polynomial_sizes_ptr + poly)
+    polynomial_start = tl.load(polynomial_offsets_ptr + poly)
+    output = tl.zeros((NUM_POINTS_TO_LOAD,), dtype=dtype)
+    monomial_lanes = tl.arange(0, NUM_MONOMIALS_TO_LOAD)
+    monomial_indexer = monomial_lanes[None, :, None]
+    num_monomial_loops = tl.cdiv(polynomial_size, NUM_MONOMIALS_TO_LOAD)
+
+    for monomial_idx in range(num_monomial_loops):
+        local_monomials = monomial_idx * NUM_MONOMIALS_TO_LOAD + monomial_lanes
+        monomial_mask = local_monomials < polynomial_size
+        monomial_offsets = polynomial_start + local_monomials
+
+        coef = tl.load(coefs_ptr + monomial_offsets, mask=monomial_mask)[None, :]
+        coef = coef.broadcast_to((NUM_POINTS_TO_LOAD, NUM_MONOMIALS_TO_LOAD))
+
+        term_lanes = tl.arange(0, NUM_MONOMIALS_TO_LOAD * degree_rounded_up)
+        terms_offsets = polynomial_start * degree_rounded_up + term_lanes
+        terms_offsets += monomial_idx * NUM_MONOMIALS_TO_LOAD * degree_rounded_up
+        terms_mask = term_lanes < (polynomial_size - monomial_idx * NUM_MONOMIALS_TO_LOAD) * degree_rounded_up
+        terms_index = tl.load(terms_ptr + terms_offsets, mask=terms_mask, other=-1)
+        terms_index = terms_index.reshape((1, NUM_MONOMIALS_TO_LOAD * degree_rounded_up))
+        terms_index = terms_index.broadcast_to(
+            (NUM_POINTS_TO_LOAD, NUM_MONOMIALS_TO_LOAD * degree_rounded_up)
+        )
+
+        terms = tl.gather(x, terms_index, 1)
+        terms = tl.where(terms_index >= 0, terms, 1)
+        terms = terms.reshape(
+            (NUM_POINTS_TO_LOAD, NUM_MONOMIALS_TO_LOAD, degree_rounded_up)
+        )
+        terms = tl.where(
+            monomial_idx * NUM_MONOMIALS_TO_LOAD + monomial_indexer < polynomial_size,
+            terms,
+            0,
+        )
+        terms = tl.reduce(terms, 2, prod)
+        output += tl.sum(terms * coef, axis=1)
+
+    output_offsets = point_offsets * num_polynomials + poly
+    tl.store(output_ptr + output_offsets, output, mask=point_mask)
