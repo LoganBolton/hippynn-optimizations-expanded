@@ -1,0 +1,310 @@
+NVIDIA A100-PCIE-40GB, 595.71.05
+all configs [{'tensor_model': 'HOP', 'tensor_order': 4, 'tensor_factors': 4}]
+kernel info {'kernel_mode': 'triton_legacy', 'custom_kernels': 'triton', 'triton_version': '3.7.1', 'triton_file': '/vast/home/logan_bolton/.conda/envs/hippynn-expanded-lmax/lib/python3.12/site-packages/triton/__init__.py', 'use_polynomial_invariants': True, 'use_tensor_message_passing': True}
+Loading arrays from /vast/home/logan_bolton/Github/hippynn-optimizations-expanded/datasets/ani1x-release.h5
+Arrays found:  ['atomic_numbers', 'ccsd(t)_cbs.energy', 'coordinates', 'wb97x_dz.energy', 'wb97x_dz.forces', 'sys_number']
+Data types:
+{'atomic_numbers': dtype('uint8'), 'ccsd(t)_cbs.energy': dtype('float64'), 'coordinates': dtype('float32'), 'wb97x_dz.energy': dtype('float64'), 'wb97x_dz.forces': dtype('float32')}
+All arrays:
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('uint8')     | (4956005, 63)                |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (4956005,)                   |
+| coordinates                    | dtype('float32')   | (4956005, 63, 3)             |
+| wb97x_dz.energy                | dtype('float64')   | (4956005,)                   |
+| wb97x_dz.forces                | dtype('float32')   | (4956005, 63, 3)             |
+--------------------------------------------------------------------------------------
+Finished checking input and target arrays; all necessary arrays were found.
+Database: Using auto-generated data indices
+Adding split indices for split: test
+Arrays for split: test
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (48957, 63)                  |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (48957,)                     |
+| coordinates                    | dtype('float32')   | (48957, 63, 3)               |
+| wb97x_dz.energy                | dtype('float32')   | (48957,)                     |
+| wb97x_dz.forces                | dtype('float32')   | (48957, 63, 3)               |
+| indices                        | dtype('int64')     | (48957,)                     |
+| split_indices                  | dtype('int64')     | (48957,)                     |
+--------------------------------------------------------------------------------------
+Adding split indices for split: valid
+Arrays for split: valid
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (48957, 63)                  |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (48957,)                     |
+| coordinates                    | dtype('float32')   | (48957, 63, 3)               |
+| wb97x_dz.energy                | dtype('float32')   | (48957,)                     |
+| wb97x_dz.forces                | dtype('float32')   | (48957, 63, 3)               |
+| indices                        | dtype('int64')     | (48957,)                     |
+| split_indices                  | dtype('int64')     | (48957,)                     |
+--------------------------------------------------------------------------------------
+Adding split indices for split: train
+Arrays for split: train
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (391657, 63)                 |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (391657,)                    |
+| coordinates                    | dtype('float32')   | (391657, 63, 3)              |
+| wb97x_dz.energy                | dtype('float32')   | (391657,)                    |
+| wb97x_dz.forces                | dtype('float32')   | (391657, 63, 3)              |
+| indices                        | dtype('int64')     | (391657,)                    |
+| split_indices                  | dtype('int64')     | (391657,)                    |
+--------------------------------------------------------------------------------------
+Database: Splitting complete.
+test configs: 48957
+test atoms: 676395
+Configuration: {'tensor_model': 'HOP', 'tensor_order': 4, 'tensor_factors': 4} parameters: 1353516
+{'metrics': {(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 4), ('batch_size', 1024)): [3.5112972259521484, 3.512763023376465, 3.5171146392822266]}, 'metrics_jsonable': {"(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 4), ('batch_size', 1024))": [3.5112972259521484, 3.512763023376465, 3.5171146392822266]}, 'parameter_counts': {"(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 4))": 1353516}, 'device_name': 'NVIDIA A100-PCIE-40GB', 'n_configs': 48957, 'n_atoms': 676395, 'batch_sizes': [1024], 'reps': 3, 'warmups': 2, 'seed': 0, 'split_seed': 0, 'include_forces': False, 'network_parameters': {'possible_species': [0, 1, 6, 7, 8], 'n_features': 128, 'n_sensitivities': 20, 'dist_soft_min': 0.75, 'dist_soft_max': 5.5, 'dist_hard_max': 6.5, 'n_interaction_layers': 2, 'n_atom_layers': 3}, 'kernel_info': {'kernel_mode': 'triton_legacy', 'custom_kernels': 'triton', 'triton_version': '3.7.1', 'triton_file': '/vast/home/logan_bolton/.conda/envs/hippynn-expanded-lmax/lib/python3.12/site-packages/triton/__init__.py', 'use_polynomial_invariants': True, 'use_tensor_message_passing': True}}
+Wrote /vast/home/logan_bolton/Github/hippynn-optimizations-expanded/examples/methane_sweep/time_benchmark/results/poly_2d_real_data/triton_legacy_energy_b1024.pt
+Wrote /vast/home/logan_bolton/Github/hippynn-optimizations-expanded/examples/methane_sweep/time_benchmark/results/poly_2d_real_data/triton_legacy_energy_b1024.json
+all configs [{'tensor_model': 'HOP', 'tensor_order': 4, 'tensor_factors': 4}]
+kernel info {'kernel_mode': 'triton', 'custom_kernels': 'triton', 'triton_version': '3.7.1', 'triton_file': '/vast/home/logan_bolton/.conda/envs/hippynn-expanded-lmax/lib/python3.12/site-packages/triton/__init__.py', 'use_polynomial_invariants': True, 'use_tensor_message_passing': True}
+Loading arrays from /vast/home/logan_bolton/Github/hippynn-optimizations-expanded/datasets/ani1x-release.h5
+Arrays found:  ['atomic_numbers', 'ccsd(t)_cbs.energy', 'coordinates', 'wb97x_dz.energy', 'wb97x_dz.forces', 'sys_number']
+Data types:
+{'atomic_numbers': dtype('uint8'), 'ccsd(t)_cbs.energy': dtype('float64'), 'coordinates': dtype('float32'), 'wb97x_dz.energy': dtype('float64'), 'wb97x_dz.forces': dtype('float32')}
+All arrays:
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('uint8')     | (4956005, 63)                |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (4956005,)                   |
+| coordinates                    | dtype('float32')   | (4956005, 63, 3)             |
+| wb97x_dz.energy                | dtype('float64')   | (4956005,)                   |
+| wb97x_dz.forces                | dtype('float32')   | (4956005, 63, 3)             |
+--------------------------------------------------------------------------------------
+Finished checking input and target arrays; all necessary arrays were found.
+Database: Using auto-generated data indices
+Adding split indices for split: test
+Arrays for split: test
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (48957, 63)                  |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (48957,)                     |
+| coordinates                    | dtype('float32')   | (48957, 63, 3)               |
+| wb97x_dz.energy                | dtype('float32')   | (48957,)                     |
+| wb97x_dz.forces                | dtype('float32')   | (48957, 63, 3)               |
+| indices                        | dtype('int64')     | (48957,)                     |
+| split_indices                  | dtype('int64')     | (48957,)                     |
+--------------------------------------------------------------------------------------
+Adding split indices for split: valid
+Arrays for split: valid
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (48957, 63)                  |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (48957,)                     |
+| coordinates                    | dtype('float32')   | (48957, 63, 3)               |
+| wb97x_dz.energy                | dtype('float32')   | (48957,)                     |
+| wb97x_dz.forces                | dtype('float32')   | (48957, 63, 3)               |
+| indices                        | dtype('int64')     | (48957,)                     |
+| split_indices                  | dtype('int64')     | (48957,)                     |
+--------------------------------------------------------------------------------------
+Adding split indices for split: train
+Arrays for split: train
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (391657, 63)                 |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (391657,)                    |
+| coordinates                    | dtype('float32')   | (391657, 63, 3)              |
+| wb97x_dz.energy                | dtype('float32')   | (391657,)                    |
+| wb97x_dz.forces                | dtype('float32')   | (391657, 63, 3)              |
+| indices                        | dtype('int64')     | (391657,)                    |
+| split_indices                  | dtype('int64')     | (391657,)                    |
+--------------------------------------------------------------------------------------
+Database: Splitting complete.
+test configs: 48957
+test atoms: 676395
+Configuration: {'tensor_model': 'HOP', 'tensor_order': 4, 'tensor_factors': 4} parameters: 1353516
+{'metrics': {(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 4), ('batch_size', 1024)): [3.2039682865142822, 3.2050743103027344, 3.2039148807525635]}, 'metrics_jsonable': {"(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 4), ('batch_size', 1024))": [3.2039682865142822, 3.2050743103027344, 3.2039148807525635]}, 'parameter_counts': {"(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 4))": 1353516}, 'device_name': 'NVIDIA A100-PCIE-40GB', 'n_configs': 48957, 'n_atoms': 676395, 'batch_sizes': [1024], 'reps': 3, 'warmups': 2, 'seed': 0, 'split_seed': 0, 'include_forces': False, 'network_parameters': {'possible_species': [0, 1, 6, 7, 8], 'n_features': 128, 'n_sensitivities': 20, 'dist_soft_min': 0.75, 'dist_soft_max': 5.5, 'dist_hard_max': 6.5, 'n_interaction_layers': 2, 'n_atom_layers': 3}, 'kernel_info': {'kernel_mode': 'triton', 'custom_kernels': 'triton', 'triton_version': '3.7.1', 'triton_file': '/vast/home/logan_bolton/.conda/envs/hippynn-expanded-lmax/lib/python3.12/site-packages/triton/__init__.py', 'use_polynomial_invariants': True, 'use_tensor_message_passing': True}}
+Wrote /vast/home/logan_bolton/Github/hippynn-optimizations-expanded/examples/methane_sweep/time_benchmark/results/poly_2d_real_data/triton_energy_b1024.pt
+Wrote /vast/home/logan_bolton/Github/hippynn-optimizations-expanded/examples/methane_sweep/time_benchmark/results/poly_2d_real_data/triton_energy_b1024.json
+all configs [{'tensor_model': 'HOP', 'tensor_order': 4, 'tensor_factors': 4}]
+kernel info {'kernel_mode': 'triton_legacy', 'custom_kernels': 'triton', 'triton_version': '3.7.1', 'triton_file': '/vast/home/logan_bolton/.conda/envs/hippynn-expanded-lmax/lib/python3.12/site-packages/triton/__init__.py', 'use_polynomial_invariants': True, 'use_tensor_message_passing': True}
+Loading arrays from /vast/home/logan_bolton/Github/hippynn-optimizations-expanded/datasets/ani1x-release.h5
+Arrays found:  ['atomic_numbers', 'ccsd(t)_cbs.energy', 'coordinates', 'wb97x_dz.energy', 'wb97x_dz.forces', 'sys_number']
+Data types:
+{'atomic_numbers': dtype('uint8'), 'ccsd(t)_cbs.energy': dtype('float64'), 'coordinates': dtype('float32'), 'wb97x_dz.energy': dtype('float64'), 'wb97x_dz.forces': dtype('float32')}
+All arrays:
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('uint8')     | (4956005, 63)                |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (4956005,)                   |
+| coordinates                    | dtype('float32')   | (4956005, 63, 3)             |
+| wb97x_dz.energy                | dtype('float64')   | (4956005,)                   |
+| wb97x_dz.forces                | dtype('float32')   | (4956005, 63, 3)             |
+--------------------------------------------------------------------------------------
+Finished checking input and target arrays; all necessary arrays were found.
+Database: Using auto-generated data indices
+Adding split indices for split: test
+Arrays for split: test
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (48957, 63)                  |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (48957,)                     |
+| coordinates                    | dtype('float32')   | (48957, 63, 3)               |
+| wb97x_dz.energy                | dtype('float32')   | (48957,)                     |
+| wb97x_dz.forces                | dtype('float32')   | (48957, 63, 3)               |
+| indices                        | dtype('int64')     | (48957,)                     |
+| split_indices                  | dtype('int64')     | (48957,)                     |
+--------------------------------------------------------------------------------------
+Adding split indices for split: valid
+Arrays for split: valid
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (48957, 63)                  |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (48957,)                     |
+| coordinates                    | dtype('float32')   | (48957, 63, 3)               |
+| wb97x_dz.energy                | dtype('float32')   | (48957,)                     |
+| wb97x_dz.forces                | dtype('float32')   | (48957, 63, 3)               |
+| indices                        | dtype('int64')     | (48957,)                     |
+| split_indices                  | dtype('int64')     | (48957,)                     |
+--------------------------------------------------------------------------------------
+Adding split indices for split: train
+Arrays for split: train
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (391657, 63)                 |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (391657,)                    |
+| coordinates                    | dtype('float32')   | (391657, 63, 3)              |
+| wb97x_dz.energy                | dtype('float32')   | (391657,)                    |
+| wb97x_dz.forces                | dtype('float32')   | (391657, 63, 3)              |
+| indices                        | dtype('int64')     | (391657,)                    |
+| split_indices                  | dtype('int64')     | (391657,)                    |
+--------------------------------------------------------------------------------------
+Database: Splitting complete.
+test configs: 48957
+test atoms: 676395
+Configuration: {'tensor_model': 'HOP', 'tensor_order': 4, 'tensor_factors': 4} parameters: 1353516
+{'metrics': {(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 4), ('batch_size', 1024)): [19.354384660720825, 19.35785961151123, 19.359541177749634]}, 'metrics_jsonable': {"(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 4), ('batch_size', 1024))": [19.354384660720825, 19.35785961151123, 19.359541177749634]}, 'parameter_counts': {"(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 4))": 1353516}, 'device_name': 'NVIDIA A100-PCIE-40GB', 'n_configs': 48957, 'n_atoms': 676395, 'batch_sizes': [1024], 'reps': 3, 'warmups': 2, 'seed': 0, 'split_seed': 0, 'include_forces': True, 'network_parameters': {'possible_species': [0, 1, 6, 7, 8], 'n_features': 128, 'n_sensitivities': 20, 'dist_soft_min': 0.75, 'dist_soft_max': 5.5, 'dist_hard_max': 6.5, 'n_interaction_layers': 2, 'n_atom_layers': 3}, 'kernel_info': {'kernel_mode': 'triton_legacy', 'custom_kernels': 'triton', 'triton_version': '3.7.1', 'triton_file': '/vast/home/logan_bolton/.conda/envs/hippynn-expanded-lmax/lib/python3.12/site-packages/triton/__init__.py', 'use_polynomial_invariants': True, 'use_tensor_message_passing': True}}
+Wrote /vast/home/logan_bolton/Github/hippynn-optimizations-expanded/examples/methane_sweep/time_benchmark/results/poly_2d_real_data/triton_legacy_energy_forces_b1024.pt
+Wrote /vast/home/logan_bolton/Github/hippynn-optimizations-expanded/examples/methane_sweep/time_benchmark/results/poly_2d_real_data/triton_legacy_energy_forces_b1024.json
+all configs [{'tensor_model': 'HOP', 'tensor_order': 4, 'tensor_factors': 4}]
+kernel info {'kernel_mode': 'triton', 'custom_kernels': 'triton', 'triton_version': '3.7.1', 'triton_file': '/vast/home/logan_bolton/.conda/envs/hippynn-expanded-lmax/lib/python3.12/site-packages/triton/__init__.py', 'use_polynomial_invariants': True, 'use_tensor_message_passing': True}
+Loading arrays from /vast/home/logan_bolton/Github/hippynn-optimizations-expanded/datasets/ani1x-release.h5
+Arrays found:  ['atomic_numbers', 'ccsd(t)_cbs.energy', 'coordinates', 'wb97x_dz.energy', 'wb97x_dz.forces', 'sys_number']
+Data types:
+{'atomic_numbers': dtype('uint8'), 'ccsd(t)_cbs.energy': dtype('float64'), 'coordinates': dtype('float32'), 'wb97x_dz.energy': dtype('float64'), 'wb97x_dz.forces': dtype('float32')}
+All arrays:
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('uint8')     | (4956005, 63)                |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (4956005,)                   |
+| coordinates                    | dtype('float32')   | (4956005, 63, 3)             |
+| wb97x_dz.energy                | dtype('float64')   | (4956005,)                   |
+| wb97x_dz.forces                | dtype('float32')   | (4956005, 63, 3)             |
+--------------------------------------------------------------------------------------
+Finished checking input and target arrays; all necessary arrays were found.
+Database: Using auto-generated data indices
+Adding split indices for split: test
+Arrays for split: test
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (48957, 63)                  |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (48957,)                     |
+| coordinates                    | dtype('float32')   | (48957, 63, 3)               |
+| wb97x_dz.energy                | dtype('float32')   | (48957,)                     |
+| wb97x_dz.forces                | dtype('float32')   | (48957, 63, 3)               |
+| indices                        | dtype('int64')     | (48957,)                     |
+| split_indices                  | dtype('int64')     | (48957,)                     |
+--------------------------------------------------------------------------------------
+Adding split indices for split: valid
+Arrays for split: valid
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (48957, 63)                  |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (48957,)                     |
+| coordinates                    | dtype('float32')   | (48957, 63, 3)               |
+| wb97x_dz.energy                | dtype('float32')   | (48957,)                     |
+| wb97x_dz.forces                | dtype('float32')   | (48957, 63, 3)               |
+| indices                        | dtype('int64')     | (48957,)                     |
+| split_indices                  | dtype('int64')     | (48957,)                     |
+--------------------------------------------------------------------------------------
+Adding split indices for split: train
+Arrays for split: train
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (391657, 63)                 |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (391657,)                    |
+| coordinates                    | dtype('float32')   | (391657, 63, 3)              |
+| wb97x_dz.energy                | dtype('float32')   | (391657,)                    |
+| wb97x_dz.forces                | dtype('float32')   | (391657, 63, 3)              |
+| indices                        | dtype('int64')     | (391657,)                    |
+| split_indices                  | dtype('int64')     | (391657,)                    |
+--------------------------------------------------------------------------------------
+Database: Splitting complete.
+test configs: 48957
+test atoms: 676395
+Configuration: {'tensor_model': 'HOP', 'tensor_order': 4, 'tensor_factors': 4} parameters: 1353516
+{'metrics': {(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 4), ('batch_size', 1024)): [10.9775869846344, 11.00379753112793, 11.004002809524536]}, 'metrics_jsonable': {"(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 4), ('batch_size', 1024))": [10.9775869846344, 11.00379753112793, 11.004002809524536]}, 'parameter_counts': {"(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 4))": 1353516}, 'device_name': 'NVIDIA A100-PCIE-40GB', 'n_configs': 48957, 'n_atoms': 676395, 'batch_sizes': [1024], 'reps': 3, 'warmups': 2, 'seed': 0, 'split_seed': 0, 'include_forces': True, 'network_parameters': {'possible_species': [0, 1, 6, 7, 8], 'n_features': 128, 'n_sensitivities': 20, 'dist_soft_min': 0.75, 'dist_soft_max': 5.5, 'dist_hard_max': 6.5, 'n_interaction_layers': 2, 'n_atom_layers': 3}, 'kernel_info': {'kernel_mode': 'triton', 'custom_kernels': 'triton', 'triton_version': '3.7.1', 'triton_file': '/vast/home/logan_bolton/.conda/envs/hippynn-expanded-lmax/lib/python3.12/site-packages/triton/__init__.py', 'use_polynomial_invariants': True, 'use_tensor_message_passing': True}}
+Wrote /vast/home/logan_bolton/Github/hippynn-optimizations-expanded/examples/methane_sweep/time_benchmark/results/poly_2d_real_data/triton_energy_forces_b1024.pt
+Wrote /vast/home/logan_bolton/Github/hippynn-optimizations-expanded/examples/methane_sweep/time_benchmark/results/poly_2d_real_data/triton_energy_forces_b1024.json
+{
+  "triton_energy_b1024": {
+    "seconds_median": 3.2039682865142822,
+    "seconds_mean": 3.20431915918986,
+    "seconds_repetitions": [
+      3.2039682865142822,
+      3.2050743103027344,
+      3.2039148807525635
+    ],
+    "n_atoms": 676395,
+    "n_configs": 48957,
+    "microseconds_per_atom_median": 4.736830234573411,
+    "speedup_vs_legacy": 1.0963788368823502
+  },
+  "triton_energy_forces_b1024": {
+    "seconds_median": 11.00379753112793,
+    "seconds_mean": 10.995129108428955,
+    "seconds_repetitions": [
+      10.9775869846344,
+      11.00379753112793,
+      11.004002809524536
+    ],
+    "n_atoms": 676395,
+    "n_configs": 48957,
+    "microseconds_per_atom_median": 16.26830111270475,
+    "speedup_vs_legacy": 1.7591980910909197
+  },
+  "triton_legacy_energy_b1024": {
+    "seconds_median": 3.512763023376465,
+    "seconds_mean": 3.51372496287028,
+    "seconds_repetitions": [
+      3.5112972259521484,
+      3.512763023376465,
+      3.5171146392822266
+    ],
+    "n_atoms": 676395,
+    "n_configs": 48957,
+    "microseconds_per_atom_median": 5.193360423090746
+  },
+  "triton_legacy_energy_forces_b1024": {
+    "seconds_median": 19.35785961151123,
+    "seconds_mean": 19.357261816660564,
+    "seconds_repetitions": [
+      19.354384660720825,
+      19.35785961151123,
+      19.359541177749634
+    ],
+    "n_atoms": 676395,
+    "n_configs": 48957,
+    "microseconds_per_atom_median": 28.619164262762485
+  }
+}
+Wrote /vast/home/logan_bolton/Github/hippynn-optimizations-expanded/examples/methane_sweep/time_benchmark/results/poly_2d_real_data/summary_b1024.json

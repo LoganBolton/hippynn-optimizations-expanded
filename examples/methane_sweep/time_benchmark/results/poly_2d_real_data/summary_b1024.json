@@ -1,0 +1,52 @@
+{
+  "triton_energy_b1024": {
+    "seconds_median": 3.2039682865142822,
+    "seconds_mean": 3.20431915918986,
+    "seconds_repetitions": [
+      3.2039682865142822,
+      3.2050743103027344,
+      3.2039148807525635
+    ],
+    "n_atoms": 676395,
+    "n_configs": 48957,
+    "microseconds_per_atom_median": 4.736830234573411,
+    "speedup_vs_legacy": 1.0963788368823502
+  },
+  "triton_energy_forces_b1024": {
+    "seconds_median": 11.00379753112793,
+    "seconds_mean": 10.995129108428955,
+    "seconds_repetitions": [
+      10.9775869846344,
+      11.00379753112793,
+      11.004002809524536
+    ],
+    "n_atoms": 676395,
+    "n_configs": 48957,
+    "microseconds_per_atom_median": 16.26830111270475,
+    "speedup_vs_legacy": 1.7591980910909197
+  },
+  "triton_legacy_energy_b1024": {
+    "seconds_median": 3.512763023376465,
+    "seconds_mean": 3.51372496287028,
+    "seconds_repetitions": [
+      3.5112972259521484,
+      3.512763023376465,
+      3.5171146392822266
+    ],
+    "n_atoms": 676395,
+    "n_configs": 48957,
+    "microseconds_per_atom_median": 5.193360423090746
+  },
+  "triton_legacy_energy_forces_b1024": {
+    "seconds_median": 19.35785961151123,
+    "seconds_mean": 19.357261816660564,
+    "seconds_repetitions": [
+      19.354384660720825,
+      19.35785961151123,
+      19.359541177749634
+    ],
+    "n_atoms": 676395,
+    "n_configs": 48957,
+    "microseconds_per_atom_median": 28.619164262762485
+  }
+}

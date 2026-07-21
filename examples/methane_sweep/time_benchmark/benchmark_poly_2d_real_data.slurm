@@ -18,6 +18,7 @@ SCRIPT_DIR="$BENCHMARK_DIR/nick_speed_comparison"
 ANI_DATA="${ANI_DATA:-$PROJECT_ROOT/datasets/ani1x-release.h5}"
 CONDA_ENV="${CONDA_ENV:-hippynn-expanded-lmax}"
 RESULT_DIR="$BENCHMARK_DIR/results/poly_2d_real_data"
+BATCH_SIZE="${BATCH_SIZE:-512}"
 
 module load miniconda3
 source "$(conda info --base)/etc/profile.d/conda.sh"
@@ -36,7 +37,7 @@ run_case() {
     local kernel_mode="$1"
     local force_flag="$2"
     local workload="$3"
-    local output_stem="$RESULT_DIR/${kernel_mode}_${workload}_b512"
+    local output_stem="$RESULT_DIR/${kernel_mode}_${workload}_b${BATCH_SIZE}"
 
     python -u "$SCRIPT_DIR/evaluation_script_triton_random_init.py" \
         --gpu 0 \
@@ -44,7 +45,7 @@ run_case() {
         --split_seed 0 \
         --anidata_location "$ANI_DATA" \
         --configs HOP:4:4 \
-        --batch_sizes 512 \
+        --batch_sizes "$BATCH_SIZE" \
         --warmups 2 \
         --reps 3 \
         --kernel_mode "$kernel_mode" \
@@ -59,15 +60,16 @@ run_case triton --no-include_forces energy
 run_case triton_legacy --include_forces energy_forces
 run_case triton --include_forces energy_forces
 
-python - "$RESULT_DIR" <<'PY'
+python - "$RESULT_DIR" "$BATCH_SIZE" <<'PY'
 import json
 import statistics
 import sys
 from pathlib import Path
 
 result_dir = Path(sys.argv[1])
+batch_size = int(sys.argv[2])
 summary = {}
-for path in sorted(result_dir.glob("*_b512.json")):
+for path in sorted(result_dir.glob(f"*_b{batch_size}.json")):
     data = json.loads(path.read_text())
     timings = next(iter(data["metrics"].values()))
     summary[path.stem] = {
@@ -80,11 +82,11 @@ for path in sorted(result_dir.glob("*_b512.json")):
     }
 
 for workload in ("energy", "energy_forces"):
-    legacy = summary[f"triton_legacy_{workload}_b512"]
-    optimized = summary[f"triton_{workload}_b512"]
+    legacy = summary[f"triton_legacy_{workload}_b{batch_size}"]
+    optimized = summary[f"triton_{workload}_b{batch_size}"]
     optimized["speedup_vs_legacy"] = legacy["seconds_median"] / optimized["seconds_median"]
 
-output = result_dir / "summary_b512.json"
+output = result_dir / f"summary_b{batch_size}.json"
 output.write_text(json.dumps(summary, indent=2) + "\n")
 print(json.dumps(summary, indent=2))
 print(f"Wrote {output}")
