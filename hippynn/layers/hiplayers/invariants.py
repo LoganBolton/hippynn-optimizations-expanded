@@ -163,12 +163,15 @@ def computeInvariantPolynomial(tensor_bases, invariant_input_offsets, invariant_
     einsum_string = einsum_front[1:] + "->" + einsum_back
     coef_tensor = torch.einsum(einsum_string, *tensors_to_contract)
 
-    # Keep only nonzero contractions before combining equivalent monomials. This
-    # is important for high-degree invariants, whose dense coefficient tensors
-    # are overwhelmingly zero.
+    # Using a high n_max results in a massive amount of terms being added together.
+    # Most of these coeffecients are zero, so we want to just disregard them
+    # For l_max=3, n_max=12, this reduces 282,475,249 terms to 5,152,520 non zero terms (98% reduction)
     nonzero_basis_choices = torch.nonzero(coef_tensor, as_tuple=False)
     nonzero_coefs = coef_tensor[tuple(nonzero_basis_choices.T)]
 
+    # This determines the starting index in the flattened feature vector for each tensor factor.
+    # E.g. rank 0 -> 0, rank 1 -> 1, rank 2 -> 4, rank 3 -> 9
+    # so "i,ij,j->,one,two,one" -> feature_offsets = [1, 4, 1]
     feature_offsets = torch.tensor(
         [invariant_input_offsets[invar_tensors[dim]] for dim in range(num_terms)],
         dtype=nonzero_basis_choices.dtype,
@@ -176,13 +179,16 @@ def computeInvariantPolynomial(tensor_bases, invariant_input_offsets, invariant_
     )
     monomial_terms = nonzero_basis_choices + feature_offsets
 
-    # Sort each product's factors and merge duplicate monomials.
+    # A lot of these remaining terms are actually identical, we want to combine them to save on compute
+    # E.g.  2*x3*x1 + 4*x1*x3 is reduced into 6*x1*x3
+    # For l_max=3, n_max=12, this reduces 5,152,520 terms to 2,512 (99% reduction)
     monomial_terms = torch.sort(monomial_terms, dim=1).values
     unique_terms, duplicate_map = torch.unique(monomial_terms, dim=0, return_inverse=True)
     unique_coefs = nonzero_coefs.new_zeros(unique_terms.shape[0])
     unique_coefs.scatter_add_(0, duplicate_map, nonzero_coefs)
 
-    # Duplicate terms can cancel exactly after merging.
+    # When we combined those duplicate monomials, sometimes the new coeffecients equal 0, so just throw those out too
+    # For l_max=3, n_max=12, this reduces 2,512 terms to 2,406 terms (4% reduction)
     nonzero_terms = unique_coefs != 0
     coefs_tensor = unique_coefs[nonzero_terms].to(dtype=torch.float32, device="cpu")
     terms_tensor = unique_terms[nonzero_terms].to(dtype=torch.int32, device="cpu")
