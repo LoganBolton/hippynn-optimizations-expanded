@@ -292,69 +292,6 @@ class EvaluatePolynomials(torch.autograd.Function):
 
         return derivative_calc_output, None, None
 
-
-class _EvaluatePolynomialsLegacy(torch.autograd.Function):
-    """Pre-2D implementation retained for correctness and performance comparisons."""
-
-    @staticmethod
-    def forward(ctx, x, polynomials, derivative_level=0):
-        ctx.save_for_backward(x)
-        ctx.polynomials = polynomials
-        ctx.derivative_level = derivative_level
-        return _evaluate_polynomials_forward(x, polynomials, derivative_level, use_legacy=True)
-
-    @staticmethod
-    def backward(ctx, grad_output):
-        x = ctx.saved_tensors[0]
-        d_x = torch.hstack((x, grad_output)).contiguous()
-        derivative_calc_output = _EvaluatePolynomialsLegacy.apply(
-            d_x, ctx.polynomials, ctx.derivative_level + 1
-        )
-        return derivative_calc_output, None, None
-
-
-def _evaluate_polynomials_forward(x, polynomials, derivative_level, use_legacy):
-    coefs, terms, polynomial_sizes, _ = polynomials.get_polynomials(derivative_level)
-    polynomial_offsets = polynomials.get_polynomial_offsets(derivative_level)
-    num_polynomials = len(polynomial_sizes)
-
-    num_points, input_dimension = x.shape
-    input_dimension_rounded_up = triton.next_power_of_2(input_dimension)
-    num_monomials, degree = terms.shape
-    degree_rounded_up = triton.next_power_of_2(degree)
-
-    if input_dimension != input_dimension_rounded_up:
-        x = F.pad(x, (0, input_dimension_rounded_up - input_dimension)).contiguous()
-    if degree != degree_rounded_up:
-        terms = F.pad(terms, (0, degree_rounded_up - degree), value=-1).contiguous()
-
-    output = torch.zeros(
-        (num_points, num_polynomials), dtype=x.dtype, device=x.device, requires_grad=True
-    )
-    kernel_dtype = tl.float64 if x.dtype == torch.float64 else tl.float32
-
-    if use_legacy:
-        grid = (triton.cdiv(num_points, 128),)
-        evaluate_polynomials_kernel_legacy[grid](
-            x, coefs, terms, polynomial_sizes, output, num_polynomials,
-            num_monomials, input_dimension_rounded_up, num_points,
-            degree_rounded_up, NUM_POINTS_TO_LOAD=128,
-            NUM_MONOMIALS_TO_LOAD=8, dtype=kernel_dtype, num_warps=2,
-            num_stages=2,
-        )
-    else:
-        grid = lambda meta: (
-            triton.cdiv(num_points, meta["NUM_POINTS_TO_LOAD"]), num_polynomials
-        )
-        evaluate_polynomials_kernel[grid](
-            x, coefs, terms, polynomial_sizes, polynomial_offsets, output,
-            num_polynomials, num_monomials, input_dimension_rounded_up,
-            num_points, degree_rounded_up,
-            point_bucket=triton.next_power_of_2(num_points), dtype=kernel_dtype,
-        )
-
-    return output
-
 def get_configs_polynomials():
     """
     Generates a list of combinations of hyperparameters to use when autotuning evaluate_polynomials_kernel.
@@ -391,7 +328,7 @@ def prod(x,y):
     key=["point_bucket", "num_monomials", "num_polynomials"],
 )
 @triton.jit
-def evaluate_polynomials_kernel_legacy(
+def evaluate_polynomials_kernel(
     input_ptr,
     coefs_ptr,
     terms_ptr,
