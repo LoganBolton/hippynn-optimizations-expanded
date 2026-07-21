@@ -49,22 +49,29 @@ class PolynomialCollection():
 
     def __init__(self, coefs, terms, polynomial_sizes, input_dimension):
         self.polynomials = {0 : (coefs, terms, polynomial_sizes, input_dimension)}
+        self.polynomial_offsets = {0: self._compute_offsets(polynomial_sizes)}
         self.max_derivative_level = 0
 
-    def get_device(self):
-        """
-        Returns the device that each tensor member variable is currently stored on.
-        """
-        return self.polynomials[0][0].device
-    
+    @staticmethod
+    def _compute_offsets(polynomial_sizes):
+        """Return the first monomial index for every polynomial."""
+        offsets = torch.empty_like(polynomial_sizes)
+        offsets[0] = 0
+        if len(polynomial_sizes) > 1:
+            torch.cumsum(
+                polynomial_sizes[:-1], dim=0, dtype=polynomial_sizes.dtype, out=offsets[1:]
+            )
+        return offsets
+
     def set_device(self,device):
         """
         Changes the device that each tensor member variable is stored on.
         """
-        if self.get_device() != device:
+        if self.polynomials[0][0].device != device:
             for i in range(self.max_derivative_level+1):
                 coefs, terms, polynomial_sizes, input_dimension = self.polynomials[i]
                 self.polynomials[i] = (coefs.to(device), terms.to(device), polynomial_sizes.to(device), input_dimension)
+                self.polynomial_offsets[i] = self.polynomial_offsets[i].to(device)
     
     def get_polynomials(self,derivative_level=0):
         """
@@ -84,8 +91,14 @@ class PolynomialCollection():
             previous_coefs, previous_terms, previous_polynomial_sizes, previous_input_dimension = previous_derivative_level
             derivative = compute_derivative(previous_coefs, previous_terms, previous_polynomial_sizes, previous_input_dimension)
             self.polynomials[derivative_level] = derivative
+            self.polynomial_offsets[derivative_level] = self._compute_offsets(derivative[2])
             self.max_derivative_level = derivative_level
             return derivative
+
+    def get_polynomial_offsets(self, derivative_level=0):
+        """Return cached starting monomial indices for one derivative level."""
+        self.get_polynomials(derivative_level)
+        return self.polynomial_offsets[derivative_level]
 
 def compute_derivative(coefs_,terms_,polynomial_sizes_,input_dimension):
     """
@@ -227,6 +240,7 @@ class EvaluatePolynomials(torch.autograd.Function):
         ctx.derivative_level = derivative_level
 
         coefs, terms, polynomial_sizes, _ = polynomials.get_polynomials(derivative_level)
+        polynomial_offsets = polynomials.get_polynomial_offsets(derivative_level)
 
         num_polynomials = len(polynomial_sizes)
 
@@ -248,7 +262,7 @@ class EvaluatePolynomials(torch.autograd.Function):
         output = torch.zeros( (num_points,num_polynomials), dtype=x.dtype, device=x.device, requires_grad=True )
 
         grid = lambda meta: (
-            triton.cdiv(num_points, meta['NUM_POINTS_TO_LOAD']),
+            triton.cdiv(num_points, meta["NUM_POINTS_TO_LOAD"]), num_polynomials
         )
 
         if x.dtype == torch.float64:
@@ -256,7 +270,12 @@ class EvaluatePolynomials(torch.autograd.Function):
         else:
             kernel_dtype = tl.float32
 
-        evaluate_polynomials_kernel[grid]( x, coefs, terms, polynomial_sizes, output, num_polynomials, num_monomials, input_dimension_rounded_up, num_points, degree_rounded_up, dtype=kernel_dtype )
+        evaluate_polynomials_kernel[grid](
+            x, coefs, terms, polynomial_sizes, polynomial_offsets, output,
+            num_polynomials, num_monomials, input_dimension_rounded_up,
+            num_points, degree_rounded_up,
+            point_bucket=triton.next_power_of_2(num_points), dtype=kernel_dtype,
+        )
 
         return output
 
@@ -278,14 +297,23 @@ def get_configs_polynomials():
     Generates a list of combinations of hyperparameters to use when autotuning evaluate_polynomials_kernel.
     TODO: reduce the number of configurations to a more manageable size to decrease compile time.
     """
-    configs = []
-    for num_points_to_load in [128,256,512]:
-        for num_monomials_to_load in [8,16,32]:
-            for num_warps in [2,4,8,16,32]:
-                for num_stages in [2,3,4,5,6]:
-                    configs.append(triton.Config(kwargs={"NUM_POINTS_TO_LOAD" : num_points_to_load, "NUM_MONOMIALS_TO_LOAD" : num_monomials_to_load}, num_warps=num_warps, num_stages=num_stages))
-                    return configs
-    return configs
+    candidates = (
+        (32, 16, 4, 2),
+        (32, 32, 4, 2),
+        (64, 16, 4, 2),
+        (64, 32, 8, 2),
+    )
+    return [
+        triton.Config(
+            kwargs={
+                "NUM_POINTS_TO_LOAD": num_points,
+                "NUM_MONOMIALS_TO_LOAD": num_monomials,
+            },
+            num_warps=num_warps,
+            num_stages=num_stages,
+        )
+        for num_points, num_monomials, num_warps, num_stages in candidates
+    ]
 
 @triton.jit
 def prod(x,y):
@@ -295,22 +323,27 @@ def prod(x,y):
     """
     return x*y
 
-@triton.autotune(configs=get_configs_polynomials(), key=["num_monomials"])
+@triton.autotune(
+    configs=get_configs_polynomials(),
+    key=["point_bucket", "num_monomials", "num_polynomials"],
+)
 @triton.jit
 def evaluate_polynomials_kernel(
     input_ptr,
     coefs_ptr,
     terms_ptr,
     polynomial_sizes_ptr,
+    polynomial_offsets_ptr,
     output_ptr,
-    num_polynomials : tl.constexpr,
-    num_monomials : tl.constexpr,
-    input_dimension_rounded_up : tl.constexpr,
+    num_polynomials: tl.constexpr,
+    num_monomials: tl.constexpr,
+    input_dimension_rounded_up: tl.constexpr,
     num_points,
-    degree_rounded_up : tl.constexpr,
-    NUM_POINTS_TO_LOAD : tl.constexpr,
-    NUM_MONOMIALS_TO_LOAD : tl.constexpr,
-    dtype:tl.constexpr = tl.float32,
+    degree_rounded_up: tl.constexpr,
+    point_bucket: tl.constexpr,
+    NUM_POINTS_TO_LOAD: tl.constexpr,
+    NUM_MONOMIALS_TO_LOAD: tl.constexpr,
+    dtype: tl.constexpr = tl.float32,
 ):
     """
     Triton kernel that is used to simultaneously evaluate many multivariate polynomials on a batch of points.
@@ -341,72 +374,56 @@ def evaluate_polynomials_kernel(
 
     :param dtype: Specifies whether the output will be float32 or float64.
     """
-
-    num_monomials_indexer = tl.arange(0,NUM_MONOMIALS_TO_LOAD)[None,:,None]
-
-    # each PID is associated with a certain subset of the points X.
     x_pid = tl.program_id(0)
+    poly = tl.program_id(1)
 
-    # Load the slice of points X.
     x_start = x_pid * NUM_POINTS_TO_LOAD * input_dimension_rounded_up
-    x_offsets = x_start + tl.arange(0,NUM_POINTS_TO_LOAD * input_dimension_rounded_up)
+    x_offsets = x_start + tl.arange(0, NUM_POINTS_TO_LOAD * input_dimension_rounded_up)
     x_mask = x_offsets < num_points * input_dimension_rounded_up
-
     x = tl.load(input_ptr + x_offsets, mask=x_mask)
-    x = x.reshape((NUM_POINTS_TO_LOAD,input_dimension_rounded_up))
+    x = x.reshape((NUM_POINTS_TO_LOAD, input_dimension_rounded_up))
 
-    # Compute output offsets. The polynomials are computed one at a time. Thus, these offsets
-    # are used to store a single polynomial evaluated on many different points.
-    point_offsets = x_pid * NUM_POINTS_TO_LOAD + tl.arange(0,NUM_POINTS_TO_LOAD)
+    point_offsets = x_pid * NUM_POINTS_TO_LOAD + tl.arange(0, NUM_POINTS_TO_LOAD)
     point_mask = point_offsets < num_points
 
-    output_offsets = point_offsets * num_polynomials
+    polynomial_size = tl.load(polynomial_sizes_ptr + poly)
+    polynomial_start = tl.load(polynomial_offsets_ptr + poly)
+    output = tl.zeros((NUM_POINTS_TO_LOAD,), dtype=dtype)
+    monomial_lanes = tl.arange(0, NUM_MONOMIALS_TO_LOAD)
+    monomial_indexer = monomial_lanes[None, :, None]
+    num_monomial_loops = tl.cdiv(polynomial_size, NUM_MONOMIALS_TO_LOAD)
 
-    which_batch = 0 # index of the first monomial is loaded in the current batch of monomials.
-    for poly in range(num_polynomials):
+    for monomial_idx in range(num_monomial_loops):
+        local_monomials = monomial_idx * NUM_MONOMIALS_TO_LOAD + monomial_lanes
+        monomial_offsets = polynomial_start + local_monomials
+        # makes sure you don't evaluate padding
+        monomial_mask = local_monomials < polynomial_size
 
-        polynomial_size = tl.load(polynomial_sizes_ptr + poly)        
-        output = tl.zeros( (NUM_POINTS_TO_LOAD,), dtype=dtype )
+        coef = tl.load(coefs_ptr + monomial_offsets, mask=monomial_mask)[None, :]
+        coef = coef.broadcast_to((NUM_POINTS_TO_LOAD, NUM_MONOMIALS_TO_LOAD))
 
-        num_monomial_loops = tl.cdiv( polynomial_size, NUM_MONOMIALS_TO_LOAD )
+        term_lanes = tl.arange(0, NUM_MONOMIALS_TO_LOAD * degree_rounded_up)
+        terms_offsets = polynomial_start * degree_rounded_up + term_lanes
+        terms_offsets += monomial_idx * NUM_MONOMIALS_TO_LOAD * degree_rounded_up
+        terms_mask = term_lanes < (polynomial_size - monomial_idx * NUM_MONOMIALS_TO_LOAD) * degree_rounded_up
+        terms_index = tl.load(terms_ptr + terms_offsets, mask=terms_mask, other=-1)
+        terms_index = terms_index.reshape((1, NUM_MONOMIALS_TO_LOAD * degree_rounded_up))
+        terms_index = terms_index.broadcast_to(
+            (NUM_POINTS_TO_LOAD, NUM_MONOMIALS_TO_LOAD * degree_rounded_up)
+        )
 
-        for monomial_idx in range(num_monomial_loops):
-            # load the coefficients associated with the current monomials
-            coef_arange = tl.arange(0,NUM_MONOMIALS_TO_LOAD) + which_batch
-            coef_mask = coef_arange < num_monomials
-            coef = tl.load( coefs_ptr + coef_arange, mask=coef_mask )[None,:]
-            coef = coef.broadcast_to( (NUM_POINTS_TO_LOAD,NUM_MONOMIALS_TO_LOAD) )
+        terms = tl.gather(x, terms_index, 1)
+        terms = tl.where(terms_index >= 0, terms, 1)
+        terms = terms.reshape(
+            (NUM_POINTS_TO_LOAD, NUM_MONOMIALS_TO_LOAD, degree_rounded_up)
+        )
+        terms = tl.where(
+            monomial_idx * NUM_MONOMIALS_TO_LOAD + monomial_indexer < polynomial_size,
+            terms,
+            0,
+        )
+        terms = tl.reduce(terms, 2, prod)
+        output += tl.sum(terms * coef, axis=1)
 
-            # load the terms (e.g. x_1, x_3, etc.) associated with each monomial.
-            terms_arange = tl.arange(0,NUM_MONOMIALS_TO_LOAD * degree_rounded_up) + which_batch * degree_rounded_up
-            terms_mask = terms_arange < num_monomials * degree_rounded_up
-            terms_index = tl.load( terms_ptr + terms_arange, mask=terms_mask )
-
-            terms_index = terms_index.reshape((1,NUM_MONOMIALS_TO_LOAD * degree_rounded_up))
-            terms_index = terms_index.broadcast_to( (NUM_POINTS_TO_LOAD, NUM_MONOMIALS_TO_LOAD * degree_rounded_up) )
-
-            # First, evaluate each term (e.g. x_1) on each point X_i. Then, take the product of all of these terms with each other,
-            # and with the coefficients, in order to compute a value for each monomial. Every time that an entry of the terms is
-            # equal to -1, rather than taking some value from the X_i, its value is replaced with the number 1, which will have no effect
-            # on the product of the other terms.
-
-            terms = tl.gather( x, terms_index, 1 )
-            terms = tl.where( terms_index >= 0, terms, 1 )
-
-            terms = terms.reshape((NUM_POINTS_TO_LOAD, NUM_MONOMIALS_TO_LOAD, degree_rounded_up))
-            terms = tl.where(monomial_idx * NUM_MONOMIALS_TO_LOAD + num_monomials_indexer < polynomial_size, terms, 0 )
-            terms = tl.reduce( terms, 2, prod )
-
-            terms *= coef
-            terms = tl.sum( terms, axis=1 )
-            
-            output += terms
-
-            # It is possible that we loaded more monomials than are left in the current polynomial, and some of the monomials that
-            # we loaded are associated with the next polynomial. If that happens, we will ignore those monomials during the current
-            # calculation (using masking). However, in such an event, the first monomial to load during the next batch should be
-            # the first monomial of the next polynomial.
-
-            which_batch += min( polynomial_size - monomial_idx * NUM_MONOMIALS_TO_LOAD, NUM_MONOMIALS_TO_LOAD )
-
-        tl.store(output_ptr + output_offsets + poly, output, mask=point_mask)
+    output_offsets = point_offsets * num_polynomials + poly
+    tl.store(output_ptr + output_offsets, output, mask=point_mask)
