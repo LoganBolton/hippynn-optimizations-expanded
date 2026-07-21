@@ -395,9 +395,14 @@ def evaluate_polynomials_kernel(
 
     for monomial_idx in range(num_monomial_loops):
         local_monomials = monomial_idx * NUM_MONOMIALS_TO_LOAD + monomial_lanes
+<<<<<<< HEAD
         monomial_offsets = polynomial_start + local_monomials
         # makes sure you don't evaluate padding
         monomial_mask = local_monomials < polynomial_size
+=======
+        monomial_mask = local_monomials < polynomial_size
+        monomial_offsets = polynomial_start + local_monomials
+>>>>>>> e0ccda5b96525539056a77e87b336bc75397d271
 
         coef = tl.load(coefs_ptr + monomial_offsets, mask=monomial_mask)[None, :]
         coef = coef.broadcast_to((NUM_POINTS_TO_LOAD, NUM_MONOMIALS_TO_LOAD))
