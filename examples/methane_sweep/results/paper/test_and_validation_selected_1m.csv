@@ -1,0 +1,35 @@
+group,config,split,data_size,seed,rmse,source,run,notes
+l2n4_ref_test,l2n4_ref,test,1000000,ref_0,0.4513370394706726,examples/methane_sweep/results/paper/methane_results.json,HipHop_l2_n4[1000000][0],reference series from methane_results.json
+l2n4_ref_test,l2n4_ref,test,1000000,ref_1,0.4503648579120636,examples/methane_sweep/results/paper/methane_results.json,HipHop_l2_n4[1000000][1],reference series from methane_results.json
+l2n4_ref_test,l2n4_ref,test,1000000,ref_2,0.44712120294570923,examples/methane_sweep/results/paper/methane_results.json,HipHop_l2_n4[1000000][2],reference series from methane_results.json
+l2n4_ref_test,l2n4_ref,test,1000000,ref_3,0.4367995262145996,examples/methane_sweep/results/paper/methane_results.json,HipHop_l2_n4[1000000][3],reference series from methane_results.json
+l2n4_ref_test,l2n4_ref,test,1000000,ref_4,0.44100475311279297,examples/methane_sweep/results/paper/methane_results.json,HipHop_l2_n4[1000000][4],reference series from methane_results.json
+l2n4_ref_test,l2n4_ref,test,1000000,ref_5,0.4288160800933838,examples/methane_sweep/results/paper/methane_results.json,HipHop_l2_n4[1000000][5],reference series from methane_results.json
+l2n4_ref_test,l2n4_ref,test,1000000,ref_6,0.4264237880706787,examples/methane_sweep/results/paper/methane_results.json,HipHop_l2_n4[1000000][6],reference series from methane_results.json
+l2n4_ref_test,l2n4_ref,test,1000000,ref_7,0.429755836725235,examples/methane_sweep/results/paper/methane_results.json,HipHop_l2_n4[1000000][7],reference series from methane_results.json
+l2n4_ref_test,l2n4_ref,test,1000000,ref_8,0.4291335344314575,examples/methane_sweep/results/paper/methane_results.json,HipHop_l2_n4[1000000][8],reference series from methane_results.json
+l2n4_ref_test,l2n4_ref,test,1000000,ref_9,0.4512619078159332,examples/methane_sweep/results/paper/methane_results.json,HipHop_l2_n4[1000000][9],reference series from methane_results.json
+l3n4_ref_test,l3n4_ref,test,1000000,ref_0,0.3623855710029602,examples/methane_sweep/results/paper/methane_results.json,HipHop[1000000][0],reference series from methane_results.json
+l3n4_ref_test,l3n4_ref,test,1000000,ref_1,0.3468756675720215,examples/methane_sweep/results/paper/methane_results.json,HipHop[1000000][1],reference series from methane_results.json
+l3n4_ref_test,l3n4_ref,test,1000000,ref_2,0.34748461842536926,examples/methane_sweep/results/paper/methane_results.json,HipHop[1000000][2],reference series from methane_results.json
+l3n4_ref_test,l3n4_ref,test,1000000,ref_3,0.3741653263568878,examples/methane_sweep/results/paper/methane_results.json,HipHop[1000000][3],reference series from methane_results.json
+l3n4_ref_test,l3n4_ref,test,1000000,ref_4,0.35638177394866943,examples/methane_sweep/results/paper/methane_results.json,HipHop[1000000][4],reference series from methane_results.json
+l3n4_ref_test,l3n4_ref,test,1000000,ref_5,0.35678401589393616,examples/methane_sweep/results/paper/methane_results.json,HipHop[1000000][5],reference series from methane_results.json
+l3n4_ref_test,l3n4_ref,test,1000000,ref_6,0.3696518540382385,examples/methane_sweep/results/paper/methane_results.json,HipHop[1000000][6],reference series from methane_results.json
+l3n4_ref_test,l3n4_ref,test,1000000,ref_7,0.3502723276615143,examples/methane_sweep/results/paper/methane_results.json,HipHop[1000000][7],reference series from methane_results.json
+l3n4_ref_test,l3n4_ref,test,1000000,ref_8,0.35984742641448975,examples/methane_sweep/results/paper/methane_results.json,HipHop[1000000][8],reference series from methane_results.json
+l3n4_ref_test,l3n4_ref,test,1000000,ref_9,0.36121344566345215,examples/methane_sweep/results/paper/methane_results.json,HipHop[1000000][9],reference series from methane_results.json
+l3n3_valid,l3n3,valid,1000000,A100_seed42,0.52612,examples/methane_sweep/results/paper/paper_methane_plot_overlay_points.csv,task 0: l=3 n=3 d=1M,overlay point (A100)
+l3n3_valid,l3n3,valid,1000000,TitanV_seed42,0.48496,examples/methane_sweep/results/paper/paper_methane_plot_overlay_points.csv,task 0: l=3 n=3 d=1M,overlay point (TitanV)
+l3n4_valid,l3n4,valid,1000000,TitanV_seed42,0.66785,examples/methane_sweep/results/paper/paper_methane_plot_overlay_points.csv,task 2: l=3 n=4 d=1M,overlay point (TitanV)
+l3n3_valid,l3n3,valid,1000000,1776,0.67247,examples/methane_sweep/logs/plots_compare_l3n3_b256/paper_style_energy_comparison.csv,task 4: l=3 n=3 d=1M,extra TitanV batch-256-start run
+l3n5_test,l3n5,test,1000000,0,0.44572,examples/methane_sweep/logs/plots_l3n5_1m_all_current/final_test_metrics.csv,task 3: l=3 n=5 d=1M,batch-256-start run
+l3n5_test,l3n5,test,1000000,2,0.44305,examples/methane_sweep/logs/plots_l3n5_1m_all_current/final_test_metrics.csv,task 5: l=3 n=5 d=1M,batch-256-start run
+l3n5_valid,l3n5,valid,1000000,0,0.4474,examples/methane_sweep/logs/plots_l3n5_1m_all_current/metrics.csv,task 3: l=3 n=5 d=1M,"best validation, epoch 1370"
+l3n5_valid,l3n5,valid,1000000,1,0.35644,examples/methane_sweep/logs/plots_l3n5_1m_all_current/metrics.csv,task 4: l=3 n=5 d=1M,"best validation, epoch 5244"
+l3n5_valid,l3n5,valid,1000000,2,0.44679,examples/methane_sweep/logs/plots_l3n5_1m_all_current/metrics.csv,task 5: l=3 n=5 d=1M,"best validation, epoch 1681"
+l3n5_valid,l3n5,valid,1000000,3,0.35947,examples/methane_sweep/logs/plots_l3n5_1m_all_current/metrics.csv,task 6: l=3 n=5 d=1M,"best validation, epoch 5621"
+l3n5_valid,l3n5,valid,1000000,4,0.34636,examples/methane_sweep/logs/plots_l3n5_1m_all_current/metrics.csv,task 7: l=3 n=5 d=1M,"best validation, epoch 5271"
+l3n5_valid,l3n5,valid,1000000,7,0.36839,examples/methane_sweep/logs/plots_l3n5_1m_all_current/metrics.csv,task 2: l=3 n=5 d=1M,"best validation, epoch 3577"
+l3n5_valid,l3n5,valid,1000000,42,0.38158,examples/methane_sweep/logs/plots_l3n5_1m_all_current/metrics.csv,task 0: l=3 n=5 d=1M,"best validation, epoch 3507"
+l3n5_valid,l3n5,valid,1000000,1776,0.3774,examples/methane_sweep/logs/plots_l3n5_1m_all_current/metrics.csv,task 1: l=3 n=5 d=1M,"best validation, epoch 3604"

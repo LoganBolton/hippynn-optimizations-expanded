@@ -637,6 +637,123 @@ def plot_dashboard(metrics: list[str], runs: dict[str, list[dict[str, float | in
     plt.close(fig)
 
 
+def moving_average(values: list[float], window: int) -> list[float]:
+    prefix = [0.0]
+    for value in values:
+        prefix.append(prefix[-1] + value)
+    averaged = []
+    for idx in range(len(values)):
+        start = max(0, idx - window + 1)
+        averaged.append((prefix[idx + 1] - prefix[start]) / (idx - start + 1))
+    return averaged
+
+
+def run_sort_key(item: tuple[str, list[dict[str, float | int | str]]]) -> tuple[int, str]:
+    label, run_rows = item
+    task_id = run_rows[0].get("sweep_task_id")
+    if task_id in (None, ""):
+        return (10**9, label)
+    return (int(task_id), label)
+
+
+def plot_smoothed_total_epoch_time_with_events(
+    runs: dict[str, list[dict[str, float | int | str]]], output: Path, smoothing_window: int = 50
+) -> None:
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots(figsize=(13, 8), constrained_layout=True)
+    first_batch_marker = True
+    first_restart_marker = True
+    ymins: list[float] = []
+    ymaxs: list[float] = []
+
+    for label, run_rows in sorted(runs.items(), key=run_sort_key):
+        xs: list[int] = []
+        ys: list[float] = []
+        batch_events: list[int] = []
+        restart_events: list[int] = []
+        previous_batch: int | None = None
+        previous_source: str | None = None
+
+        for row in run_rows:
+            if row.get("total_epoch_time_s") in (None, ""):
+                continue
+            epoch = int(row["epoch"])
+            total_epoch_time = float(row["total_epoch_time_s"])
+            xs.append(epoch)
+            ys.append(total_epoch_time)
+
+            current_source = str(row.get("source_file", ""))
+            if previous_source is not None and current_source and current_source != previous_source:
+                restart_events.append(epoch)
+            previous_source = current_source or previous_source
+
+            if row.get("batch_size") not in (None, ""):
+                batch_size = int(row["batch_size"])
+                if previous_batch is not None and batch_size != previous_batch:
+                    batch_events.append(epoch)
+                previous_batch = batch_size
+
+        if not xs:
+            continue
+
+        smoothed = moving_average(ys, smoothing_window)
+        style = model_plot_style(run_rows[0])
+        ax.plot(xs, smoothed, linewidth=2.3, linestyle=style["linestyle"], label=f"{label} (MA{smoothing_window})")
+
+        smoothed_by_epoch = dict(zip(xs, smoothed))
+        event_color = ax.lines[-1].get_color()
+
+        batch_x = [epoch for epoch in batch_events if epoch in smoothed_by_epoch]
+        batch_y = [smoothed_by_epoch[epoch] for epoch in batch_x]
+        if batch_x:
+            ax.scatter(
+                batch_x,
+                batch_y,
+                marker="^",
+                s=140,
+                color=event_color,
+                edgecolors="black",
+                linewidths=0.8,
+                zorder=4,
+                label="batch-size increase" if first_batch_marker else None,
+            )
+            first_batch_marker = False
+
+        restart_x = [epoch for epoch in restart_events if epoch in smoothed_by_epoch]
+        restart_y = [smoothed_by_epoch[epoch] for epoch in restart_x]
+        if restart_x:
+            ax.scatter(
+                restart_x,
+                restart_y,
+                marker="X",
+                s=180,
+                color=event_color,
+                edgecolors="black",
+                linewidths=0.8,
+                zorder=5,
+                label="restart/resume" if first_restart_marker else None,
+            )
+            first_restart_marker = False
+
+        ymins.append(min(smoothed))
+        ymaxs.append(max(smoothed))
+
+    if not ymins or not ymaxs:
+        plt.close(fig)
+        return
+
+    padding = max(1.0, 0.05 * (max(ymaxs) - min(ymins)))
+    ax.set_ylim(min(ymins) - padding, max(ymaxs) + padding)
+    ax.set_title(f"Total Epoch Time (smoothed moving average, window={smoothing_window})")
+    ax.set_xlabel("Epoch")
+    ax.set_ylabel("Total epoch time (s)")
+    ax.grid(True, alpha=0.25)
+    ax.legend(fontsize=8, ncol=2)
+    fig.savefig(output, dpi=180)
+    plt.close(fig)
+
+
 def run_average(rows: list[dict[str, float | int | str]], metric: str) -> float:
     values = [float(row[metric]) for row in rows if metric in row and row[metric] != ""]
     values = [value for value in values if math.isfinite(value)]
@@ -1518,6 +1635,11 @@ def main() -> None:
         if metric in metrics
     ]
     plot_dashboard(dashboard_metrics, runs, args.output_dir / "summary_dashboard.png")
+    plot_smoothed_total_epoch_time_with_events(
+        runs,
+        args.output_dir / "total_epoch_time_smoothed_window50_minmax_with_events_large_markers.png",
+        smoothing_window=50,
+    )
     plot_force_accuracy_pareto(
         runs,
         args.output_dir / "force_mae_pareto.png",
@@ -1548,6 +1670,7 @@ def main() -> None:
         print(f"Wrote {sweep_task_map_path}")
     print(f"Wrote {len(metrics)} metric plots to {metric_dir}")
     print(f"Wrote {args.output_dir / 'summary_dashboard.png'}")
+    print(f"Wrote {args.output_dir / 'total_epoch_time_smoothed_window50_minmax_with_events_large_markers.png'}")
     print(f"Wrote {args.output_dir / 'force_mae_pareto.png'}")
     print(f"Wrote {args.output_dir / 'best_metric_pareto.png'}")
     print(f"Wrote {args.output_dir / 'paper_style_energy_comparison.png'}")

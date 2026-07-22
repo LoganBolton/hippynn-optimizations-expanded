@@ -1,0 +1,5 @@
+/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/examples/methane_sweep/time_benchmark/nick_speed_comparison/training_script.py:338: SyntaxWarning: invalid escape sequence '\e'
+  parser.add_argument("--tensor_order", type=int, default=3, help="tensor order $\ell$")
+all configs [{'tensor_model': 'HOP', 'tensor_order': 3, 'tensor_factors': 4}, {'tensor_model': 'HOP', 'tensor_order': 3, 'tensor_factors': 5}, {'tensor_model': 'HOP', 'tensor_order': 4, 'tensor_factors': 3}, {'tensor_model': 'HOP', 'tensor_order': 4, 'tensor_factors': 4}]
+kernel info {'kernel_mode': 'triton', 'custom_kernels': 'triton', 'triton_version': '3.7.1', 'triton_file': '/vast/home/logan_bolton/.conda/envs/hippynn-expanded-lmax/lib/python3.12/site-packages/triton/__init__.py', 'use_polynomial_invariants': True, 'use_tensor_message_passing': True}
+Loading arrays from /vast/home/logan_bolton/Github/hippynn-optimizations-expanded/datasets/ani1x-release.h5

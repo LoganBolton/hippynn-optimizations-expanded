@@ -1,0 +1,232 @@
+all configs [{'tensor_model': 'HOP', 'tensor_order': 4, 'tensor_factors': 7}]
+kernel info {'kernel_mode': 'triton', 'custom_kernels': 'triton', 'triton_version': '3.7.1', 'triton_file': '/vast/home/logan_bolton/.conda/envs/hippynn-expanded-lmax/lib/python3.12/site-packages/triton/__init__.py', 'use_polynomial_invariants': True, 'use_tensor_message_passing': True}
+Loading arrays from /vast/home/logan_bolton/Github/hippynn-optimizations-expanded/datasets/ani1x-release.h5
+Arrays found:  ['atomic_numbers', 'ccsd(t)_cbs.energy', 'coordinates', 'wb97x_dz.energy', 'wb97x_dz.forces', 'sys_number']
+Data types:
+{'atomic_numbers': dtype('uint8'), 'ccsd(t)_cbs.energy': dtype('float64'), 'coordinates': dtype('float32'), 'wb97x_dz.energy': dtype('float64'), 'wb97x_dz.forces': dtype('float32')}
+All arrays:
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('uint8')     | (4956005, 63)                |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (4956005,)                   |
+| coordinates                    | dtype('float32')   | (4956005, 63, 3)             |
+| wb97x_dz.energy                | dtype('float64')   | (4956005,)                   |
+| wb97x_dz.forces                | dtype('float32')   | (4956005, 63, 3)             |
+--------------------------------------------------------------------------------------
+Finished checking input and target arrays; all necessary arrays were found.
+Database: Using auto-generated data indices
+Adding split indices for split: test
+Arrays for split: test
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (48957, 63)                  |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (48957,)                     |
+| coordinates                    | dtype('float32')   | (48957, 63, 3)               |
+| wb97x_dz.energy                | dtype('float32')   | (48957,)                     |
+| wb97x_dz.forces                | dtype('float32')   | (48957, 63, 3)               |
+| indices                        | dtype('int64')     | (48957,)                     |
+| split_indices                  | dtype('int64')     | (48957,)                     |
+--------------------------------------------------------------------------------------
+Adding split indices for split: valid
+Arrays for split: valid
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (48957, 63)                  |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (48957,)                     |
+| coordinates                    | dtype('float32')   | (48957, 63, 3)               |
+| wb97x_dz.energy                | dtype('float32')   | (48957,)                     |
+| wb97x_dz.forces                | dtype('float32')   | (48957, 63, 3)               |
+| indices                        | dtype('int64')     | (48957,)                     |
+| split_indices                  | dtype('int64')     | (48957,)                     |
+--------------------------------------------------------------------------------------
+Adding split indices for split: train
+Arrays for split: train
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (391657, 63)                 |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (391657,)                    |
+| coordinates                    | dtype('float32')   | (391657, 63, 3)              |
+| wb97x_dz.energy                | dtype('float32')   | (391657,)                    |
+| wb97x_dz.forces                | dtype('float32')   | (391657, 63, 3)              |
+| indices                        | dtype('int64')     | (391657,)                    |
+| split_indices                  | dtype('int64')     | (391657,)                    |
+--------------------------------------------------------------------------------------
+Database: Splitting complete.
+/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/databases/database.py:181: UserWarning: Pin memory was set, but target device requested is not CPU. Setting pin_memory=False.
+  warnings.warn("Pin memory was set, but target device requested is not CPU. Setting pin_memory=False.")
+test configs: 48957
+test atoms: 676395
+/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/networks/hiphop.py:12: UserWarning: HIP-HOP-NN is still in a beta state: Details, defaults, and API are still subject to change.
+  warnings.warn("HIP-HOP-NN is still in a beta state: " "Details, defaults, and API are still subject to change.")
+Configuration: {'tensor_model': 'HOP', 'tensor_order': 4, 'tensor_factors': 7} parameters: 1386796
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 6, maxnreg: None
+Triton autotuning for function tensor_products_kernel,
+with key as (True, False, False, False, 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.int64', 'torch.int64', 'torch.int64'),
+finished after 5.64s,
+best config selected: T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 3, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (4194304, 8988, 24, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 14.88s,
+best config selected: NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (4194304, 44850, 25, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 74.75s,
+best config selected: NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None;
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 2, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 2, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 2, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 2, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 4, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 4, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 4, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 4, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 8, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 8, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 8, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 8, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 2, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 2, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 2, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 2, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 4, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 4, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 4, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 4, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 8, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 8, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 8, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 8, num_ctas: 1, num_stages: 6, maxnreg: None
+Triton autotuning for function tensor_products_kernel,
+with key as (False, True, True, True, 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.int64', 'torch.int64', 'torch.int64'),
+finished after 57.21s,
+best config selected: T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (1048576, 8988, 24, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 5.01s,
+best config selected: NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (1048576, 44850, 25, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 27.04s,
+best config selected: NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (2097152, 8988, 24, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 6.09s,
+best config selected: NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (2097152, 44850, 25, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 32.14s,
+best config selected: NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None;
+{'metrics': {(('tensor_factors', 7), ('tensor_model', 'HOP'), ('tensor_order', 4), ('batch_size', 1024)): [76.54472613334656, 76.57754135131836, 76.60085082054138, 76.57243824005127, 76.56558322906494]}, 'metrics_jsonable': {"(('tensor_factors', 7), ('tensor_model', 'HOP'), ('tensor_order', 4), ('batch_size', 1024))": [76.54472613334656, 76.57754135131836, 76.60085082054138, 76.57243824005127, 76.56558322906494]}, 'parameter_counts': {"(('tensor_factors', 7), ('tensor_model', 'HOP'), ('tensor_order', 4))": 1386796}, 'device_name': 'NVIDIA A100-PCIE-40GB', 'n_configs': 48957, 'n_atoms': 676395, 'batch_sizes': [1024], 'reps': 5, 'warmups': 2, 'seed': 0, 'split_seed': 0, 'include_forces': True, 'network_parameters': {'possible_species': [0, 1, 6, 7, 8], 'n_features': 128, 'n_sensitivities': 20, 'dist_soft_min': 0.75, 'dist_soft_max': 5.5, 'dist_hard_max': 6.5, 'n_interaction_layers': 2, 'n_atom_layers': 3}, 'kernel_info': {'kernel_mode': 'triton', 'custom_kernels': 'triton', 'triton_version': '3.7.1', 'triton_file': '/vast/home/logan_bolton/.conda/envs/hippynn-expanded-lmax/lib/python3.12/site-packages/triton/__init__.py', 'use_polynomial_invariants': True, 'use_tensor_message_passing': True}}
+Wrote /vast/home/logan_bolton/Github/hippynn-optimizations-expanded/examples/methane_sweep/time_benchmark/results/poly_2d_real_data/triton_energy_forces_b1024_autotune_l4n7_only.pt
+Wrote /vast/home/logan_bolton/Github/hippynn-optimizations-expanded/examples/methane_sweep/time_benchmark/results/poly_2d_real_data/triton_energy_forces_b1024_autotune_l4n7_only.json
