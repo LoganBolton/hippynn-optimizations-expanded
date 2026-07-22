@@ -1,0 +1,569 @@
+all configs [{'tensor_model': 'HOP', 'tensor_order': 1, 'tensor_factors': 2}, {'tensor_model': 'HOP', 'tensor_order': 2, 'tensor_factors': 2}, {'tensor_model': 'HOP', 'tensor_order': 2, 'tensor_factors': 3}, {'tensor_model': 'HOP', 'tensor_order': 2, 'tensor_factors': 4}, {'tensor_model': 'HOP', 'tensor_order': 3, 'tensor_factors': 2}, {'tensor_model': 'HOP', 'tensor_order': 3, 'tensor_factors': 3}]
+kernel info {'kernel_mode': 'triton', 'custom_kernels': 'triton', 'triton_version': '3.7.1', 'triton_file': '/vast/home/logan_bolton/.conda/envs/hippynn-expanded-lmax/lib/python3.12/site-packages/triton/__init__.py', 'use_polynomial_invariants': True, 'use_tensor_message_passing': True}
+Loading arrays from /vast/home/logan_bolton/Github/hippynn-optimizations-expanded/datasets/ani1x-release.h5
+Arrays found:  ['atomic_numbers', 'ccsd(t)_cbs.energy', 'coordinates', 'wb97x_dz.energy', 'wb97x_dz.forces', 'sys_number']
+Data types:
+{'atomic_numbers': dtype('uint8'), 'ccsd(t)_cbs.energy': dtype('float64'), 'coordinates': dtype('float32'), 'wb97x_dz.energy': dtype('float64'), 'wb97x_dz.forces': dtype('float32')}
+All arrays:
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('uint8')     | (4956005, 63)                |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (4956005,)                   |
+| coordinates                    | dtype('float32')   | (4956005, 63, 3)             |
+| wb97x_dz.energy                | dtype('float64')   | (4956005,)                   |
+| wb97x_dz.forces                | dtype('float32')   | (4956005, 63, 3)             |
+--------------------------------------------------------------------------------------
+Finished checking input and target arrays; all necessary arrays were found.
+Database: Using auto-generated data indices
+Adding split indices for split: test
+Arrays for split: test
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (48957, 63)                  |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (48957,)                     |
+| coordinates                    | dtype('float32')   | (48957, 63, 3)               |
+| wb97x_dz.energy                | dtype('float32')   | (48957,)                     |
+| wb97x_dz.forces                | dtype('float32')   | (48957, 63, 3)               |
+| indices                        | dtype('int64')     | (48957,)                     |
+| split_indices                  | dtype('int64')     | (48957,)                     |
+--------------------------------------------------------------------------------------
+Adding split indices for split: valid
+Arrays for split: valid
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (48957, 63)                  |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (48957,)                     |
+| coordinates                    | dtype('float32')   | (48957, 63, 3)               |
+| wb97x_dz.energy                | dtype('float32')   | (48957,)                     |
+| wb97x_dz.forces                | dtype('float32')   | (48957, 63, 3)               |
+| indices                        | dtype('int64')     | (48957,)                     |
+| split_indices                  | dtype('int64')     | (48957,)                     |
+--------------------------------------------------------------------------------------
+Adding split indices for split: train
+Arrays for split: train
+--------------------------------------------------------------------------------------
+| Name                           | dtype              | shape                        |
+--------------------------------------------------------------------------------------
+| atomic_numbers                 | dtype('int64')     | (391657, 63)                 |
+| ccsd(t)_cbs.energy             | dtype('float64')   | (391657,)                    |
+| coordinates                    | dtype('float32')   | (391657, 63, 3)              |
+| wb97x_dz.energy                | dtype('float32')   | (391657,)                    |
+| wb97x_dz.forces                | dtype('float32')   | (391657, 63, 3)              |
+| indices                        | dtype('int64')     | (391657,)                    |
+| split_indices                  | dtype('int64')     | (391657,)                    |
+--------------------------------------------------------------------------------------
+Database: Splitting complete.
+/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/databases/database.py:181: UserWarning: Pin memory was set, but target device requested is not CPU. Setting pin_memory=False.
+  warnings.warn("Pin memory was set, but target device requested is not CPU. Setting pin_memory=False.")
+test configs: 48957
+test atoms: 676395
+/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/networks/hiphop.py:12: UserWarning: HIP-HOP-NN is still in a beta state: Details, defaults, and API are still subject to change.
+  warnings.warn("HIP-HOP-NN is still in a beta state: " "Details, defaults, and API are still subject to change.")
+Configuration: {'tensor_model': 'HOP', 'tensor_order': 1, 'tensor_factors': 2} parameters: 653673
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 6, maxnreg: None
+Triton autotuning for function tensor_products_kernel,
+with key as (True, False, False, False, 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.int64', 'torch.int64', 'torch.int64'),
+finished after 4.81s,
+best config selected: T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 4, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (4194304, 4, 2, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 0.91s,
+best config selected: NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (4194304, 4, 4, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 2.58s,
+best config selected: NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None;
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 2, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 4, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 64, num_warps: 8, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 2, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 2, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 2, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 2, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 4, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 4, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 4, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 4, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 8, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 8, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 8, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 4, Z_BLOCK_SIZE: 128, num_warps: 8, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 2, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 2, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 2, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 2, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 4, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 4, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 4, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 4, num_ctas: 1, num_stages: 6, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 8, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 8, num_ctas: 1, num_stages: 3, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 8, num_ctas: 1, num_stages: 4, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 8, num_ctas: 1, num_stages: 5, maxnreg: None
+Autotuning kernel tensor_products_kernel with config T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 8, num_ctas: 1, num_stages: 6, maxnreg: None
+Triton autotuning for function tensor_products_kernel,
+with key as (False, True, True, True, 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.float32', 'torch.int64', 'torch.int64', 'torch.int64'),
+finished after 42.09s,
+best config selected: T_BLOCK_SIZE: 16, S_BLOCK_SIZE: 8, Z_BLOCK_SIZE: 128, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (1048576, 4, 2, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 0.86s,
+best config selected: NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (1048576, 4, 4, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 2.56s,
+best config selected: NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (2097152, 4, 2, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 0.87s,
+best config selected: NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (2097152, 4, 4, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 2.55s,
+best config selected: NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None;
+/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/networks/hiphop.py:12: UserWarning: HIP-HOP-NN is still in a beta state: Details, defaults, and API are still subject to change.
+  warnings.warn("HIP-HOP-NN is still in a beta state: " "Details, defaults, and API are still subject to change.")
+Configuration: {'tensor_model': 'HOP', 'tensor_order': 2, 'tensor_factors': 2} parameters: 686998
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (4194304, 10, 3, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 0.93s,
+best config selected: NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (4194304, 11, 9, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 2.77s,
+best config selected: NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (1048576, 10, 3, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 0.89s,
+best config selected: NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (1048576, 11, 9, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 2.64s,
+best config selected: NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (2097152, 10, 3, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 0.89s,
+best config selected: NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (2097152, 11, 9, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 2.70s,
+best config selected: NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None;
+Configuration: {'tensor_model': 'HOP', 'tensor_order': 2, 'tensor_factors': 3} parameters: 753558
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (4194304, 24, 5, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 0.98s,
+best config selected: NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (4194304, 43, 9, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 3.14s,
+best config selected: NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (1048576, 24, 5, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 0.92s,
+best config selected: NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (1048576, 43, 9, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 3.17s,
+best config selected: NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (2097152, 24, 5, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 0.93s,
+best config selected: NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (2097152, 43, 9, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 2.96s,
+best config selected: NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None;
+Configuration: {'tensor_model': 'HOP', 'tensor_order': 2, 'tensor_factors': 4} parameters: 786838
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (4194304, 42, 6, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 1.02s,
+best config selected: NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (4194304, 94, 9, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 3.16s,
+best config selected: NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (1048576, 42, 6, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 0.94s,
+best config selected: NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (1048576, 94, 9, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 2.96s,
+best config selected: NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (2097152, 42, 6, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 0.95s,
+best config selected: NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (2097152, 94, 9, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 3.05s,
+best config selected: NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None;
+Configuration: {'tensor_model': 'HOP', 'tensor_order': 3, 'tensor_factors': 2} parameters: 720467
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (4194304, 20, 4, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 0.96s,
+best config selected: NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (4194304, 24, 16, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 3.49s,
+best config selected: NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (1048576, 20, 4, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 0.91s,
+best config selected: NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (1048576, 24, 16, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 3.17s,
+best config selected: NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (2097152, 20, 4, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 0.91s,
+best config selected: NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (2097152, 24, 16, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 3.13s,
+best config selected: NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None;
+Configuration: {'tensor_model': 'HOP', 'tensor_order': 3, 'tensor_factors': 3} parameters: 820307
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (4194304, 58, 7, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 1.02s,
+best config selected: NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (4194304, 124, 16, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 3.64s,
+best config selected: NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (1048576, 58, 7, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 0.95s,
+best config selected: NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (1048576, 124, 16, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 3.40s,
+best config selected: NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (2097152, 58, 7, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 0.96s,
+best config selected: NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None;
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 16, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 128, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 2, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 8, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Autotuning kernel evaluate_polynomials_kernel with config NUM_POINTS_TO_LOAD: 64, NUM_MONOMIALS_TO_LOAD: 32, num_warps: 8, num_ctas: 1, num_stages: 1, maxnreg: None
+Triton autotuning for function evaluate_polynomials_kernel,
+with key as (2097152, 124, 16, 'torch.float32', 'torch.float32', 'torch.int32', 'torch.int32', 'torch.int32', 'torch.float32'),
+finished after 3.41s,
+best config selected: NUM_POINTS_TO_LOAD: 32, NUM_MONOMIALS_TO_LOAD: 16, num_warps: 4, num_ctas: 1, num_stages: 2, maxnreg: None;
+{'metrics': {(('tensor_factors', 2), ('tensor_model', 'HOP'), ('tensor_order', 1), ('batch_size', 1024)): [1.1966445446014404, 1.196906328201294, 1.1967086791992188, 1.1940736770629883, 1.1948883533477783], (('tensor_factors', 2), ('tensor_model', 'HOP'), ('tensor_order', 2), ('batch_size', 1024)): [2.1818346977233887, 2.178861618041992, 2.1752376556396484, 2.181349515914917, 2.1795647144317627], (('tensor_factors', 3), ('tensor_model', 'HOP'), ('tensor_order', 2), ('batch_size', 1024)): [2.2839102745056152, 2.281543493270874, 2.27917218208313, 2.2830114364624023, 2.2809364795684814], (('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 2), ('batch_size', 1024)): [2.341308832168579, 2.338656187057495, 2.340075731277466, 2.3439924716949463, 2.3414158821105957], (('tensor_factors', 2), ('tensor_model', 'HOP'), ('tensor_order', 3), ('batch_size', 1024)): [3.464595317840576, 3.464723825454712, 3.4607367515563965, 3.461355209350586, 3.467846632003784], (('tensor_factors', 3), ('tensor_model', 'HOP'), ('tensor_order', 3), ('batch_size', 1024)): [3.651120185852051, 3.6499102115631104, 3.648106575012207, 3.657228946685791, 3.656003475189209]}, 'metrics_jsonable': {"(('tensor_factors', 2), ('tensor_model', 'HOP'), ('tensor_order', 1), ('batch_size', 1024))": [1.1966445446014404, 1.196906328201294, 1.1967086791992188, 1.1940736770629883, 1.1948883533477783], "(('tensor_factors', 2), ('tensor_model', 'HOP'), ('tensor_order', 2), ('batch_size', 1024))": [2.1818346977233887, 2.178861618041992, 2.1752376556396484, 2.181349515914917, 2.1795647144317627], "(('tensor_factors', 3), ('tensor_model', 'HOP'), ('tensor_order', 2), ('batch_size', 1024))": [2.2839102745056152, 2.281543493270874, 2.27917218208313, 2.2830114364624023, 2.2809364795684814], "(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 2), ('batch_size', 1024))": [2.341308832168579, 2.338656187057495, 2.340075731277466, 2.3439924716949463, 2.3414158821105957], "(('tensor_factors', 2), ('tensor_model', 'HOP'), ('tensor_order', 3), ('batch_size', 1024))": [3.464595317840576, 3.464723825454712, 3.4607367515563965, 3.461355209350586, 3.467846632003784], "(('tensor_factors', 3), ('tensor_model', 'HOP'), ('tensor_order', 3), ('batch_size', 1024))": [3.651120185852051, 3.6499102115631104, 3.648106575012207, 3.657228946685791, 3.656003475189209]}, 'parameter_counts': {"(('tensor_factors', 2), ('tensor_model', 'HOP'), ('tensor_order', 1))": 653673, "(('tensor_factors', 2), ('tensor_model', 'HOP'), ('tensor_order', 2))": 686998, "(('tensor_factors', 3), ('tensor_model', 'HOP'), ('tensor_order', 2))": 753558, "(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 2))": 786838, "(('tensor_factors', 2), ('tensor_model', 'HOP'), ('tensor_order', 3))": 720467, "(('tensor_factors', 3), ('tensor_model', 'HOP'), ('tensor_order', 3))": 820307}, 'device_name': 'NVIDIA A100-PCIE-40GB', 'n_configs': 48957, 'n_atoms': 676395, 'batch_sizes': [1024], 'reps': 5, 'warmups': 2, 'seed': 0, 'split_seed': 0, 'include_forces': True, 'network_parameters': {'possible_species': [0, 1, 6, 7, 8], 'n_features': 128, 'n_sensitivities': 20, 'dist_soft_min': 0.75, 'dist_soft_max': 5.5, 'dist_hard_max': 6.5, 'n_interaction_layers': 2, 'n_atom_layers': 3}, 'kernel_info': {'kernel_mode': 'triton', 'custom_kernels': 'triton', 'triton_version': '3.7.1', 'triton_file': '/vast/home/logan_bolton/.conda/envs/hippynn-expanded-lmax/lib/python3.12/site-packages/triton/__init__.py', 'use_polynomial_invariants': True, 'use_tensor_message_passing': True}}
+Wrote /vast/home/logan_bolton/Github/hippynn-optimizations-expanded/examples/methane_sweep/time_benchmark/results/poly_2d_real_data/triton_energy_forces_b1024_autotune_rest.pt
+Wrote /vast/home/logan_bolton/Github/hippynn-optimizations-expanded/examples/methane_sweep/time_benchmark/results/poly_2d_real_data/triton_energy_forces_b1024_autotune_rest.json

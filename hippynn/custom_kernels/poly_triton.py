@@ -297,11 +297,17 @@ def get_configs_polynomials():
     Generates a list of combinations of hyperparameters to use when autotuning evaluate_polynomials_kernel.
     TODO: reduce the number of configurations to a more manageable size to decrease compile time.
     """
+    # points, monomials, warps, stages
     candidates = (
+        (16, 8, 2, 1),
+        (128, 8, 2, 2),
+        # Common winners
+        (32, 8, 4, 1),
+        (32, 16, 4, 1),
         (32, 16, 4, 2),
-        (32, 32, 4, 2),
-        (64, 16, 4, 2),
-        (64, 32, 8, 2),
+        # Larger polynomial workloads
+        (64, 16, 8, 1),
+        (64, 32, 8, 1),
     )
     return [
         triton.Config(

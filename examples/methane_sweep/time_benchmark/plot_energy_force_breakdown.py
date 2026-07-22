@@ -45,10 +45,14 @@ def main(args):
         else {}
     )
 
+    show_optimized = bool(optimized_energy)
+    config_set = set(upstream_energy) | set(upstream_total) | set(triton_energy) | set(triton_total)
+    if show_optimized:
+        config_set |= set(optimized_energy) | set(optimized_total)
     configs = sorted(
         {
             config
-            for config in set(upstream_energy) | set(triton_energy)
+            for config in config_set
             if config[0] != "TS"
         },
         key=config_sort_key,
@@ -65,8 +69,8 @@ def main(args):
 
     labels = [config_label(config) for config in configs]
     x = list(range(len(configs)))
-    show_optimized = bool(optimized_energy)
-    width = 0.26 if show_optimized else 0.38
+    default_width = 0.26 if show_optimized else 0.38
+    width = args.bar_width if args.bar_width is not None else default_width
     upstream_x = [value - width if show_optimized else value - width / 2 for value in x]
     triton_x = x if show_optimized else [value + width / 2 for value in x]
     optimized_x = [value + width for value in x]
@@ -91,7 +95,7 @@ def main(args):
         for energy, total in zip(optimized_energy_values, optimized_total_values)
     ]
 
-    fig, ax = plt.subplots(figsize=(10, 5.5), constrained_layout=True)
+    fig, ax = plt.subplots(figsize=(args.fig_width, args.fig_height), constrained_layout=True)
     upstream_color = "#e99f9f"
     triton_color = "#3b73b9"
     optimized_color = "#2e8b57"
@@ -160,7 +164,7 @@ def main(args):
                 label,
                 ha="center",
                 va="bottom",
-                fontsize=7,
+                fontsize=6,
                 color=color,
             )
 
@@ -178,42 +182,64 @@ def main(args):
             label,
             ha="center",
             va="bottom",
-            fontsize=8,
+            fontsize=7,
             color=color,
         )
 
+    if show_optimized:
+        if args.optimized_compare_to == "default":
+            optimized_energy_reference_values = upstream_energy_values
+            optimized_total_reference_values = upstream_total_values
+        elif args.optimized_compare_to == "triton":
+            optimized_energy_reference_values = triton_energy_values
+            optimized_total_reference_values = triton_total_values
+        else:
+            optimized_energy_reference_values = [
+                upstream if math.isfinite(upstream) else triton
+                for upstream, triton in zip(upstream_energy_values, triton_energy_values)
+            ]
+            optimized_total_reference_values = [
+                upstream if math.isfinite(upstream) else triton
+                for upstream, triton in zip(upstream_total_values, triton_total_values)
+            ]
+
     if show_optimized and not args.total_only:
-        for bar, triton_value, optimized_value in zip(
-            optimized_energy_bars, triton_energy_values, optimized_energy_values
+        for bar, reference_value, optimized_value in zip(
+            optimized_energy_bars, optimized_energy_reference_values, optimized_energy_values
         ):
-            if not math.isfinite(triton_value) or not math.isfinite(optimized_value):
+            if not math.isfinite(reference_value) or not math.isfinite(optimized_value):
                 continue
-            label, _ = comparison_label(triton_value, optimized_value)
+            label, color = comparison_label(reference_value, optimized_value)
             ax.text(
                 bar.get_x() + bar.get_width() / 2,
                 optimized_value,
+                label,
+                ha="center",
+                va="bottom",
+                fontsize=6,
+                color=color,
+                clip_on=False,
+            )
+
+    if show_optimized:
+        for bar, reference_value, optimized_value in zip(
+            optimized_total_bars, optimized_total_reference_values, optimized_total_values
+        ):
+            if not math.isfinite(reference_value) or not math.isfinite(optimized_value):
+                continue
+            label, color = comparison_label(reference_value, optimized_value)
+            total_height = optimized_value
+            if not args.total_only:
+                total_height = bar.get_y() + bar.get_height()
+            ax.text(
+                bar.get_x() + bar.get_width() / 2,
+                total_height,
                 label,
                 ha="center",
                 va="bottom",
                 fontsize=7,
-                color=optimized_color,
-            )
-
-    if show_optimized:
-        for bar, triton_value, optimized_value in zip(
-            optimized_total_bars, triton_total_values, optimized_total_values
-        ):
-            if not math.isfinite(triton_value) or not math.isfinite(optimized_value):
-                continue
-            label, _ = comparison_label(triton_value, optimized_value)
-            ax.text(
-                bar.get_x() + bar.get_width() / 2,
-                optimized_value,
-                label,
-                ha="center",
-                va="bottom",
-                fontsize=8,
-                color=optimized_color,
+                color=color,
+                clip_on=False,
             )
 
     if not args.total_only:
@@ -227,7 +253,7 @@ def main(args):
                     "force N/A",
                     ha="center",
                     va="bottom",
-                    fontsize=7,
+                    fontsize=6,
                     color="#666666",
                 )
 
@@ -306,6 +332,12 @@ if __name__ == "__main__":
         help="Legend label for the optional green series",
     )
     parser.add_argument(
+        "--optimized_compare_to",
+        choices=["triton", "default", "default_then_triton"],
+        default="triton",
+        help="Series used for green percentage labels when the optional optimized series is shown",
+    )
+    parser.add_argument(
         "--extra_triton_energy_forces_pt",
         action="append",
         default=[],
@@ -318,6 +350,13 @@ if __name__ == "__main__":
         default=script_dir / "plots/energy_force_breakdown_inference_time_per_atom.png",
     )
     parser.add_argument("--dpi", type=int, default=200)
+    parser.add_argument(
+        "--bar_width",
+        type=float,
+        help="Optional grouped-bar width override; larger values make each column thicker",
+    )
+    parser.add_argument("--fig_width", type=float, default=10)
+    parser.add_argument("--fig_height", type=float, default=5.5)
     parser.add_argument(
         "--total_only",
         action="store_true",

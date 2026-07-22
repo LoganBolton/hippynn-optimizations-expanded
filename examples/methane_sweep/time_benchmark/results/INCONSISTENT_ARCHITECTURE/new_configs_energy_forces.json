@@ -1,0 +1,88 @@
+{
+  "metrics": {
+    "(('tensor_factors', 3), ('tensor_model', 'HOP'), ('tensor_order', 4), ('batch_size', 1024))": [
+      16.17069959640503,
+      16.188100337982178,
+      16.184751987457275,
+      16.191192865371704,
+      16.193488121032715
+    ],
+    "(('tensor_factors', 5), ('tensor_model', 'HOP'), ('tensor_order', 3), ('batch_size', 1024))": [
+      15.852468967437744,
+      15.87665843963623,
+      15.877602338790894,
+      15.881719589233398,
+      15.895026922225952
+    ],
+    "(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 3), ('batch_size', 1024))": [
+      10.7472403049469,
+      10.750568389892578,
+      10.753502607345581,
+      10.758984088897705,
+      10.756743907928467
+    ]
+  },
+  "metrics_jsonable": {
+    "(('tensor_factors', 3), ('tensor_model', 'HOP'), ('tensor_order', 4), ('batch_size', 1024))": [
+      16.17069959640503,
+      16.188100337982178,
+      16.184751987457275,
+      16.191192865371704,
+      16.193488121032715
+    ],
+    "(('tensor_factors', 5), ('tensor_model', 'HOP'), ('tensor_order', 3), ('batch_size', 1024))": [
+      15.852468967437744,
+      15.87665843963623,
+      15.877602338790894,
+      15.881719589233398,
+      15.895026922225952
+    ],
+    "(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 3), ('batch_size', 1024))": [
+      10.7472403049469,
+      10.750568389892578,
+      10.753502607345581,
+      10.758984088897705,
+      10.756743907928467
+    ]
+  },
+  "parameter_counts": {
+    "(('tensor_factors', 3), ('tensor_model', 'HOP'), ('tensor_order', 4))": 4433452,
+    "(('tensor_factors', 5), ('tensor_model', 'HOP'), ('tensor_order', 3))": 4696915,
+    "(('tensor_factors', 4), ('tensor_model', 'HOP'), ('tensor_order', 3))": 4564819
+  },
+  "device_name": "NVIDIA A100-PCIE-40GB",
+  "n_configs": 48957,
+  "n_atoms": 676583,
+  "batch_sizes": [
+    1024
+  ],
+  "reps": 5,
+  "warmups": 2,
+  "seed": 42,
+  "split_seed": 42,
+  "include_forces": true,
+  "network_parameters": {
+    "possible_species": [
+      0,
+      1,
+      6,
+      7,
+      8
+    ],
+    "n_features": 256,
+    "n_sensitivities": 20,
+    "dist_soft_min": 0.75,
+    "dist_soft_max": 5.5,
+    "dist_hard_max": 6.5,
+    "n_interaction_layers": 2,
+    "n_atom_layers": 5
+  },
+  "kernel_info": {
+    "kernel_mode": "triton",
+    "custom_kernels": "triton",
+    "triton_version": "3.7.1",
+    "triton_file": "/vast/home/logan_bolton/.conda/envs/hippynn-expanded-lmax/lib/python3.12/site-packages/triton/__init__.py",
+    "use_polynomial_invariants": true,
+    "use_tensor_message_passing": true
+  }
+}
