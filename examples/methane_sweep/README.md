@@ -31,6 +31,14 @@ From `examples/methane_sweep`:
 # Start or resume the main A100 sweep.
 MODEL_SUFFIX=b256_fresh RESUME=1 sbatch launchers/run_sweep.slurm
 
+# Resume one task using synchronized replicas on four GPUs. Change NUM_GPUS
+# and the gpu_count constraint to 2 to target a two-GPU A100 node.
+TASK_ID=2 NUM_GPUS=4 \
+  SWEEP_CONFIG=configs/methane-l4-n3-1m-8seeds.yml \
+  MODEL_SUFFIX=b256_fresh RESUME=1 \
+  sbatch --constraint='gpu_cc:8.0&gpu_count:4' \
+  launchers/run_single_task_multigpu.slurm
+
 # Resume the exact task groups used by the current l4/n3 and l4/n4 runs.
 ./launchers/resume_l4_b256_fresh.sh
 

@@ -54,6 +54,12 @@ parser.add_argument("--test_set_size", type=positive_int, default=80_000)
 parser.add_argument("--batch_size", type=positive_int, default=256)
 parser.add_argument("--eval_batch_size", type=positive_int, default=2048)
 parser.add_argument("--max_batch_size", type=positive_int, default=2048)
+parser.add_argument(
+    "--num_gpus",
+    type=positive_int,
+    default=1,
+    help="Number of visible CUDA devices to use for one run (1 uses one model; >1 uses DataParallel).",
+)
 parser.add_argument("--resume", action="store_true")
 parser.add_argument("--checkpoint_every", type=int, default=10)
 parser.add_argument("--activation_max_batches", type=positive_int, default=10)
@@ -460,6 +466,33 @@ def latest_checkpoint(run_dir):
     return None
 
 
+def model_state_for_target(model, state_dict):
+    """Match state-dict key prefixes to a wrapped or unwrapped target model."""
+    prefix = "module."
+    keys = tuple(state_dict)
+    source_is_wrapped = bool(keys) and all(key.startswith(prefix) for key in keys)
+    target_is_wrapped = isinstance(
+        model, (torch.nn.DataParallel, torch.nn.parallel.DistributedDataParallel)
+    )
+
+    if source_is_wrapped and not target_is_wrapped:
+        return {key[len(prefix):]: value for key, value in state_dict.items()}
+    if target_is_wrapped and not source_is_wrapped:
+        return {prefix + key: value for key, value in state_dict.items()}
+    return state_dict
+
+
+def load_model_state_portably(model, state_dict):
+    """Load checkpoints written by either wrapped or unwrapped models.
+
+    ``torch.nn.DataParallel.state_dict`` prefixes every key with ``module.``.
+    Existing methane checkpoints predate multi-GPU-per-run training and do not
+    have that prefix. Matching the prefix to the target makes checkpoints
+    portable in both directions.
+    """
+    model.load_state_dict(model_state_for_target(model, state_dict))
+
+
 def require_cuda_triton_kernels():
     if not torch.cuda.is_available():
         raise RuntimeError("This training script requires CUDA because it is configured to use Triton custom kernels.")
@@ -530,6 +563,24 @@ if network_class == HipHopnn:
 configure_wandb_auth(wandb_mode)
 require_cuda_triton_kernels()
 
+visible_gpu_count = torch.cuda.device_count()
+if args.num_gpus > visible_gpu_count:
+    parser.error(
+        f"--num_gpus={args.num_gpus} requested, but only {visible_gpu_count} CUDA "
+        "device(s) are visible"
+    )
+if args.num_gpus > 1:
+    setup_device = list(range(args.num_gpus))
+    device = torch.device(f"cuda:{setup_device[0]}")
+else:
+    setup_device = torch.device("cuda:0")
+    device = setup_device
+print(
+    f"Training one model on {args.num_gpus} GPU(s); "
+    f"visible CUDA devices={visible_gpu_count}, setup device={setup_device}",
+    flush=True,
+)
+
 wandb_run = wandb.init(
     name=run_name,
     id=run_name,
@@ -556,6 +607,7 @@ wandb_run = wandb.init(
         "hiphop_l_max": hiphop_l_max,
         "hiphop_n_max": hiphop_n_max,
         "n_epochs": n_epochs,
+        "num_gpus": args.num_gpus,
         "resume": args.resume,
         "checkpoint_every": args.checkpoint_every,
         "optimizer_name": "Adam",
@@ -745,11 +797,9 @@ controller = PatienceController(
     fraction_train_eval=1,
 )
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 experiment_params = hippynn.experiment.SetupParams(
     controller=controller,
-    device=device,
+    device=setup_device,
 )
 
 training_modules, controller, metric_tracker = setup_training(
@@ -839,12 +889,20 @@ if args.resume:
     if checkpoint_path is not None:
         print(f"Resuming {run_name} from {checkpoint_path}", flush=True)
         checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
-        training_modules.model.load_state_dict(checkpoint["model"])
+        load_model_state_portably(training_modules.model, checkpoint["model"])
         controller.load_state_dict(checkpoint["controller"])
         metric_tracker = checkpoint["metric_tracker"]
+        if metric_tracker.best_model:
+            # ``train_model`` restores this state itself before final testing,
+            # so its keys must match the current wrapped/unwrapped model too.
+            metric_tracker.best_model = model_state_for_target(
+                training_modules.model, metric_tracker.best_model
+            )
         if "torch_rng_state" in checkpoint:
             try:
                 rng_state = checkpoint["torch_rng_state"]
+                if hasattr(rng_state, "cpu"):
+                    rng_state = rng_state.cpu()
                 if not isinstance(rng_state, torch.ByteTensor):
                     if hasattr(rng_state, "byte"):
                         rng_state = rng_state.byte()
@@ -907,7 +965,7 @@ try:
         evaluator = training_modules.evaluator
         best_model = metric_tracker.best_model
         if best_model:
-            evaluator.model.load_state_dict(best_model)
+            load_model_state_portably(evaluator.model, best_model)
 
         print("Testing model...")
         torch.cuda.empty_cache()

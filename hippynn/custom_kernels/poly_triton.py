@@ -1,6 +1,8 @@
 import torch
+import threading
 import torch.nn.functional as F
-
+_autotune_lock = threading.Lock()
+_autotuned_shapes = set()
 import triton
 import triton.language as tl
 
@@ -270,12 +272,28 @@ class EvaluatePolynomials(torch.autograd.Function):
         else:
             kernel_dtype = tl.float32
 
-        evaluate_polynomials_kernel[grid](
-            x, coefs, terms, polynomial_sizes, polynomial_offsets, output,
-            num_polynomials, num_monomials, input_dimension_rounded_up,
-            num_points, degree_rounded_up,
-            point_bucket=triton.next_power_of_2(num_points), dtype=kernel_dtype,
-        )
+        point_bucket = triton.next_power_of_2(num_points)
+        # Triton's autotuner cache is process-global and not thread-safe.  A
+        # DataParallel first forward invokes this kernel concurrently from its
+        # replica threads, so serialize only the first autotune for each shape.
+        shape_key = (point_bucket, num_monomials, num_polynomials)
+        if shape_key not in _autotuned_shapes:
+            with _autotune_lock:
+                if shape_key not in _autotuned_shapes:
+                    evaluate_polynomials_kernel[grid](
+                        x, coefs, terms, polynomial_sizes, polynomial_offsets, output,
+                        num_polynomials, num_monomials, input_dimension_rounded_up,
+                        num_points, degree_rounded_up,
+                        point_bucket=point_bucket, dtype=kernel_dtype,
+                    )
+                    _autotuned_shapes.add(shape_key)
+        else:
+            evaluate_polynomials_kernel[grid](
+                x, coefs, terms, polynomial_sizes, polynomial_offsets, output,
+                num_polynomials, num_monomials, input_dimension_rounded_up,
+                num_points, degree_rounded_up,
+                point_bucket=point_bucket, dtype=kernel_dtype,
+            )
 
         return output
 

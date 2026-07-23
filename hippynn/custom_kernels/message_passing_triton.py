@@ -1,6 +1,11 @@
+import threading
+
 import triton
 import triton.language as tl
 import torch
+
+_tensor_products_autotune_lock = threading.Lock()
+_tensor_products_autotuned_shapes = set()
 
 from .utils import resort_pairs_cached
 from . import envsum
@@ -389,14 +394,32 @@ class TensorProductWrapper(torch.autograd.Function):
         # run the kernel. Recall that the T and S block indices are squeezed into one axis (the second one) because Triton only allows up to 3 axes.
         grid = lambda META : (n_atom_with_pairs, triton.cdiv(t, META["T_BLOCK_SIZE"]) * triton.cdiv(nu, META["S_BLOCK_SIZE"]), triton.cdiv(b, META["Z_BLOCK_SIZE"]))
 
-        tensor_products_kernel[grid](
-            Tsz, Esz, ETz, ETs_ij,
-            E,T,s,z,
-            atom1_ids, atom1_starts, pair_second,
-            i, t, nu, b,
-            compute_Tsz, compute_Esz, compute_ETz, compute_ETs,
-            dtype=tl_dtype,
-        )
+        # Triton's autotuner cache is process-global and not thread-safe.
+        # DataParallel may hit this kernel concurrently from replica threads,
+        # including during backward, so serialize the first autotune for each
+        # workload shape and compute mode.
+        shape_key = (t, nu, b, compute_Tsz, compute_Esz, compute_ETz, compute_ETs)
+        if shape_key not in _tensor_products_autotuned_shapes:
+            with _tensor_products_autotune_lock:
+                if shape_key not in _tensor_products_autotuned_shapes:
+                    tensor_products_kernel[grid](
+                        Tsz, Esz, ETz, ETs_ij,
+                        E,T,s,z,
+                        atom1_ids, atom1_starts, pair_second,
+                        i, t, nu, b,
+                        compute_Tsz, compute_Esz, compute_ETz, compute_ETs,
+                        dtype=tl_dtype,
+                    )
+                    _tensor_products_autotuned_shapes.add(shape_key)
+        else:
+            tensor_products_kernel[grid](
+                Tsz, Esz, ETz, ETs_ij,
+                E,T,s,z,
+                atom1_ids, atom1_starts, pair_second,
+                i, t, nu, b,
+                compute_Tsz, compute_Esz, compute_ETz, compute_ETs,
+                dtype=tl_dtype,
+            )
 
         # Sum ETs over i using index_add.
         if compute_ETs:

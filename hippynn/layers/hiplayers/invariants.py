@@ -362,7 +362,12 @@ class HopInvariantLayer(torch.nn.Module):
         super().__init__()
         self.l_max = l_max
         self.n_max = n_max
-        self.cmaps = cmaps_
+        self._cmap_orders = tuple(cmaps_)
+        for order, cmap in cmaps_.items():
+            # DataParallel only replicates parameters and registered buffers
+            # onto each device. Keeping these tensors in an ordinary dict made
+            # every replica share and mutate the same dict during ``forward``.
+            self.register_buffer(f"_cmap_{order}", cmap.detach().clone(), persistent=False)
 
         # register buffer to allow us to check the device that the layer is set to
         # (allowing use of .to(), .cpu(), etc.)
@@ -371,6 +376,10 @@ class HopInvariantLayer(torch.nn.Module):
         # will be used if polynomial invariants are active
         self.polynomials = None 
         self._invariant_metadata = None
+
+    @property
+    def cmaps(self):
+        return {order: getattr(self, f"_cmap_{order}") for order in self._cmap_orders}
 
     def invariant_metadata(self):
         if self._invariant_metadata is None:
@@ -387,8 +396,9 @@ class HopInvariantLayer(torch.nn.Module):
 
         cmaps_device = self.cmaps[0].device
         if cmaps_device != device:
-            for c in self.cmaps.keys():
-                self.cmaps[c] = self.cmaps[c].to(device)
+            for order in self._cmap_orders:
+                name = f"_cmap_{order}"
+                setattr(self, name, getattr(self, name).to(device))
 
         if device == 'cpu' or not settings.USE_POLYNOMIAL_INVARIANTS or not triton_available_with_gather:
             return calc_invariants(self.l_max, self.n_max, tensor_features, self.cmaps)

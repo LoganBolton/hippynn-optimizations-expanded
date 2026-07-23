@@ -209,6 +209,11 @@ def setup_training(
     model, evaluator, optimizer = serialization.set_devices(
         model, loss, evaluator, optimizer, setup_params.device or tools.device_fallback()
     )
+    # ``set_devices`` may replace the model with a DataParallel wrapper. Keep
+    # that replacement in the container returned to the training loop; the
+    # evaluator alone holding the wrapped model would leave training on only
+    # the primary GPU.
+    training_modules = TrainingModules(model, loss, evaluator)
 
     metrics = MetricTracker(evaluator.loss_names, controller.stopping_key)
 
