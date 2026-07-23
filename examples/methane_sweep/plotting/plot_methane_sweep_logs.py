@@ -33,6 +33,7 @@ FINAL_EVALUATION_MARKERS = (
     "Training complete.",
 )
 TEST_STATISTICS_RE = re.compile(r"^TEST_SET_STATISTICS_JSON:\s*(\{.*\})$")
+RUN_ID_RE = re.compile(r"methane-l(\d+)-n(\d+)-d(\d+)-seed(\d+)")
 
 
 METRIC_NAMES = {
@@ -105,6 +106,12 @@ def parse_args() -> argparse.Namespace:
         "--requested-train-batch-size",
         type=int,
         help="Only include runs whose earliest log requested this starting training batch size.",
+    )
+    parser.add_argument(
+        "--label-mode",
+        choices=("task", "seed-config"),
+        default="task",
+        help="How to group runs across log files. 'task' keeps sweep task ids separate; 'seed-config' merges logs that share l/n/data_size/seed.",
     )
     return parser.parse_args()
 
@@ -210,18 +217,75 @@ def sweep_jobs(path: Path) -> dict[int, dict[str, object]]:
     return jobs
 
 
-def run_label(path: Path, total_count: int | None, task_params: dict[str, object] | None) -> str:
+def run_params_from_file(path: Path) -> dict[str, object]:
+    try:
+        with path.open("r", encoding="utf-8", errors="replace") as handle:
+            for line in handle:
+                if match := RUN_ID_RE.search(line):
+                    return {
+                        "hiphop_l_max": int(match.group(1)),
+                        "hiphop_n_max": int(match.group(2)),
+                        "data_size": int(match.group(3)),
+                        "seed": int(match.group(4)),
+                    }
+    except OSError:
+        pass
+    return {}
+
+
+def infer_run_params_from_sidecar(log_path: Path) -> dict[str, object]:
+    """Read the run identity emitted by W&B to the task's paired stderr."""
+    resolved_path = log_path.resolve()
+    return run_params_from_file(resolved_path.with_suffix(".err"))
+
+
+def infer_sweep_config_from_submission_log(log_path: Path) -> Path | None:
+    try:
+        resolved_path = log_path.resolve()
+        job_dir = resolved_path.parent
+        job_id = resolved_path.name.split("_", 1)[0]
+        candidates: list[Path] = []
+
+        # Completed jobs retain their controller output beside task logs.
+        candidates.extend(sorted(job_dir.glob(f"{job_id}_methane_*.out")))
+
+        # Active jobs may also have a submission-level controller log.
+        if job_dir.parent.name == "runs":
+            submissions_dir = job_dir.parent.parent / "submissions"
+            candidates.extend(sorted(submissions_dir.glob(f"{job_id}_*.out")))
+
+        for candidate in candidates:
+            with candidate.open("r", encoding="utf-8", errors="replace") as handle:
+                for line in handle:
+                    if line.startswith("Sweep config:"):
+                        config_path = line.split(":", 1)[1].strip()
+                        if config_path:
+                            return Path(config_path)
+    except OSError:
+        return None
+    return None
+
+
+def run_label(
+    path: Path,
+    total_count: int | None,
+    task_params: dict[str, object] | None,
+    label_mode: str = "task",
+) -> str:
     task_id = task_id_from_path(path)
     task = str(task_id) if task_id is not None else path.stem
     if task_params:
-        detail = " ".join(
-            [
-                f"l={task_params['hiphop_l_max']}",
-                f"n={task_params['hiphop_n_max']}",
-            ]
-        )
+        detail_parts = [
+            f"l={task_params['hiphop_l_max']}",
+            f"n={task_params['hiphop_n_max']}",
+        ]
         if "data_size" in task_params:
-            detail += f" d={format_data_size(task_params['data_size'])}"
+            detail_parts.append(f"d={format_data_size(task_params['data_size'])}")
+        if "seed" in task_params:
+            detail_parts.append(f"seed={task_params['seed']}")
+        detail = ' '.join(detail_parts)
+        if label_mode == "seed-config":
+            return detail
         return f"task {task}: {detail}"
     return f"task {task}"
 
@@ -240,7 +304,9 @@ def parse_metric_values(line: str) -> tuple[str, float, float] | None:
 
 
 def parse_log(
-    path: Path, task_params: dict[str, object] | None
+    path: Path,
+    task_params: dict[str, object] | None,
+    label_mode: str = "task",
 ) -> tuple[list[dict[str, float | int | str]], int | None]:
     rows: list[dict[str, float | int | str]] = []
     current: dict[str, float | int | str] | None = None
@@ -249,6 +315,7 @@ def parse_log(
     final_test_metrics: dict[str, float] = {}
     testing_sections = 0
     requested_train_batch_size: int | None = None
+    inferred_task_params = infer_run_params_from_sidecar(path)
 
     with path.open("r", encoding="utf-8", errors="replace") as handle:
         for line in handle:
@@ -261,6 +328,16 @@ def parse_log(
             if match := TEST_STATISTICS_RE.match(line):
                 test_statistics = json.loads(match.group(1))
                 continue
+
+            if match := RUN_ID_RE.search(line):
+                inferred_task_params.update(
+                    {
+                        "hiphop_l_max": int(match.group(1)),
+                        "hiphop_n_max": int(match.group(2)),
+                        "data_size": int(match.group(3)),
+                        "seed": int(match.group(4)),
+                    }
+                )
 
             if line == "Testing model...":
                 testing_sections += 1
@@ -322,7 +399,10 @@ def parse_log(
     if current is not None:
         rows.append(current)
 
-    label = run_label(path, total_count, task_params)
+    merged_task_params = dict(task_params or {})
+    merged_task_params.update(inferred_task_params)
+    task_params = merged_task_params or None
+    label = run_label(path, total_count, task_params, label_mode=label_mode)
     for row in rows:
         row["run"] = label
         task_id = task_id_from_path(path)
@@ -656,7 +736,7 @@ def run_sort_key(item: tuple[str, list[dict[str, float | int | str]]]) -> tuple[
     return (int(task_id), label)
 
 
-def plot_smoothed_total_epoch_time_with_events(
+def plot_smoothed_training_time_with_events(
     runs: dict[str, list[dict[str, float | int | str]]], output: Path, smoothing_window: int = 50
 ) -> None:
     import matplotlib.pyplot as plt
@@ -676,12 +756,12 @@ def plot_smoothed_total_epoch_time_with_events(
         previous_source: str | None = None
 
         for row in run_rows:
-            if row.get("total_epoch_time_s") in (None, ""):
+            if row.get("training_time_s") in (None, ""):
                 continue
             epoch = int(row["epoch"])
-            total_epoch_time = float(row["total_epoch_time_s"])
+            training_time = float(row["training_time_s"])
             xs.append(epoch)
-            ys.append(total_epoch_time)
+            ys.append(training_time)
 
             current_source = str(row.get("source_file", ""))
             if previous_source is not None and current_source and current_source != previous_source:
@@ -745,9 +825,9 @@ def plot_smoothed_total_epoch_time_with_events(
 
     padding = max(1.0, 0.05 * (max(ymaxs) - min(ymins)))
     ax.set_ylim(min(ymins) - padding, max(ymaxs) + padding)
-    ax.set_title(f"Total Epoch Time (smoothed moving average, window={smoothing_window})")
+    ax.set_title(f"Training Time (smoothed moving average, window={smoothing_window})")
     ax.set_xlabel("Epoch")
-    ax.set_ylabel("Total epoch time (s)")
+    ax.set_ylabel("Training time (s)")
     ax.grid(True, alpha=0.25)
     ax.legend(fontsize=8, ncol=2)
     fig.savefig(output, dpi=180)
@@ -1534,10 +1614,24 @@ def main() -> None:
 
     runs: dict[str, list[dict[str, float | int | str]]] = defaultdict(list)
     original_requested_batch: dict[str, int] = {}
-    jobs = sweep_jobs(args.sweep_config)
+    jobs_by_config: dict[Path, dict[int, dict[str, object]]] = {}
+    default_config = args.sweep_config.resolve() if args.sweep_config.exists() else args.sweep_config
+    jobs_by_config[default_config] = sweep_jobs(args.sweep_config)
     for path in log_paths:
         task_id = task_id_from_path(path)
-        rows, _ = parse_log(path, jobs.get(task_id) if task_id is not None else None)
+        config_path = infer_sweep_config_from_submission_log(path)
+        if config_path is None:
+            config_path = default_config
+        else:
+            config_path = config_path.resolve() if config_path.exists() else config_path
+        if config_path not in jobs_by_config:
+            jobs_by_config[config_path] = sweep_jobs(config_path)
+        job_map = jobs_by_config[config_path]
+        rows, _ = parse_log(
+            path,
+            job_map.get(task_id) if task_id is not None else None,
+            label_mode=args.label_mode,
+        )
         if not rows:
             print(f"warning: no epochs parsed from {path}")
             continue
@@ -1609,8 +1703,9 @@ def main() -> None:
         for label, run_rows in sorted(runs.items()):
             first = run_rows[0]
             writer.writerow({column: first.get(column, "") for column in summary_columns[:-1]} | {"epochs": len(run_rows)})
-    if jobs:
-        write_sweep_task_map(jobs, runs, sweep_task_map_path)
+    default_jobs = jobs_by_config.get(default_config, {})
+    if default_jobs:
+        write_sweep_task_map(default_jobs, runs, sweep_task_map_path)
     metrics = metric_columns(columns)
 
     metric_dir = args.output_dir / "by_metric"
@@ -1635,9 +1730,9 @@ def main() -> None:
         if metric in metrics
     ]
     plot_dashboard(dashboard_metrics, runs, args.output_dir / "summary_dashboard.png")
-    plot_smoothed_total_epoch_time_with_events(
+    plot_smoothed_training_time_with_events(
         runs,
-        args.output_dir / "total_epoch_time_smoothed_window50_minmax_with_events_large_markers.png",
+        args.output_dir / "training_time_smoothed_window50_minmax_with_events_large_markers.png",
         smoothing_window=50,
     )
     plot_force_accuracy_pareto(
@@ -1666,11 +1761,11 @@ def main() -> None:
     print(f"Parsed {len(all_rows)} epochs from {len(runs)} runs.")
     print(f"Wrote {csv_path}")
     print(f"Wrote {run_summary_path}")
-    if jobs:
+    if default_jobs:
         print(f"Wrote {sweep_task_map_path}")
     print(f"Wrote {len(metrics)} metric plots to {metric_dir}")
     print(f"Wrote {args.output_dir / 'summary_dashboard.png'}")
-    print(f"Wrote {args.output_dir / 'total_epoch_time_smoothed_window50_minmax_with_events_large_markers.png'}")
+    print(f"Wrote {args.output_dir / 'training_time_smoothed_window50_minmax_with_events_large_markers.png'}")
     print(f"Wrote {args.output_dir / 'force_mae_pareto.png'}")
     print(f"Wrote {args.output_dir / 'best_metric_pareto.png'}")
     print(f"Wrote {args.output_dir / 'paper_style_energy_comparison.png'}")

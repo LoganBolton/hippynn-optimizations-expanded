@@ -1,0 +1,35 @@
+name: methane-l4-n3-1m-8seeds
+program: training/methane_configurations.py
+method: grid
+metric:
+  name: T-MAE
+  goal: minimize
+parameters:
+  wandb_mode:
+    value: offline
+  seed:
+    values: [42, 1776, 7, 0, 101, 202, 303, 404]
+  hiphop_l_max:
+    value: 4
+  hiphop_n_max:
+    value: 3
+  n_epochs:
+    value: 10000
+  data_size:
+    value: 1000000
+  test_set_size:
+    value: 80000
+  batch_size:
+    value: 256
+  eval_batch_size:
+    value: 4096
+  max_batch_size:
+    value: 4096
+  activation_max_batches:
+    value: 10
+  activation_max_values:
+    value: 200000
+  invariant_max_batches:
+    value: 10
+  invariant_max_values:
+    value: 1000000

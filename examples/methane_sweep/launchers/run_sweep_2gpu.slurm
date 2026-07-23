@@ -15,6 +15,7 @@
 # Run from examples/methane_sweep.
 # Usage:
 #   RESUME=0 MODEL_SUFFIX=b256_fresh TASK_IDS="8 9 10 11 12 13 14 15" sbatch launchers/run_sweep_2gpu.slurm
+#   SWEEP_CONFIG=configs/methane-l4-n3-1m-8seeds.yml TASK_IDS="0 1 2 3 4 5 6 7" MODEL_SUFFIX=b256_fresh_8seeds RESUME=0 sbatch launchers/run_sweep_2gpu.slurm
 #
 # This is the 2-GPU A100 variant of run_sweep.slurm. It is useful when the
 # 4-GPU SXM node is busy but 2-GPU A100-PCIE nodes are available.
@@ -22,7 +23,10 @@
 METHANE_DIR="${SLURM_SUBMIT_DIR:-$(pwd)}"
 PROJECT_ROOT="$(cd "$METHANE_DIR/../.." && pwd)"
 TRAINING_SCRIPT="$METHANE_DIR/training/methane_configurations.py"
-SWEEP_CONFIG="$METHANE_DIR/configs/methane-l4-n4.yml"
+SWEEP_CONFIG="${SWEEP_CONFIG:-$METHANE_DIR/configs/methane-l4-n4.yml}"
+if [[ "$SWEEP_CONFIG" != /* ]]; then
+    SWEEP_CONFIG="$METHANE_DIR/$SWEEP_CONFIG"
+fi
 CONDA_ENV="hippynn-expanded-lmax"
 MAX_PARALLEL=2
 TASK_IDS="${TASK_IDS:-}"

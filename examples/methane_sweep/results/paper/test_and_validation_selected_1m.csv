@@ -33,3 +33,8 @@ l3n5_valid,l3n5,valid,1000000,4,0.34636,examples/methane_sweep/logs/plots_l3n5_1
 l3n5_valid,l3n5,valid,1000000,7,0.36839,examples/methane_sweep/logs/plots_l3n5_1m_all_current/metrics.csv,task 2: l=3 n=5 d=1M,"best validation, epoch 3577"
 l3n5_valid,l3n5,valid,1000000,42,0.38158,examples/methane_sweep/logs/plots_l3n5_1m_all_current/metrics.csv,task 0: l=3 n=5 d=1M,"best validation, epoch 3507"
 l3n5_valid,l3n5,valid,1000000,1776,0.3774,examples/methane_sweep/logs/plots_l3n5_1m_all_current/metrics.csv,task 1: l=3 n=5 d=1M,"best validation, epoch 3604"
+l3n5_test,l3n5,test,1000000,42,0.3631627559661865,examples/methane_sweep/logs/plots_l3n5_1m_all_current/current_best_checkpoint_test_metrics_speedup.csv,task 0: l=3 n=5 d=1000000,current best checkpoint test result from still-running run
+l3n5_test,l3n5,test,1000000,7,0.364526629447937,examples/methane_sweep/logs/plots_l3n5_1m_all_current/current_best_checkpoint_test_metrics_speedup.csv,task 2: l=3 n=5 d=1000000,current best checkpoint test result from still-running run
+l3n5_test,l3n5,test,1000000,3,0.34636375308036804,examples/methane_sweep/logs/plots_l3n5_1m_all_current/current_best_checkpoint_test_metrics_lmax3nmax5.csv,task 6: l=3 n=5 d=1000000,current best checkpoint test result from still-running run
+l3n5_test,l3n5,test,1000000,4,0.3512721657752991,examples/methane_sweep/logs/plots_l3n5_1m_all_current/current_best_checkpoint_test_metrics_lmax3nmax5.csv,task 7: l=3 n=5 d=1000000,current best checkpoint test result from still-running run
+l3n5_test,l3n5,test,1000000,1,0.38291,examples/methane_sweep/logs/plots_l3n5_1m_all_current/final_test_metrics.csv,task 4: l=3 n=5 d=1M,batch-256-start run

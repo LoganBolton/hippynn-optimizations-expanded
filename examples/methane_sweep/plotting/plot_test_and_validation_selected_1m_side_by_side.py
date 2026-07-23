@@ -32,7 +32,7 @@ PLOT_ORDER = [
 GROUP_LABELS = [
     ("$\\ell=2, n=4$\n(from paper)", ["l2n4_ref_test"]),
     ("$\\ell=3, n=4$\n(from paper)", ["l3n4_ref_test"]),
-    ("$\\ell=3, n=5$", ["l3n5_test", "l3n5_valid"]),
+    ("$\\ell=3, n=5$\n(4/7 runs\ntested early)", ["l3n5_test", "l3n5_valid"]),
 ]
 
 POSITIONS = {

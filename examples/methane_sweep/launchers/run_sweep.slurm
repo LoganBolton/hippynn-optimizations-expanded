@@ -17,6 +17,7 @@
 # Usage: sbatch launchers/run_sweep.slurm
 #        TASK_IDS="0 1 2 3 4 5 6 7" sbatch launchers/run_sweep.slurm
 #        RESUME=0 MODEL_SUFFIX=b256_fresh TASK_IDS="0 1 2 3 4 5 6 7" sbatch launchers/run_sweep.slurm
+#        SWEEP_CONFIG=configs/methane-l4-n3-1m-8seeds.yml TASK_IDS="0 1 2 3 4 5 6 7" MODEL_SUFFIX=b256_fresh_8seeds RESUME=0 sbatch launchers/run_sweep.slurm
 #
 # This is a local/offline replacement for `wandb agent`. W&B offline mode logs
 # each run locally, but it cannot pull sweep jobs from the online W&B backend.
@@ -24,7 +25,10 @@
 METHANE_DIR="${SLURM_SUBMIT_DIR:-$(pwd)}"
 PROJECT_ROOT="$(cd "$METHANE_DIR/../.." && pwd)"
 TRAINING_SCRIPT="$METHANE_DIR/training/methane_configurations.py"
-SWEEP_CONFIG="$METHANE_DIR/configs/methane-l4-n4.yml"
+SWEEP_CONFIG="${SWEEP_CONFIG:-$METHANE_DIR/configs/methane-l4-n4.yml}"
+if [[ "$SWEEP_CONFIG" != /* ]]; then
+    SWEEP_CONFIG="$METHANE_DIR/$SWEEP_CONFIG"
+fi
 CONDA_ENV="hippynn-expanded-lmax"       # Your conda environment name
 MAX_PARALLEL="${MAX_PARALLEL:-}"
 TASK_IDS="${TASK_IDS:-}"
