@@ -19,12 +19,15 @@ FLOAT_RE = re.compile(r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?")
 METRIC_RE = re.compile(r"^([A-Za-z0-9][A-Za-z0-9 -]*?)\s*:")
 TOTAL_COUNT_RE = re.compile(r"Total Count:\s*(\d+)")
 LR_RE = re.compile(r"Learning rate:\s*(%s)" % FLOAT_RE.pattern)
-BATCH_RE = re.compile(r"Batch Size:\s*(\d+)")
+BATCH_RE = re.compile(r"Batch [Ss]ize:\s*(\d+)")
 REQUESTED_BATCH_RE = re.compile(r"Batch config:\s*requested_train_batch=(\d+)")
 TIME_RE = re.compile(r"(Training time|Total epoch time):\s*(%s)\s*s" % FLOAT_RE.pattern)
 BEST_RE = re.compile(r"Best T-MAE so far:\s*(%s)" % FLOAT_RE.pattern)
 SINCE_BEST_RE = re.compile(r"Epochs since last best:\s*(\d+)")
 CURRENT_MAX_RE = re.compile(r"Current max epochs:\s*(\d+)")
+LIGHTNING_EPOCH_TIME_RE = re.compile(
+    r"^Epoch\s+(\d+):\s+100%.*?\[(\d+):(\d{2})(?::(\d{2}))?<"
+)
 FINAL_EVALUATION_MARKERS = (
     "Training phase ended.",
     "Reverting to best model found.",
@@ -195,7 +198,7 @@ def format_data_size(value: object) -> str:
 
 def task_id_from_path(path: Path) -> int | None:
     match = re.search(
-        r"_(\d+)(?:_w\d+)?_methane_(?:sweep|resume_selected|l3_b256|l3n5|l4_titanv)(?:_[A-Za-z0-9-]+)?\.out$",
+        r"_(?:r\d+_)?(\d+)(?:_w\d+)?_methane_(?:sweep|resume_selected|l3_b256|l3n5|l4_titanv|lightning)(?:_[A-Za-z0-9-]+)?\.out$",
         path.name,
     )
     return int(match.group(1)) if match else None
@@ -315,11 +318,13 @@ def parse_log(
     final_test_metrics: dict[str, float] = {}
     testing_sections = 0
     requested_train_batch_size: int | None = None
+    metric_section: str | None = None
     inferred_task_params = infer_run_params_from_sidecar(path)
 
     with path.open("r", encoding="utf-8", errors="replace") as handle:
-        for line in handle:
-            line = line.rstrip("\n")
+        # Lightning progress bars update a line in-place with carriage returns.
+        # Split those updates into ordinary logical lines before parsing them.
+        for line in handle.read().replace("\r", "\n").splitlines():
 
             if match := REQUESTED_BATCH_RE.search(line):
                 requested_train_batch_size = int(match.group(1))
@@ -339,6 +344,14 @@ def parse_log(
                     }
                 )
 
+            stripped = line.strip()
+            if stripped in {"train", "valid"}:
+                metric_section = stripped
+            elif stripped.endswith(" valid"):
+                metric_section = "valid"
+            elif stripped.endswith(" train"):
+                metric_section = "train"
+
             if line == "Testing model...":
                 testing_sections += 1
                 continue
@@ -356,10 +369,25 @@ def parse_log(
                 total_count = int(match.group(1))
                 continue
 
+            if match := LIGHTNING_EPOCH_TIME_RE.match(line):
+                epoch = int(match.group(1))
+                first, second, third = (int(value) if value is not None else None for value in match.groups()[1:])
+                # tqdm uses MM:SS for short epochs and H:MM:SS for long ones.
+                elapsed_s = first * 60 + second if third is None else first * 3600 + second * 60 + third
+                if current is not None and current["epoch"] == epoch:
+                    # The final repeated 100% line appears after validation, so
+                    # retaining the last value gives the full epoch duration.
+                    current["total_epoch_time_s"] = elapsed_s
+
             if match := EPOCH_RE.match(line):
-                if current is not None:
-                    rows.append(current)
-                current = {"epoch": int(match.group(1)), "source_file": path.name}
+                epoch = int(match.group(1))
+                # tqdm emits many in-place ``Epoch N: ...`` refreshes.  They
+                # all belong to the same record; start a new row only when N
+                # changes.
+                if current is None or current["epoch"] != epoch:
+                    if current is not None:
+                        rows.append(current)
+                    current = {"epoch": epoch, "source_file": path.name}
                 continue
 
             if current is None:
@@ -395,6 +423,18 @@ def parse_log(
                 metric, train_value, valid_value = parsed
                 current[f"train_{metric}"] = train_value
                 current[f"valid_{metric}"] = valid_value
+                continue
+
+            # The Lightning adapter writes one-column tables headed by "valid"
+            # (and repeats them once per rank in the combined torchrun output).
+            # Repeated values simply overwrite the same epoch field.
+            name_match = METRIC_RE.match(line)
+            if name_match and metric_section is not None:
+                metric = name_match.group(1).strip()
+                if metric in METRIC_NAMES:
+                    values = [float(value) for value in FLOAT_RE.findall(line[name_match.end() :])]
+                    if len(values) == 1:
+                        current[f"{metric_section}_{metric}"] = values[0]
 
     if current is not None:
         rows.append(current)
@@ -603,7 +643,23 @@ def apply_sparse_y_axis(ax, metric: str, log_scale: bool) -> None:
             ax.yaxis.set_major_locator(ticker.FixedLocator([0.98, 0.99, 1.0]))
             ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda value, _: f"{value:g}"))
         else:
-            ax.yaxis.set_major_locator(ticker.LogLocator(base=10, numticks=3))
+            lower, upper = ax.get_ylim()
+            # A decade-only locator can leave a narrow range around 1 with a
+            # single label.  Keep the logarithmic scale, but use enough
+            # value-space ticks to show changes within a factor of two.
+            if lower > 0 and upper / lower < 2:
+                ax.yaxis.set_major_locator(ticker.LinearLocator(numticks=6))
+            else:
+                # Add useful intermediate values within every decade.  This
+                # makes late-training plateaus around values such as 0.25
+                # readable without sacrificing the logarithmic overview.
+                ax.yaxis.set_major_locator(
+                    ticker.LogLocator(
+                        base=10,
+                        subs=(1.0, 1.25, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0),
+                        numticks=15,
+                    )
+                )
             ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda value, _: f"{value:g}"))
         ax.yaxis.set_minor_locator(ticker.NullLocator())
     else:
@@ -1604,7 +1660,7 @@ def main() -> None:
             for pattern in log_patterns
             for path in args.log_dir.glob(pattern)
             if re.search(
-                r"_\d+(?:_w\d+)?_methane_(?:sweep|resume_selected|l3_b256|l3n5)(?:_[A-Za-z0-9-]+)?\.out$",
+                r"_(?:r\d+_)?\d+(?:_w\d+)?_methane_(?:sweep|resume_selected|l3_b256|l3n5|l4_titanv|lightning)(?:_[A-Za-z0-9-]+)?\.out$",
                 path.name,
             )
         }

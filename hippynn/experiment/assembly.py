@@ -88,9 +88,24 @@ def determine_out_in_targ(*nodes_required_for_loss: Node):
     targets = [x.origin_node for x in required_inputs if isinstance(x, LossTrueNode)]
     inputs = [p for node in outputs for p in node.get_ancestors() if isinstance(p, InputNode)]
 
-    inputs = list(set(inputs))
-    outputs = list(set(outputs))
-    targets = list(set(targets))
+    # These collections originate from sets. Their iteration order differs
+    # between independently started Python processes, which can make DDP
+    # ranks assemble model outputs in different orders. That is harmless in a
+    # one-process run but fatal once corresponding outputs participate in a
+    # collective (for example Lightning's distributed validation gathering).
+    # Node names/db names are the stable graph identifiers used throughout an
+    # experiment, so use them to provide a process-independent order.
+    def stable_node_order(node):
+        return (
+            type(node).__module__,
+            type(node).__qualname__,
+            str(getattr(node, "name", "")),
+            str(getattr(node, "db_name", "")),
+        )
+
+    inputs = sorted(set(inputs), key=stable_node_order)
+    outputs = sorted(set(outputs), key=stable_node_order)
+    targets = sorted(set(targets), key=stable_node_order)
 
     return inputs, outputs, targets
 

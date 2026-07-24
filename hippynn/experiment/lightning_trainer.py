@@ -174,12 +174,17 @@ class HippynnLightningModule(pl.LightningModule):
         log_dir = self.trainer.log_dir
 
         if not self.structure_file:
-            # Perform change on all ranks.
-            sf = serialization.DEFAULT_STRUCTURE_FNAME
-            self.structure_file = sf
+            # Store the structure beside the checkpoint directory so
+            # ``load_from_checkpoint`` can infer it from
+            # <run>/checkpoints/<checkpoint>.ckpt.  Resolve this path on every
+            # rank, but only rank zero writes the file.
+            checkpoint_dir = Path(self.trainer.checkpoint_callback.dirpath)
+            path = checkpoint_dir.parent.joinpath(serialization.DEFAULT_STRUCTURE_FNAME)
+            self.structure_file = str(path)
 
-        if self.global_rank == 0 and not self.structure_file:
-            self.print("creating structure file.")
+        path = Path(self.structure_file)
+        if self.global_rank == 0 and not path.exists():
+            self.print("Creating HIPPYNN Lightning structure file.")
             structure = dict(
                 model=self.model,
                 loss=self.loss,
@@ -188,11 +193,13 @@ class HippynnLightningModule(pl.LightningModule):
                 optimizer_list=self.optimizer_list,
                 scheduler_list=self.scheduler_list,
             )
-            path: Path = Path(log_dir).joinpath(sf)
+            path.parent.mkdir(parents=True, exist_ok=True)
             self.print("Saving structure file at", path)
             torch.save(obj=structure, f=path)
 
+        checkpoint["hippynn_structure_file"] = str(path)
         checkpoint["controller_state"] = self.controller.state_dict()
+        checkpoint["hippynn_metric_tracker"] = self.metric_tracker
         return
 
     @classmethod
@@ -237,6 +244,8 @@ class HippynnLightningModule(pl.LightningModule):
         """
         cstate = checkpoint.pop("controller_state")
         self.controller.load_state_dict(cstate)
+        self.structure_file = checkpoint.pop("hippynn_structure_file", self.structure_file)
+        self.metric_tracker = checkpoint.pop("hippynn_metric_tracker", self.metric_tracker)
         return
 
     def configure_optimizers(self):
@@ -328,9 +337,25 @@ class HippynnLightningModule(pl.LightningModule):
         # now 'shape' (n_batch, n_targets) -> need to transpose.
         all_batch_targets = [[bpred[i] for bpred in all_batch_targets] for i in range(self.n_targets)]
 
-        # now cat each prediction and target across the batch index.
+        # Cat across local batches, then gather the complete evaluation set
+        # across DDP ranks before computing nonlinear metrics such as RMSE.
+        # Averaging independently computed per-rank RMSE values is not
+        # mathematically equivalent to computing the global RMSE.
         all_predictions = [torch.cat(x, dim=0) if x[0].shape != () else x[0] for x in all_batch_predictions]
         all_targets = [torch.cat(x, dim=0) for x in all_batch_targets]
+
+        def gather_evaluation_tensor(value):
+            if self.trainer.world_size == 1:
+                return value
+            gathered = self.all_gather(value, sync_grads=False)
+            if value.ndim == 0:
+                # Model-only quantities such as regularization are identical
+                # on synchronized ranks apart from roundoff.
+                return gathered.mean()
+            return gathered.reshape(-1, *value.shape[1:])
+
+        all_predictions = [gather_evaluation_tensor(value) for value in all_predictions]
+        all_targets = [gather_evaluation_tensor(value) for value in all_targets]
 
         all_losses = [x.item() for x in self.eval_loss(*all_predictions, *all_targets)]
         self.eval_step_outputs.clear()  # free memory

@@ -1,3 +1,5 @@
+import os
+
 import torch
 import torch.nn.functional as F
 
@@ -374,7 +376,8 @@ class HopInvariantLayer(torch.nn.Module):
         self.register_buffer("device_check", torch.empty(0))
 
         # will be used if polynomial invariants are active
-        self.polynomials = None 
+        self.polynomials = None
+        self._polynomial_collection_build_count = 0
         self._invariant_metadata = None
 
     @property
@@ -405,6 +408,18 @@ class HopInvariantLayer(torch.nn.Module):
         else:
             if self.polynomials is None:
                 self.polynomials = compute_invariant_polynomial_collection(self.n_max, self.l_max, self.cmaps)
+                self._polynomial_collection_build_count += 1
+                self.polynomials.debug_label = (
+                    f"HopInvariantLayer(id={id(self)},l_max={self.l_max},n_max={self.n_max})"
+                )
+                if os.environ.get("HIPPYNN_POLYNOMIAL_CACHE_DEBUG") == "1":
+                    print(
+                        "POLYNOMIAL_CACHE_BUILD "
+                        f"rank={os.environ.get('RANK', '0')} "
+                        f"layer={self.polynomials.debug_label} "
+                        f"count={self._polynomial_collection_build_count}",
+                        flush=True,
+                    )
             self.polynomials.set_device(device)
             return EvaluatePolynomials.apply(tensor_features, self.polynomials)
         
@@ -413,5 +428,6 @@ class HopInvariantLayer(torch.nn.Module):
         # Make sure that self.polynomials is not saved, because this model may be reloaded onto a machine
         # where triton or cuda is not available. In that case, the polynomials object would be unnecessary.
         state["polynomials"] = None
+        state["_polynomial_collection_build_count"] = 0
         state["_invariant_metadata"] = None
         return state

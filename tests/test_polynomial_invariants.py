@@ -41,6 +41,23 @@ def test_polynomial_invariant_counts_match_interaction_lmax3():
         assert n_invariants == _invariant_counts[n_max, 3]
 
 
+def test_polynomial_derivative_cache_builds_each_level_once():
+    if not triton_available_with_gather:
+        pytest.skip("PolynomialCollection is available only with the Triton polynomial backend")
+
+    collection = compute_invariant_polynomial_collection(
+        n_max=1,
+        l_max=0,
+        input_tensor_ordering=["zero"],
+    )
+
+    first_derivative = collection.get_polynomials(1)
+    cached_first_derivative = collection.get_polynomials(1)
+
+    assert first_derivative is cached_first_derivative
+    assert collection.derivative_build_counts == {1: 1}
+
+
 def evaluate_polynomial_collection_torch(x, polyCollection):
     coefs, terms, polynomial_sizes, _ = polyCollection.get_polynomials()
 

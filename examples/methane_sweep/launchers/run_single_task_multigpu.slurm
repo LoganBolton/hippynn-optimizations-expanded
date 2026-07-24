@@ -12,7 +12,10 @@
 #SBATCH --cpus-per-task=32
 #SBATCH --mem=96G
 
-# Train exactly one sweep task using one synchronized model replica per GPU.
+# Legacy/debug-only torch.nn.DataParallel launcher. This path recreates
+# HIP-HOP replicas and their lazy polynomial caches every batch and is not
+# suitable for production multi-GPU training. Use
+# run_single_task_lightning_ddp.slurm for persistent one-process-per-GPU DDP.
 #
 # Run from examples/methane_sweep. TASK_ID is required. Examples:
 #
@@ -210,6 +213,7 @@ fi
 output_base="logs/runs/${SLURM_JOB_ID}/${SLURM_JOB_ID}_r${ATTEMPT_ID}_${TASK_ID}_methane_single_${NUM_GPUS}gpu"
 echo "Starting sweep task $TASK_ID / $SWEEP_COUNT on $NUM_GPUS synchronized GPUs"
 python -u "$TRAINING_SCRIPT" \
+    --parallel_backend data-parallel \
     --sweep_config "$SWEEP_CONFIG" \
     --sweep_task_id "$TASK_ID" \
     --num_gpus "$NUM_GPUS" \

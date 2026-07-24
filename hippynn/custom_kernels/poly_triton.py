@@ -1,3 +1,5 @@
+import os
+
 import torch
 import threading
 import torch.nn.functional as F
@@ -53,6 +55,8 @@ class PolynomialCollection():
         self.polynomials = {0 : (coefs, terms, polynomial_sizes, input_dimension)}
         self.polynomial_offsets = {0: self._compute_offsets(polynomial_sizes)}
         self.max_derivative_level = 0
+        self.derivative_build_counts = {}
+        self.debug_label = "unlabeled"
 
     @staticmethod
     def _compute_offsets(polynomial_sizes):
@@ -95,6 +99,15 @@ class PolynomialCollection():
             self.polynomials[derivative_level] = derivative
             self.polynomial_offsets[derivative_level] = self._compute_offsets(derivative[2])
             self.max_derivative_level = derivative_level
+            count = self.derivative_build_counts.get(derivative_level, 0) + 1
+            self.derivative_build_counts[derivative_level] = count
+            if os.environ.get("HIPPYNN_POLYNOMIAL_CACHE_DEBUG") == "1":
+                print(
+                    "POLYNOMIAL_DERIVATIVE_BUILD "
+                    f"rank={os.environ.get('RANK', '0')} "
+                    f"layer={self.debug_label} level={derivative_level} count={count}",
+                    flush=True,
+                )
             return derivative
 
     def get_polynomial_offsets(self, derivative_level=0):
