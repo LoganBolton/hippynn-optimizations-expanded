@@ -77,6 +77,23 @@ def build_parser():
         help="Resume the selected backend's latest native checkpoint.",
     )
     parser.add_argument(
+        "--reset_early_stopping_patience",
+        action="store_true",
+        help=(
+            "After restoring a native checkpoint, give the PatienceController a "
+            "fresh termination window without resetting optimizer or scheduler state."
+        ),
+    )
+    parser.add_argument(
+        "--reset_batch_schedule_on_resume",
+        action="store_true",
+        help=(
+            "After restoring a Lightning checkpoint, reset the train batch to the "
+            "configured starting value and restart plateau counting. Model and "
+            "optimizer state are preserved."
+        ),
+    )
+    parser.add_argument(
         "--legacy_checkpoint",
         type=Path,
         help="Import model weights from a legacy HIPPYNN .pt checkpoint.",
@@ -561,6 +578,7 @@ def run_lightning_training(
     run_name,
     wandb_config,
     world_size,
+    starting_per_rank_batch_size,
 ):
     """Run the already-assembled experiment through Lightning DDP."""
     try:
@@ -611,9 +629,33 @@ def run_lightning_training(
 
     class DistributedRunDiagnostics(Callback):
         def on_fit_start(self, trainer, pl_module):
-            # Checkpoint restoration happens before this hook. Ensure a resumed
-            # controller's dynamic batch size is reflected by the first loader
-            # of the continued run.
+            # Checkpoint restoration happens before this hook, making this the
+            # correct place for intentional resume-state overrides.
+            if args.resume and args.reset_early_stopping_patience:
+                pl_module.controller.last_best = trainer.current_epoch
+                pl_module.controller.boredom = 0
+                if trainer.is_global_zero:
+                    print(
+                        "Reset early-stopping state after Lightning restore: "
+                        f"last_best={trainer.current_epoch}, boredom=0.",
+                        flush=True,
+                    )
+
+            if args.resume and args.reset_batch_schedule_on_resume:
+                pl_module.controller.batch_size = starting_per_rank_batch_size
+                for scheduler in pl_module.scheduler_list:
+                    if isinstance(scheduler, RaiseBatchSizeOnPlateau):
+                        scheduler.reset_plateau_tracking()
+                if trainer.is_global_zero:
+                    print(
+                        "Reset batch schedule after Lightning restore: "
+                        f"per_rank_batch_size={starting_per_rank_batch_size}, "
+                        "plateau_boredom=0.",
+                        flush=True,
+                    )
+
+            # Ensure the controller's active batch size is reflected by the
+            # first loader of a fresh or continued run.
             trainer.datamodule.batch_size = pl_module.controller.batch_size
             trainer.datamodule.eval_batch_size = pl_module.controller.eval_batch_size
 
@@ -886,6 +928,9 @@ def run_training(args):
             "world_size": world_size,
             "run_name": run_name,
             "wandb_mode": wandb_mode,
+            "resume": args.resume,
+            "reset_early_stopping_patience": args.reset_early_stopping_patience,
+            "reset_batch_schedule_on_resume": args.reset_batch_schedule_on_resume,
             "seed": seed,
             "sha": sha,
             "activation_max_batches": args.activation_max_batches,
@@ -1268,6 +1313,14 @@ def run_training(args):
             load_model_state_portably(training_modules.model, checkpoint["model"])
             controller.load_state_dict(checkpoint["controller"])
             metric_tracker = checkpoint["metric_tracker"]
+            if args.reset_early_stopping_patience:
+                controller.last_best = metric_tracker.current_epoch
+                controller.boredom = 0
+                print(
+                    "Reset early-stopping patience at resumed epoch "
+                    f"{metric_tracker.current_epoch}; optimizer and scheduler state are unchanged.",
+                    flush=True,
+                )
             if metric_tracker.best_model:
                 # ``train_model`` restores this state itself before final testing,
                 # so its keys must match the current wrapped/unwrapped model too.
@@ -1333,6 +1386,7 @@ def run_training(args):
             run_name=run_name,
             wandb_config=wandb_config,
             world_size=world_size,
+            starting_per_rank_batch_size=per_rank_batch_size,
         )
         return
 

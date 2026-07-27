@@ -239,6 +239,14 @@ class RaiseBatchSizeOnPlateau(ReduceLROnPlateau):
         self.inner.load_state_dict(state_dict["inner"])
         self.last_epoch = state_dict["last_epoch"]
 
+    def reset_plateau_tracking(self):
+        """Restart plateau counting without changing the optimizer or learning rate."""
+        self.boredom = 0
+        self.best_metric = float("inf")
+        self.inner.best = self.inner.mode_worse
+        self.inner.num_bad_epochs = 0
+        self.inner.cooldown_counter = 0
+
     def step(self, metrics):
         self.last_epoch += 1
 

@@ -20,7 +20,10 @@ METRIC_RE = re.compile(r"^([A-Za-z0-9][A-Za-z0-9 -]*?)\s*:")
 TOTAL_COUNT_RE = re.compile(r"Total Count:\s*(\d+)")
 LR_RE = re.compile(r"Learning rate:\s*(%s)" % FLOAT_RE.pattern)
 BATCH_RE = re.compile(r"Batch [Ss]ize:\s*(\d+)")
-REQUESTED_BATCH_RE = re.compile(r"Batch config:\s*requested_train_batch=(\d+)")
+# Older logs record the requested batch directly; Lightning logs report the
+# equivalent starting global batch.  Capture either form so comparisons do not
+# silently omit Lightning architectures from requested_train_batch_size plots.
+REQUESTED_BATCH_RE = re.compile(r"Batch config:\s*(?:requested_train_batch|global_train_batch)=(\d+)")
 TIME_RE = re.compile(r"(Training time|Total epoch time):\s*(%s)\s*s" % FLOAT_RE.pattern)
 BEST_RE = re.compile(r"Best T-MAE so far:\s*(%s)" % FLOAT_RE.pattern)
 SINCE_BEST_RE = re.compile(r"Epochs since last best:\s*(\d+)")
@@ -319,6 +322,7 @@ def parse_log(
     testing_sections = 0
     requested_train_batch_size: int | None = None
     metric_section: str | None = None
+    is_lightning_log = "_methane_lightning_" in path.name
     inferred_task_params = infer_run_params_from_sidecar(path)
 
     with path.open("r", encoding="utf-8", errors="replace") as handle:
@@ -418,6 +422,20 @@ def parse_log(
                 current["current_max_epochs"] = int(match.group(1))
                 continue
 
+            # torchrun combines stdout from both ranks. Occasionally their
+            # one-column Lightning tables collide on one physical line, e.g.
+            # ``T-RMSE: 1.6938L2: 0.0018173``. The first number still belongs
+            # to the metric at the start of the line; never reinterpret the
+            # second rank's number as a legacy train/valid pair.
+            name_match = METRIC_RE.match(line)
+            if is_lightning_log and name_match and metric_section is not None:
+                metric = name_match.group(1).strip()
+                if metric in METRIC_NAMES:
+                    values = [float(value) for value in FLOAT_RE.findall(line[name_match.end() :])]
+                    if values:
+                        current[f"{metric_section}_{metric}"] = values[0]
+                        continue
+
             parsed = parse_metric_values(line)
             if parsed is not None:
                 metric, train_value, valid_value = parsed
@@ -480,6 +498,7 @@ def write_csv(rows: list[dict[str, float | int | str]], path: Path) -> list[str]
         "training_time_s",
         "total_epoch_time_s",
         "best_valid_T-MAE_so_far",
+        "best_valid_T-RMSE_so_far",
         "epochs_since_best",
         "current_max_epochs",
     ]
@@ -547,14 +566,22 @@ def metric_columns(columns: list[str]) -> list[str]:
         "hiphop_n_max",
         "data_size",
         "total_params",
+        "requested_train_batch_size",
+        "original_requested_train_batch_size",
         "epoch",
-        "batch_size",
         "current_max_epochs",
     }
     return [
         column
         for column in columns
-        if column not in skip and any(isinstance_marker in column for isinstance_marker in ("train_", "valid_", "_time_s", "learning_rate", "epochs_since_best"))
+        if column not in skip
+        and (
+            column == "batch_size"
+            or any(
+                isinstance_marker in column
+                for isinstance_marker in ("train_", "valid_", "_time_s", "learning_rate", "epochs_since_best")
+            )
+        )
     ]
 
 
@@ -573,6 +600,42 @@ def deduplicate_epochs(
         all_rows.extend(deduplicated_rows)
 
     return all_rows, deduplicated_runs
+
+
+def add_running_best_metric(
+    runs: dict[str, list[dict[str, float | int | str]]],
+    source_metric: str,
+    target_metric: str,
+    isolated_drop_factor: float = 10.0,
+) -> None:
+    """Add a cumulative minimum while rejecting isolated implausible drops."""
+    for run_rows in runs.values():
+        best = math.inf
+        values: list[float | None] = []
+        for row in run_rows:
+            value = row.get(source_metric, "")
+            if value not in ("", None):
+                candidate = float(value)
+                if math.isfinite(candidate):
+                    values.append(candidate)
+                    continue
+            values.append(None)
+
+        for index, (row, candidate) in enumerate(zip(run_rows, values)):
+            isolated_drop = False
+            if candidate is not None and 0 < index < len(values) - 1:
+                previous = values[index - 1]
+                following = values[index + 1]
+                isolated_drop = (
+                    previous is not None
+                    and following is not None
+                    and previous >= candidate * isolated_drop_factor
+                    and following >= candidate * isolated_drop_factor
+                )
+            if candidate is not None and not isolated_drop:
+                best = min(best, candidate)
+            if math.isfinite(best):
+                row[target_metric] = best
 
 
 def add_stored_test_statistics(
@@ -635,12 +698,15 @@ def should_use_log_y(metric: str, runs: dict[str, list[dict[str, float | int | s
     return max(values) / min(values) >= 1.5
 
 
-def apply_sparse_y_axis(ax, metric: str, log_scale: bool) -> None:
+def apply_sparse_y_axis(ax, metric: str, log_scale: bool, detailed: bool = False) -> None:
     import matplotlib.ticker as ticker
 
     if log_scale:
         if "RSQ" in metric:
-            ax.yaxis.set_major_locator(ticker.FixedLocator([0.98, 0.99, 1.0]))
+            if detailed:
+                ax.yaxis.set_major_locator(ticker.FixedLocator([0.98, 0.985, 0.99, 0.995, 1.0]))
+            else:
+                ax.yaxis.set_major_locator(ticker.FixedLocator([0.98, 0.99, 1.0]))
             ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda value, _: f"{value:g}"))
         else:
             lower, upper = ax.get_ylim()
@@ -648,7 +714,7 @@ def apply_sparse_y_axis(ax, metric: str, log_scale: bool) -> None:
             # single label.  Keep the logarithmic scale, but use enough
             # value-space ticks to show changes within a factor of two.
             if lower > 0 and upper / lower < 2:
-                ax.yaxis.set_major_locator(ticker.LinearLocator(numticks=6))
+                ax.yaxis.set_major_locator(ticker.LinearLocator(numticks=9 if detailed else 6))
             else:
                 # Add useful intermediate values within every decade.  This
                 # makes late-training plateaus around values such as 0.25
@@ -656,17 +722,21 @@ def apply_sparse_y_axis(ax, metric: str, log_scale: bool) -> None:
                 ax.yaxis.set_major_locator(
                     ticker.LogLocator(
                         base=10,
-                        subs=(1.0, 1.25, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0),
-                        numticks=15,
+                        subs=(
+                            (1.0, 1.15, 1.3, 1.45, 1.6, 1.8, 2.0, 2.25, 2.5, 2.75, 3.0, 3.5, 4.0, 4.5, 5.0, 6.0, 7.0, 8.0, 9.0)
+                            if detailed
+                            else (1.0, 1.25, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0)
+                        ),
+                        numticks=24 if detailed else 15,
                     )
                 )
             ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda value, _: f"{value:g}"))
         ax.yaxis.set_minor_locator(ticker.NullLocator())
     else:
         if metric.endswith("_time_s"):
-            ax.yaxis.set_major_locator(ticker.MultipleLocator(50))
+            ax.yaxis.set_major_locator(ticker.MultipleLocator(25 if detailed else 50))
         else:
-            ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=3))
+            ax.yaxis.set_major_locator(ticker.MaxNLocator(nbins=6 if detailed else 3))
         ax.yaxis.set_minor_locator(ticker.NullLocator())
         if metric.endswith("_time_s"):
             ax.yaxis.set_major_formatter(ticker.FuncFormatter(lambda value, _: f"{value:g}"))
@@ -703,12 +773,18 @@ def metric_title(metric: str) -> str:
         "total_epoch_time_s": "Total Epoch Time",
         "learning_rate": "Learning Rate",
         "best_valid_T-MAE_so_far": "Best Validation Energy MAE So Far",
+        "best_valid_T-RMSE_so_far": "Best Validation Energy RMSE So Far",
         "epochs_since_best": "Epochs Since Best Validation Energy MAE",
     }
     return split + replacements.get(base, base.replace("_", " "))
 
 
-def plot_metric(metric: str, runs: dict[str, list[dict[str, float | int | str]]], output: Path) -> None:
+def plot_metric(
+    metric: str,
+    runs: dict[str, list[dict[str, float | int | str]]],
+    output: Path,
+    detailed_y_axis: bool = True,
+) -> None:
     import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots(figsize=(11, 6.5), constrained_layout=True)
@@ -733,14 +809,19 @@ def plot_metric(metric: str, runs: dict[str, list[dict[str, float | int | str]]]
         ax.set_yscale("log")
         ax.set_ylabel(f"{metric} (log scale)")
     apply_metric_limits(ax, metric)
-    apply_sparse_y_axis(ax, metric, log_scale)
+    apply_sparse_y_axis(ax, metric, log_scale, detailed=detailed_y_axis)
     ax.grid(True, alpha=0.25)
     ax.legend(fontsize=8)
     fig.savefig(output, dpi=180)
     plt.close(fig)
 
 
-def plot_dashboard(metrics: list[str], runs: dict[str, list[dict[str, float | int | str]]], output: Path) -> None:
+def plot_dashboard(
+    metrics: list[str],
+    runs: dict[str, list[dict[str, float | int | str]]],
+    output: Path,
+    detailed_y_axis: bool = True,
+) -> None:
     import matplotlib.pyplot as plt
 
     ncols = 3
@@ -760,7 +841,7 @@ def plot_dashboard(metrics: list[str], runs: dict[str, list[dict[str, float | in
         if log_scale:
             ax.set_yscale("log")
         apply_metric_limits(ax, metric)
-        apply_sparse_y_axis(ax, metric, log_scale)
+        apply_sparse_y_axis(ax, metric, log_scale, detailed=detailed_y_axis)
         ax.grid(True, alpha=0.25)
 
     for ax in flat_axes[len(metrics) :]:
@@ -1723,6 +1804,7 @@ def main() -> None:
             row["original_requested_train_batch_size"] = original_requested_batch.get(label, "")
 
     all_rows, runs = deduplicate_epochs(runs)
+    add_running_best_metric(runs, "valid_T-RMSE", "best_valid_T-RMSE_so_far")
     add_stored_test_statistics(runs, args.test_statistics_dir, args.test_set_size)
 
     if not all_rows:
@@ -1785,7 +1867,11 @@ def main() -> None:
         ]
         if metric in metrics
     ]
-    plot_dashboard(dashboard_metrics, runs, args.output_dir / "summary_dashboard.png")
+    plot_dashboard(
+        dashboard_metrics,
+        runs,
+        args.output_dir / "summary_dashboard.png",
+    )
     plot_smoothed_training_time_with_events(
         runs,
         args.output_dir / "training_time_smoothed_window50_minmax_with_events_large_markers.png",

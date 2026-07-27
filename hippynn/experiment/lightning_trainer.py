@@ -19,6 +19,7 @@ from typing import Optional
 import torch
 
 import pytorch_lightning as pl
+from pytorch_lightning.trainer.states import TrainerFn
 
 from .routines import TrainingModules
 from ..databases import Database
@@ -415,14 +416,23 @@ class HippynnLightningModule(pl.LightningModule):
             self.trainer.should_stop = True
 
         # Step 3: Logic for changing the batch size without always requiring new dataloaders.
-        # Step 3a: don't do this when not testing.
-        if not self.trainer.training:
+        # ``trainer.training`` is false while Lightning is running validation,
+        # including validation inside ``fit``.  This hook itself runs at
+        # validation end, so using that property here prevented every dynamic
+        # batch-size update from reaching the datamodule.  Gate on the overall
+        # Trainer function instead: update loaders during fit, but not during a
+        # standalone validation or test call.
+        if self.trainer.state.fn != TrainerFn.FITTING:
             return
 
         controller_batch_size = self.controller.batch_size
         trainer_batch_size = self.trainer.train_dataloader.batch_size
         if controller_batch_size != trainer_batch_size:
             # Need to trigger a batch size change.
+            self.print(
+                "Scheduling train dataloader batch-size update: "
+                f"{trainer_batch_size} -> {controller_batch_size}"
+            )
             if self._last_reload_dlene is None:
                 # save the original value of this variable to the pl module
                 self._last_reload_dlene = self.trainer.reload_dataloaders_every_n_epochs

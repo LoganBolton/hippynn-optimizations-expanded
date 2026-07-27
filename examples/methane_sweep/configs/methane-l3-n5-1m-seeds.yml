@@ -1,0 +1,12 @@
+name: methane-l3-n5-1m
+program: training/methane_configurations.py
+method: grid
+parameters:
+  seed:
+    values: [42, 1776, 7, 0, 1, 2, 3, 4]
+  hiphop_l_max:
+    value: 3
+  hiphop_n_max:
+    value: 5
+  data_size:
+    value: 1000000
