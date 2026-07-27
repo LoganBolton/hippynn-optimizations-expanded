@@ -18,22 +18,29 @@ python plotting/plot_methane_sweep_logs.py \
 
 ./launchers/plot_l4n3_1m_current.sh
 
+# Bugged batch size: intermediate pre-rollback L4N4 runs.
+# --extra-log-pattern 'runs/17148141/*.out'
+# --extra-log-pattern 'runs/17148142/*.out'
+# --extra-log-pattern 'runs/17148143/*.out'
+# --extra-log-pattern 'runs/17148144/*.out'
+# --extra-log-pattern 'runs/17148163/*.out'
+# --extra-log-pattern 'runs/17148165/*.out'
+# --extra-log-pattern 'runs/17148175/*.out'
+# --extra-log-pattern 'runs/17148164/*.out'
+# --extra-log-pattern 'runs/17148192/*.out'
+# --extra-log-pattern 'runs/17148166/*.out'
+
+# Post-rollback L4N4 resumes on Volta.
 python plotting/plot_methane_sweep_logs.py \
   --log-dir logs \
   --log-pattern 'runs/17145567/*.out' \
   --extra-log-pattern 'runs/17145568/*.out' \
   --extra-log-pattern 'runs/17145569/*.out' \
   --extra-log-pattern 'runs/17145570/*.out' \
-  --extra-log-pattern 'runs/17148141/*.out' \
-  --extra-log-pattern 'runs/17148142/*.out' \
-  --extra-log-pattern 'runs/17148143/*.out' \
-  --extra-log-pattern 'runs/17148144/*.out' \
-  --extra-log-pattern 'runs/17148163/*.out' \
-  --extra-log-pattern 'runs/17148165/*.out' \
-  --extra-log-pattern 'runs/17148175/*.out' \
-  --extra-log-pattern 'runs/17148164/*.out' \
-  --extra-log-pattern 'runs/17148192/*.out' \
-  --extra-log-pattern 'runs/17148166/*.out' \
+  --extra-log-pattern 'runs/17148565/*.out' \
+  --extra-log-pattern 'runs/17148566/*.out' \
+  --extra-log-pattern 'runs/17148567/*.out' \
+  --extra-log-pattern 'runs/17148568/*.out' \
   --output-dir logs/plots_lightning_ddp_v100 \
   --sweep-config configs/methane-l4-n4.yml \
   --data-size 1000000 \

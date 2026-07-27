@@ -50,6 +50,12 @@ def build_parser():
     parser.add_argument("--sweep_config", type=str)
     parser.add_argument("--sweep_task_id", type=int)
     parser.add_argument("--n_epochs", type=positive_int, default=200)
+    parser.add_argument(
+        "--termination_patience",
+        type=positive_int,
+        default=450,
+        help="Stop training after this many epochs without a new best validation metric.",
+    )
     parser.add_argument("--data_size", type=positive_int, default=1000)
     parser.add_argument("--test_set_size", type=positive_int, default=80_000)
     parser.add_argument("--batch_size", type=positive_int, default=256)
@@ -632,12 +638,17 @@ def run_lightning_training(
             # Checkpoint restoration happens before this hook, making this the
             # correct place for intentional resume-state overrides.
             if args.resume and args.reset_early_stopping_patience:
-                pl_module.controller.last_best = trainer.current_epoch
+                restored_epoch = int(pl_module.controller.current_epoch)
+                pl_module.controller.last_best = restored_epoch
                 pl_module.controller.boredom = 0
+                # Checkpoints contain the old patience value, so override it
+                # after Lightning restores the controller state.
+                pl_module.controller.patience = args.termination_patience
                 if trainer.is_global_zero:
                     print(
                         "Reset early-stopping state after Lightning restore: "
-                        f"last_best={trainer.current_epoch}, boredom=0.",
+                        f"last_best={restored_epoch}, boredom=0, "
+                        f"patience={args.termination_patience}.",
                         flush=True,
                     )
 
@@ -966,7 +977,7 @@ def run_training(args):
                 "eval_batch_size": args.eval_batch_size,
                 "max_epochs": n_epochs,
                 "stopping_key": "T-MAE",
-                "termination_patience": 300,
+                "termination_patience": args.termination_patience,
                 "fraction_train_eval": 1,
             },
             "model_save_folder": str(model_save_folder),
@@ -1172,7 +1183,7 @@ def run_training(args):
         eval_batch_size=per_rank_eval_batch_size,
         max_epochs=n_epochs,
         stopping_key="T-MAE",
-        termination_patience=300,
+        termination_patience=args.termination_patience,
         fraction_train_eval=1,
     )
 
