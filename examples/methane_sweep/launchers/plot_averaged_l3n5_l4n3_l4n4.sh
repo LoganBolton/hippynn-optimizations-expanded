@@ -4,17 +4,6 @@ set -euo pipefail
 METHANE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$METHANE_DIR"
 
-# Rebuild every input plot directory so active logs are reflected in the
-# averaged comparison rather than using a stale metrics.csv.
-python plotting/plot_methane_sweep_logs.py \
-  --log-dir logs \
-  --log-pattern 'combined_l3n5_1m_current/*.out' \
-  --output-dir logs/plots_l3n5_1m_updated \
-  --sweep-config configs/methane-l3-n5-1m-seeds.yml \
-  --data-size 1000000 \
-  --hiphop-l-max 3 \
-  --hiphop-n-max 5 \
-  --label-mode task
 
 ./launchers/plot_l4n3_1m_current.sh
 
@@ -48,17 +37,35 @@ python plotting/plot_methane_sweep_logs.py \
   --hiphop-n-max 4 \
   --label-mode task
 
-# The l3n4 logs have descriptive filenames rather than the array-task naming
-# convention expected by the parser. Give them temporary conventional names
-# so they are included; embedded run metadata still takes precedence when
-# available (as it does for the Lightning run).
+# The l3n4 logs have descriptive or generic filenames rather than the strict
+# array-task naming convention expected by the parser. Give each persisted
+# training log a conventional name. Keep the legacy seed-7 log under the
+# legacy parser family and the seed-42/101 logs under the Lightning family.
 L3N4_LOG_DIR="$(mktemp -d)"
 trap 'rm -rf "$L3N4_LOG_DIR"' EXIT
 mkdir -p "$L3N4_LOG_DIR/runs"
 ln -s "$METHANE_DIR/logs/runs/17146276/17146276_l3n4_seed7_fresh_restart.out" \
-  "$L3N4_LOG_DIR/runs/17146276_r0_1_methane_l3n5.out"
+  "$L3N4_LOG_DIR/runs/17146276_r0_1_methane_sweep.out"
+if [[ -f "$METHANE_DIR/logs/runs/17146291/17146291_l3n4_seed7_live_continue.out" ]]; then
+  ln -s "$METHANE_DIR/logs/runs/17146291/17146291_l3n4_seed7_live_continue.out" \
+    "$L3N4_LOG_DIR/runs/17146291_r0_1_methane_sweep_seed7-live.out"
+fi
+if [[ -f "$METHANE_DIR/logs/runs/17146291/17146291_l3n4_seed7_gpu3_resume.out" ]]; then
+  ln -s "$METHANE_DIR/logs/runs/17146291/17146291_l3n4_seed7_gpu3_resume.out" \
+    "$L3N4_LOG_DIR/runs/17146291_r0_1_methane_sweep_seed7-gpu3-resume.out"
+fi
 ln -s "$METHANE_DIR/logs/runs/17148178/17148178_r0_2_methane_l3n4_redstone4_lightning.out" \
-  "$L3N4_LOG_DIR/runs/17148178_r0_2_methane_lightning_l3n4-redstone4.out"
+  "$L3N4_LOG_DIR/runs/17148178_r0_42_methane_lightning_l3n4-redstone4.out"
+if [[ -f "$METHANE_DIR/logs/runs/17146291/17146291_l3n4_seed42_gpu3_resume.out" ]]; then
+  ln -s "$METHANE_DIR/logs/runs/17146291/17146291_l3n4_seed42_gpu3_resume.out" \
+    "$L3N4_LOG_DIR/runs/17146291_r0_2_methane_lightning_l3n4-seed42-resume.out"
+fi
+ln -s "$METHANE_DIR/logs/runs/17146291/17146291_r0_2_methane_lightning_2gpu.out" \
+  "$L3N4_LOG_DIR/runs/17146291_r0_2_methane_lightning_l3n4-seed101.out"
+if [[ -f "$METHANE_DIR/logs/runs/17149896/17149896_r0_0_methane_lightning_4gpu.out" ]]; then
+  ln -s "$METHANE_DIR/logs/runs/17149896/17149896_r0_0_methane_lightning_4gpu.out" \
+    "$L3N4_LOG_DIR/runs/17149896_r0_0_methane_lightning_l3n4-seed0-a100x4.out"
+fi
 
 python plotting/plot_methane_sweep_logs.py \
   --log-dir "$L3N4_LOG_DIR" \
@@ -70,11 +77,37 @@ python plotting/plot_methane_sweep_logs.py \
   --hiphop-n-max 4 \
   --label-mode seed-config
 
+# Rebuild every input plot directory so active logs are reflected in the
+# averaged comparison rather than using a stale metrics.csv.
+
+# not actively running so juts use the cached
+# python plotting/plot_methane_sweep_logs.py \
+#   --log-dir logs \
+#   --log-pattern 'combined_l3n5_1m_current/*.out' \
+#   --output-dir logs/plots_l3n5_1m_updated \
+#   --sweep-config configs/methane-l3-n5-1m-seeds.yml \
+#   --data-size 1000000 \
+#   --hiphop-l-max 3 \
+#   --hiphop-n-max 5 \
+#   --label-mode task
+
 # Average the available seeds within each architecture, then compare the
 # architecture-level mean ± standard deviation curves.
+AVERAGED_OUTPUT_DIR="logs/plots_averaged_l3n5_l4n3_l4n4"
+
 python plotting/plot_averaged_methane_sweep_metrics.py \
   --input-dir logs/plots_l4n3_1m_all_current \
   --input-dir logs/plots_l3n5_1m_updated \
   --input-dir logs/plots_lightning_ddp_v100 \
   --input-dir logs/plots_l3n4_1m_current \
-  --output-dir logs/plots_averaged_l3n5_l4n3_l4n4
+  --output-dir "$AVERAGED_OUTPUT_DIR"
+
+# Also write a companion averaged comparison with the l4n3 1M seed-7 outlier
+# excluded.
+python plotting/plot_averaged_methane_sweep_metrics.py \
+  --input-dir logs/plots_l4n3_1m_all_current \
+  --input-dir logs/plots_l3n5_1m_updated \
+  --input-dir logs/plots_lightning_ddp_v100 \
+  --input-dir logs/plots_l3n4_1m_current \
+  --exclude-run 'l=4 n=3 d=1M seed=7' \
+  --output-dir "$AVERAGED_OUTPUT_DIR/without_seed7"
