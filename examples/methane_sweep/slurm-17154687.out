@@ -1,0 +1,57 @@
+
+Inactive Modules:
+  1) miniconda3
+
+
+Activating Modules:
+  1) miniconda3/py312_24.11.1
+
+W0729 17:03:17.783000 2601780 site-packages/torch/distributed/run.py:793] 
+W0729 17:03:17.783000 2601780 site-packages/torch/distributed/run.py:793] *****************************************
+W0729 17:03:17.783000 2601780 site-packages/torch/distributed/run.py:793] Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+W0729 17:03:17.783000 2601780 site-packages/torch/distributed/run.py:793] *****************************************
+Using hippynn custom kernels: tritonUsing hippynn custom kernels: triton
+
+DDP_RANK_INFO global_rank=0 local_rank=0 world_size=4 hostname=cn0 cuda_device=cuda:0 cuda_name='NVIDIA A100-SXM4-40GB' pid=2601846
+DDP_RANK_INFO global_rank=3 local_rank=3 world_size=4 hostname=cn0 cuda_device=cuda:3 cuda_name='NVIDIA A100-SXM4-40GB' pid=2601849Using hippynn custom kernels: tritonTraining one model on 4 GPU(s); visible CUDA devices=4, setup device=cpu
+
+Training one model on 4 GPU(s); visible CUDA devices=4, setup device=cpu
+
+Using hippynn custom kernels: triton
+DDP_RANK_INFO global_rank=1 local_rank=1 world_size=4 hostname=cn0 cuda_device=cuda:1 cuda_name='NVIDIA A100-SXM4-40GB' pid=2601847
+Training one model on 4 GPU(s); visible CUDA devices=4, setup device=cpu
+DDP_RANK_INFO global_rank=2 local_rank=2 world_size=4 hostname=cn0 cuda_device=cuda:2 cuda_name='NVIDIA A100-SXM4-40GB' pid=2601848
+Training one model on 4 GPU(s); visible CUDA devices=4, setup device=cpu
+/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/networks/hiphop.py:12: UserWarning: HIP-HOP-NN is still in a beta state: Details, defaults, and API are still subject to change.
+  warnings.warn("HIP-HOP-NN is still in a beta state: " "Details, defaults, and API are still subject to change.")
+/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/networks/hiphop.py:12: UserWarning: HIP-HOP-NN is still in a beta state: Details, defaults, and API are still subject to change.
+  warnings.warn("HIP-HOP-NN is still in a beta state: " "Details, defaults, and API are still subject to change.")
+/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/networks/hiphop.py:12: UserWarning: HIP-HOP-NN is still in a beta state: Details, defaults, and API are still subject to change.
+  warnings.warn("HIP-HOP-NN is still in a beta state: " "Details, defaults, and API are still subject to change.")
+/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/networks/hiphop.py:12: UserWarning: HIP-HOP-NN is still in a beta state: Details, defaults, and API are still subject to change.
+  warnings.warn("HIP-HOP-NN is still in a beta state: " "Details, defaults, and API are still subject to change.")
+Determined Inputs:Determined Inputs:  ['positions', 'species']['positions', 'species']
+
+Determined Outputs:Determined Outputs:  ['HEnergy.system_energy', 'L^P_Reg(network,p=2)', 'forces']['HEnergy.system_energy', 'L^P_Reg(network,p=2)', 'forces']
+
+Determined Targets:Determined Targets:  ['HEnergy.system_energy', 'species', 'forces']['HEnergy.system_energy', 'species', 'forces']
+
+Determined Inputs: ['positions', 'species']
+Determined Outputs: ['HEnergy.system_energy', 'L^P_Reg(network,p=2)', 'forces']
+Determined Targets: ['HEnergy.system_energy', 'species', 'forces']
+Determined Inputs: ['positions', 'species']
+Determined Outputs: ['HEnergy.system_energy', 'L^P_Reg(network,p=2)', 'forces']
+Determined Targets: ['HEnergy.system_energy', 'species', 'forces']
+Device was not specified. Attempting to default to device: cuda:3Device was not specified. Attempting to default to device:
+ cuda:0
+Device was not specified. Attempting to default to device: cuda:1
+/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/experiment/controllers.py:219: UserWarning: Parameter verbose no longer supported for schedulers. It will be ignored.
+  warnings.warn("Parameter verbose no longer supported for schedulers. It will be ignored.")
+/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/experiment/controllers.py:219: UserWarning: Parameter verbose no longer supported for schedulers. It will be ignored.
+  warnings.warn("Parameter verbose no longer supported for schedulers. It will be ignored.")
+/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/experiment/controllers.py:219: UserWarning: Parameter verbose no longer supported for schedulers. It will be ignored.
+  warnings.warn("Parameter verbose no longer supported for schedulers. It will be ignored.")
+Device was not specified. Attempting to default to device: cuda:2
+/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/hippynn/experiment/controllers.py:219: UserWarning: Parameter verbose no longer supported for schedulers. It will be ignored.
+  warnings.warn("Parameter verbose no longer supported for schedulers. It will be ignored.")
+[2026-07-29T17:09:51.787] error: *** JOB 17154687 ON cn0 CANCELLED AT 2026-07-29T17:09:51 DUE to SIGNAL Terminated ***

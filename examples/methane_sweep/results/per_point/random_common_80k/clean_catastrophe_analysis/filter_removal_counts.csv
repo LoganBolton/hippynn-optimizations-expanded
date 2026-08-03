@@ -1,0 +1,6 @@
+architecture,n_runs,run_structure_predictions_per_diagnostic,energy_predictions_filtered,force_mae_predictions_filtered,force_rmse_predictions_filtered,unique_source_structures_in_any_filter,shared_hard_source_structures_deleted,complete_source_structures_deleted
+L3N4,6,480000,2,4,5,5,1,1
+L3N5,8,640000,3,6,6,6,1,1
+L4N3,6,480000,1,1,2,1,1,1
+L4N4,4,320000,1,0,0,1,1,1
+ALL,24,1920000,7,11,13,11,1,1

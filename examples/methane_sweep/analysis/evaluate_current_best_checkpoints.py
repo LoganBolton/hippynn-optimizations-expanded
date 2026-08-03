@@ -28,6 +28,7 @@ from __future__ import annotations
 import argparse
 import csv
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -48,6 +49,8 @@ DEFAULT_DATASET_PATH = SCRIPT_ROOT / "datasets" / "methane.extxyz"
 ENERGY_MEAN = -25042.327220945674
 DEFAULT_TEST_SET_SIZE = 80_000
 DEFAULT_OUTPUT_NAME = "current_best_checkpoint_test_metrics.csv"
+RUN_DIR_RE = re.compile(r"TEST_METHANE_MODEL_l(\d+)_n(\d+)_d(\d+)_seed(\d+)")
+LIGHTNING_BEST_RE = re.compile(r"best-epoch=(\d+)-valid_T-MAE=([0-9.eE+-]+)\.ckpt$")
 
 
 def parse_args() -> argparse.Namespace:
@@ -90,6 +93,27 @@ def parse_args() -> argparse.Namespace:
         help="Specific sweep task ids to evaluate. If omitted, infer unfinished tasks.",
     )
     parser.add_argument(
+        "--run-dirs",
+        type=Path,
+        nargs="+",
+        default=None,
+        help="Explicit TEST_METHANE_MODEL_* directories to evaluate instead of inferring sweep tasks.",
+    )
+    parser.add_argument(
+        "--checkpoint-paths",
+        type=Path,
+        nargs="+",
+        default=None,
+        help="Explicit checkpoint for each --run-dirs entry, in the same order.",
+    )
+    parser.add_argument(
+        "--checkpoint-target-epochs",
+        type=int,
+        nargs="+",
+        default=None,
+        help="Optional validation-selection epoch for each explicit checkpoint (recorded in the output).",
+    )
+    parser.add_argument(
         "--checkpoint-kind",
         choices=("best", "latest"),
         default="best",
@@ -106,6 +130,23 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=DEFAULT_TEST_SET_SIZE,
         help="Held-out test set size used by methane_configurations.py",
+    )
+    parser.add_argument(
+        "--test-indices",
+        type=Path,
+        default=None,
+        help="Optional .npy file of absolute methane frame indices (for example the reserved common external test set).",
+    )
+    parser.add_argument(
+        "--per-point-output-dir",
+        type=Path,
+        default=None,
+        help="Write one CSV summary and compressed raw prediction/error NPZ per evaluated checkpoint.",
+    )
+    parser.add_argument(
+        "--per-point-only",
+        action="store_true",
+        help="Only write per-point records and their directly recomputed aggregate RMSE/MAE values.",
     )
     parser.add_argument(
         "--device",
@@ -185,12 +226,46 @@ def infer_target_tasks(plot_dir: Path, selected_task_ids: list[int] | None) -> l
                 "hiphop_l_max": int(row["hiphop_l_max"]),
                 "hiphop_n_max": int(row["hiphop_n_max"]),
                 "data_size": int(row["data_size"]),
-                "total_params": int(row["total_params"]),
+                "total_params": int(row["total_params"]) if row.get("total_params") else "",
                 "source_file": row.get("source_file", ""),
             }
         )
 
     tasks.sort(key=lambda row: row["sweep_task_id"])
+    return tasks
+
+
+def tasks_from_run_dirs(
+    run_dirs: list[Path],
+    checkpoint_paths: list[Path] | None = None,
+    checkpoint_target_epochs: list[int] | None = None,
+) -> list[dict[str, Any]]:
+    if checkpoint_paths is not None and len(checkpoint_paths) != len(run_dirs):
+        raise ValueError("--checkpoint-paths must contain one path per --run-dirs entry")
+    if checkpoint_target_epochs is not None and len(checkpoint_target_epochs) != len(run_dirs):
+        raise ValueError("--checkpoint-target-epochs must contain one epoch per --run-dirs entry")
+    tasks: list[dict[str, Any]] = []
+    for index, raw_path in enumerate(run_dirs):
+        path = raw_path.resolve()
+        match = RUN_DIR_RE.search(path.name)
+        if not match:
+            raise ValueError(f"Cannot infer l/n/data-size/seed from run directory: {path}")
+        l_max, n_max, data_size, seed = (int(value) for value in match.groups())
+        task = {
+                "sweep_task_id": index,
+                "seed": seed,
+                "hiphop_l_max": l_max,
+                "hiphop_n_max": n_max,
+                "data_size": data_size,
+                "total_params": "",
+                "source_file": "",
+                "run_dir": path,
+            }
+        if checkpoint_paths is not None:
+            task["checkpoint_path"] = checkpoint_paths[index].resolve()
+        if checkpoint_target_epochs is not None:
+            task["checkpoint_target_epoch"] = checkpoint_target_epochs[index]
+        tasks.append(task)
     return tasks
 
 
@@ -218,15 +293,33 @@ def choose_checkpoint(run_dir: Path, checkpoint_kind: str) -> Path | None:
     best_checkpoint = run_dir / "best_checkpoint.pt"
     latest = latest_checkpoint(run_dir)
 
+    lightning_checkpoints = list((run_dir / "lightning_checkpoints").glob("best-*.ckpt"))
+    lightning_best: Path | None = None
+    if lightning_checkpoints:
+        def lightning_score(path: Path) -> tuple[float, int, float]:
+            match = LIGHTNING_BEST_RE.match(path.name)
+            if match:
+                return float(match.group(2)), -int(match.group(1)), -path.stat().st_mtime
+            return float("inf"), 0, -path.stat().st_mtime
+
+        lightning_best = min(lightning_checkpoints, key=lightning_score)
+
     if checkpoint_kind == "best":
+        if lightning_best is not None:
+            return lightning_best
         if best_checkpoint.exists():
             return best_checkpoint
         return latest
 
-    return latest
+    last_lightning = run_dir / "lightning_checkpoints" / "last.ckpt"
+    if last_lightning.exists():
+        return last_lightning
+    return latest or lightning_best
 
 
 def find_run_dir(task: dict[str, Any], run_root: Path, strict: bool = False) -> Path:
+    if "run_dir" in task:
+        return Path(task["run_dir"])
     prefix = (
         f"TEST_METHANE_MODEL_l{task['hiphop_l_max']}_n{task['hiphop_n_max']}_"
         f"d{task['data_size']}_seed{task['seed']}"
@@ -251,7 +344,12 @@ def find_run_dir(task: dict[str, Any], run_root: Path, strict: bool = False) -> 
     return candidates[0]
 
 
-def prepare_test_dict(data_size: int, test_set_size: int, dataset_path: Path) -> dict[str, Any]:
+def prepare_test_dict(
+    data_size: int,
+    test_set_size: int,
+    dataset_path: Path,
+    test_indices: Path | None = None,
+) -> dict[str, Any]:
     if not dataset_path.exists():
         raise FileNotFoundError(
             f"Methane dataset not found at {dataset_path}. "
@@ -259,20 +357,31 @@ def prepare_test_dict(data_size: int, test_set_size: int, dataset_path: Path) ->
         )
 
     test_dict: dict[str, list[Any] | np.ndarray] = {
+        "source_indices": [],
         "numbers": [],
         "positions": [],
         "forces": [],
         "energy": [],
     }
 
-    start_idx = data_size
-    stop_idx = data_size + test_set_size
+    selected_indices: set[int] | None = None
+    if test_indices is not None:
+        indices = np.load(test_indices)
+        selected_indices = {int(index) for index in indices.tolist()}
+        if len(selected_indices) != len(indices):
+            raise ValueError(f"Test index file contains duplicate indices: {test_indices}")
+        test_set_size = len(selected_indices)
+
+    start_idx = data_size if selected_indices is None else min(selected_indices)
+    stop_idx = data_size + test_set_size if selected_indices is None else max(selected_indices) + 1
 
     for idx, frame in enumerate(ase.io.iread(dataset_path)):
         if idx < start_idx:
             continue
         if idx >= stop_idx:
             break
+        if selected_indices is not None and idx not in selected_indices:
+            continue
 
         species = frame.get_atomic_numbers()
         positions = frame.get_positions()
@@ -283,11 +392,14 @@ def prepare_test_dict(data_size: int, test_set_size: int, dataset_path: Path) ->
         energy = energy * 627.5096080305927
         energy -= ENERGY_MEAN
 
+        test_dict["source_indices"].append(idx)
         test_dict["numbers"].append(species)
         test_dict["positions"].append(positions)
         test_dict["forces"].append(forces)
         test_dict["energy"].append(energy)
 
+    test_dict["source_indices"] = np.asarray(test_dict["source_indices"], dtype=np.int64)
+    test_dict["numbers"] = np.asarray(test_dict["numbers"], dtype=np.int64)
     for key in ("positions", "forces", "energy"):
         test_dict[key] = np.array(test_dict[key], dtype=np.float32)
 
@@ -351,6 +463,126 @@ def metric_value(value: Any) -> Any:
     return value
 
 
+def save_per_point_predictions(
+    *,
+    evaluator,
+    test_dict: dict[str, Any],
+    device: torch.device,
+    batch_size: int,
+    output_dir: Path,
+    task: dict[str, Any],
+) -> tuple[dict[str, float], Path, Path]:
+    """Persist lossless per-structure targets, predictions, and errors."""
+    numbers = np.asarray(test_dict["numbers"], dtype=np.int64)
+    positions = np.asarray(test_dict["positions"], dtype=np.float32)
+    true_energy = np.asarray(test_dict["energy"], dtype=np.float32).reshape(-1)
+    true_forces = np.asarray(test_dict["forces"], dtype=np.float32)
+    source_indices = np.asarray(test_dict["source_indices"], dtype=np.int64)
+    n_structures, n_atoms = numbers.shape
+
+    pred_energy_chunks: list[np.ndarray] = []
+    pred_force_chunks: list[np.ndarray] = []
+    evaluator.model.eval()
+    for start in range(0, n_structures, batch_size):
+        stop = min(start + batch_size, n_structures)
+        # Force outputs are gradients of the predicted energy with respect to
+        # positions, so the position leaf must retain autograd information even
+        # though this is evaluation rather than training.
+        batch_positions = (
+            torch.as_tensor(positions[start:stop], dtype=torch.float32, device=device)
+            .detach()
+            .clone()
+            .requires_grad_(True)
+        )
+        batch_values = {
+            "numbers": torch.as_tensor(numbers[start:stop], dtype=torch.long, device=device),
+            "positions": batch_positions,
+        }
+        model_inputs = tuple(batch_values[node.db_name] for node in evaluator.model.input_nodes)
+        with torch.enable_grad():
+            outputs = evaluator.model(*model_inputs)
+        if isinstance(outputs, torch.Tensor):
+            outputs = (outputs,)
+        batch_count = stop - start
+        energy_outputs = [output for output in outputs if output.numel() == batch_count]
+        force_outputs = [output for output in outputs if output.numel() == batch_count * n_atoms * 3]
+        if len(energy_outputs) != 1 or len(force_outputs) != 1:
+            shapes = [tuple(output.shape) for output in outputs]
+            raise RuntimeError(f"Could not identify unique energy/force predictions; output shapes={shapes}")
+        pred_energy_chunks.append(energy_outputs[0].detach().cpu().numpy().reshape(batch_count))
+        pred_force_chunks.append(force_outputs[0].detach().cpu().numpy().reshape(batch_count, n_atoms, 3))
+
+    pred_energy = np.concatenate(pred_energy_chunks).astype(np.float32, copy=False)
+    pred_forces = np.concatenate(pred_force_chunks).astype(np.float32, copy=False)
+    energy_error = pred_energy - true_energy
+    force_error = pred_forces - true_forces
+    per_structure_force_rmse = np.sqrt(np.mean(force_error.astype(np.float64) ** 2, axis=(1, 2)))
+    per_structure_force_mae = np.mean(np.abs(force_error.astype(np.float64)), axis=(1, 2))
+    per_structure_max_abs_force_error = np.max(np.abs(force_error), axis=(1, 2))
+
+    stem = (
+        f"l{task['hiphop_l_max']}_n{task['hiphop_n_max']}_d{task['data_size']}_"
+        f"seed{task['seed']}_task{task['sweep_task_id']}"
+    )
+    output_dir.mkdir(parents=True, exist_ok=True)
+    npz_path = output_dir / f"{stem}_per_point.npz"
+    csv_path = output_dir / f"{stem}_per_point.csv"
+    np.savez_compressed(
+        npz_path,
+        source_indices=source_indices,
+        numbers=numbers,
+        positions=positions,
+        true_energy=true_energy,
+        pred_energy=pred_energy,
+        energy_error=energy_error,
+        true_forces=true_forces,
+        pred_forces=pred_forces,
+        force_error=force_error,
+        per_structure_force_rmse=per_structure_force_rmse,
+        per_structure_force_mae=per_structure_force_mae,
+        per_structure_max_abs_force_error=per_structure_max_abs_force_error,
+    )
+    with csv_path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.writer(handle)
+        writer.writerow(
+            [
+                "test_row",
+                "source_index",
+                "energy_target",
+                "energy_prediction",
+                "energy_error",
+                "abs_energy_error",
+                "force_rmse",
+                "force_mae",
+                "max_abs_force_component_error",
+            ]
+        )
+        for row in range(n_structures):
+            writer.writerow(
+                [
+                    row,
+                    int(source_indices[row]),
+                    float(true_energy[row]),
+                    float(pred_energy[row]),
+                    float(energy_error[row]),
+                    float(abs(energy_error[row])),
+                    float(per_structure_force_rmse[row]),
+                    float(per_structure_force_mae[row]),
+                    float(per_structure_max_abs_force_error[row]),
+                ]
+            )
+
+    aggregates = {
+        "test_T-RMSE": float(np.sqrt(np.mean(energy_error.astype(np.float64) ** 2))),
+        "test_T-MAE": float(np.mean(np.abs(energy_error.astype(np.float64)))),
+        "test_F-RMSE": float(np.sqrt(np.mean(force_error.astype(np.float64) ** 2))),
+        "test_F-MAE": float(np.mean(np.abs(force_error.astype(np.float64)))),
+    }
+    print(f"Wrote per-point records: {csv_path}", flush=True)
+    print(f"Wrote raw predictions/errors: {npz_path}", flush=True)
+    return aggregates, csv_path, npz_path
+
+
 def evaluate_task(
     task: dict[str, Any],
     args: argparse.Namespace,
@@ -358,8 +590,18 @@ def evaluate_task(
     test_dict_cache: dict[tuple[int, int], dict[str, Any]],
 ) -> dict[str, Any]:
     run_dir = find_run_dir(task, run_root=args.run_root, strict=args.strict_run_dir)
+    explicit_checkpoint = "checkpoint_path" in task
+    checkpoint_path = Path(task["checkpoint_path"]) if explicit_checkpoint else choose_checkpoint(
+        run_dir, args.checkpoint_kind
+    )
     structure_path = run_dir / "experiment_structure.pt"
-    checkpoint_path = choose_checkpoint(run_dir, args.checkpoint_kind)
+
+    if checkpoint_path is not None and checkpoint_path.suffix == ".ckpt" and not structure_path.exists():
+        metadata = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+        embedded_structure = metadata.get("hippynn_structure_file")
+        if embedded_structure:
+            structure_path = Path(embedded_structure)
+        del metadata
 
     if not structure_path.exists():
         raise FileNotFoundError(f"Missing experiment structure: {structure_path}")
@@ -372,53 +614,91 @@ def evaluate_task(
     print(f"Checkpoint:   {checkpoint_path}", flush=True)
     print(f"Structure:    {structure_path}", flush=True)
 
-    bundle = load_bundle_with_retry(
-        structure_path=structure_path,
-        checkpoint_path=checkpoint_path,
-        device=device,
-        attempts=args.retry_attempts,
-        sleep_seconds=args.retry_sleep,
-    )
+    if checkpoint_path.suffix == ".ckpt":
+        from hippynn.experiment import HippynnLightningModule
+        from hippynn.experiment.evaluator import Evaluator
 
-    training_modules = bundle["training_modules"]
-    controller = bundle["controller"]
-    metric_tracker = bundle["metric_tracker"]
-
-    if getattr(metric_tracker, "best_model", None):
-        print("Loading best-so-far weights from metric_tracker.best_model", flush=True)
-        training_modules.model.load_state_dict(metric_tracker.best_model)
-        training_modules.evaluator.model.load_state_dict(metric_tracker.best_model)
+        lightning_module = HippynnLightningModule.load_from_checkpoint(
+            str(checkpoint_path),
+            structure_file=str(structure_path),
+            map_location="cpu",
+            weights_only=False,
+        )
+        lightning_module.model.to(device)
+        evaluator = Evaluator(
+            lightning_module.model,
+            lightning_module.eval_loss,
+            lightning_module.eval_names,
+            db_info={"inputs": list(lightning_module.inputs), "targets": list(lightning_module.targets)},
+        )
+        controller = lightning_module.controller
+        metric_tracker = lightning_module.metric_tracker
+        del lightning_module
     else:
-        print("Warning: checkpoint does not contain metric_tracker.best_model; evaluating checkpoint model state directly", flush=True)
+        bundle = load_bundle_with_retry(
+            structure_path=structure_path,
+            checkpoint_path=checkpoint_path,
+            device=device,
+            attempts=args.retry_attempts,
+            sleep_seconds=args.retry_sleep,
+        )
+        training_modules = bundle["training_modules"]
+        controller = bundle["controller"]
+        metric_tracker = bundle["metric_tracker"]
+        if explicit_checkpoint:
+            print("Evaluating exact model weights from explicitly requested checkpoint", flush=True)
+        elif getattr(metric_tracker, "best_model", None):
+            print("Loading best-so-far weights from metric_tracker.best_model", flush=True)
+            training_modules.model.load_state_dict(metric_tracker.best_model)
+            training_modules.evaluator.model.load_state_dict(metric_tracker.best_model)
+        evaluator = training_modules.evaluator
 
-    db_info = training_modules.evaluator.db_info
+    db_info = evaluator.db_info
     cache_key = (task["data_size"], args.test_set_size)
     if cache_key not in test_dict_cache:
         print(
             f"Preparing methane test split once for data_size={task['data_size']} test_size={args.test_set_size}",
             flush=True,
         )
-        test_dict_cache[cache_key] = prepare_test_dict(task["data_size"], args.test_set_size, args.dataset_path)
-
-    test_database = build_test_database(
-        test_dict=test_dict_cache[cache_key],
-        db_info=db_info,
-        seed=task["seed"],
-        device=device,
-    )
+        test_dict_cache[cache_key] = prepare_test_dict(
+            task["data_size"], args.test_set_size, args.dataset_path, args.test_indices
+        )
 
     eval_batch_size = args.eval_batch_size or getattr(controller, "eval_batch_size", None) or 512
     when = "CurrentBestCheckpoint"
+    per_point_metrics: dict[str, float] = {}
+    per_point_csv: Path | str = ""
+    per_point_npz: Path | str = ""
+    if args.per_point_output_dir is not None:
+        per_point_metrics, per_point_csv, per_point_npz = save_per_point_predictions(
+            evaluator=evaluator,
+            test_dict=test_dict_cache[cache_key],
+            device=device,
+            batch_size=eval_batch_size,
+            output_dir=args.per_point_output_dir,
+            task=task,
+        )
 
-    torch.cuda.empty_cache()
-    results_tracker = test_model(
-        test_database,
-        training_modules.evaluator,
-        batch_size=eval_batch_size,
-        when=when,
-        metric_tracker=metric_tracker,
-    )
-    metrics = results_tracker.other_metric_values[when]["test"]
+    if args.per_point_only:
+        metrics = {key.removeprefix("test_"): value for key, value in per_point_metrics.items()}
+        results_tracker = metric_tracker
+    else:
+        test_database = build_test_database(
+            test_dict=test_dict_cache[cache_key],
+            db_info=db_info,
+            seed=task["seed"],
+            device=device,
+        )
+
+        torch.cuda.empty_cache()
+        results_tracker = test_model(
+            test_database,
+            evaluator,
+            batch_size=eval_batch_size,
+            when=when,
+            metric_tracker=metric_tracker,
+        )
+        metrics = results_tracker.other_metric_values[when]["test"]
     best_valid = results_tracker.best_metric_values.get("valid", {})
 
     row = {
@@ -433,7 +713,12 @@ def evaluate_task(
         "checkpoint_path": str(checkpoint_path),
         "checkpoint_kind_requested": args.checkpoint_kind,
         "checkpoint_file_used": checkpoint_path.name,
+        "checkpoint_target_epoch": task.get("checkpoint_target_epoch", ""),
         "eval_batch_size": eval_batch_size,
+        "test_indices_path": str(args.test_indices or ""),
+        "test_set_size": len(test_dict_cache[cache_key]["numbers"]),
+        "per_point_csv": str(per_point_csv),
+        "per_point_npz": str(per_point_npz),
         "checkpoint_epoch_count": getattr(results_tracker, "current_epoch", ""),
         "best_valid_T-RMSE": metric_value(best_valid.get("T-RMSE", "")),
         "best_valid_T-MAE": metric_value(best_valid.get("T-MAE", "")),
@@ -474,6 +759,12 @@ def main() -> int:
     args.repo_root = args.repo_root.resolve()
     args.run_root = (args.run_root or (args.repo_root / "examples")).resolve()
     args.dataset_path = (args.dataset_path or (args.repo_root / "datasets" / "methane.extxyz")).resolve()
+    if args.test_indices is not None:
+        args.test_indices = args.test_indices.resolve()
+    if args.per_point_output_dir is not None:
+        args.per_point_output_dir = args.per_point_output_dir.resolve()
+    if args.per_point_only and args.per_point_output_dir is None:
+        raise ValueError("--per-point-only requires --per-point-output-dir")
     output_csv = (args.output_csv or (plot_dir / DEFAULT_OUTPUT_NAME)).resolve()
     device = choose_device(args.device)
 
@@ -481,12 +772,17 @@ def main() -> int:
     print(f"Repo root:     {args.repo_root}", flush=True)
     print(f"Run root:      {args.run_root}", flush=True)
     print(f"Dataset path:  {args.dataset_path}", flush=True)
+    print(f"Test indices:  {args.test_indices or 'sequential legacy slice'}", flush=True)
     print(f"Output CSV:    {output_csv}", flush=True)
     print(f"Device:        {device}", flush=True)
 
     maybe_enable_triton()
 
-    tasks = infer_target_tasks(plot_dir, args.task_ids)
+    tasks = (
+        tasks_from_run_dirs(args.run_dirs, args.checkpoint_paths, args.checkpoint_target_epochs)
+        if args.run_dirs
+        else infer_target_tasks(plot_dir, args.task_ids)
+    )
     if not tasks:
         print("No tasks selected for evaluation.", flush=True)
         return 0

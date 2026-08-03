@@ -1,0 +1,11 @@
+
+Inactive Modules:
+  1) miniconda3
+
+
+Activating Modules:
+  1) miniconda3/py312_24.11.1
+
+mkdir: cannot create directory ‘/tmp/slurmd/results’: Permission denied
+mkdir: cannot create directory ‘/tmp/slurmd/results’: Permission denied
+mkdir: cannot create directory ‘logs’: Permission denied

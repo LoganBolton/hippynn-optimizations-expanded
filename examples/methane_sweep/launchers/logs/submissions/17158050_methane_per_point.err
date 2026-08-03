@@ -1,0 +1,9 @@
+
+Inactive Modules:
+  1) miniconda3
+
+
+Activating Modules:
+  1) miniconda3/py312_24.11.1
+
+/vast/home/logan_bolton/.conda/envs/hippynn-expanded-lmax/bin/python: can't open file '/vast/home/logan_bolton/Github/hippynn-optimizations-expanded/examples/methane_sweep/launchers/analysis/evaluate_current_best_checkpoints.py': [Errno 2] No such file or directory

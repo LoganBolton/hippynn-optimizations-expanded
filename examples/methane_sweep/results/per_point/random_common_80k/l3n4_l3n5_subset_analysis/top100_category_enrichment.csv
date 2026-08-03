@@ -1,0 +1,7 @@
+metric,category,top100_count,top100_fraction,test_fraction,enrichment,baseline_error_matched_fraction
+energy_abs_error,in_high_force,63,0.63,0.1500018750234378,4.1999475,0.63
+energy_abs_error,in_high_energy,31,0.31,0.14998937486718583,2.066813067755646,0.32
+energy_abs_error,in_planar,15,0.15,0.14998937486718583,1.0000708392366031,0.19
+force_rmse,in_high_force,65,0.65,0.1500018750234378,4.333279166666667,0.58
+force_rmse,in_high_energy,36,0.36,0.14998937486718583,2.4001700141678475,0.29
+force_rmse,in_planar,10,0.1,0.14998937486718583,0.6667138928244021,0.18

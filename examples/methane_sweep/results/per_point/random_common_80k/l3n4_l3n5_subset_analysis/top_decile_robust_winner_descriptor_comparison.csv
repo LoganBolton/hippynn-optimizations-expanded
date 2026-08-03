@@ -1,0 +1,45 @@
+metric,n_winners_in_decile,descriptor,descriptor_label,winner_decile_median,rest_of_test_median,winner_decile_median_percentile_in_test
+energy_abs_error,360,target_energy,Target energy,-15.51650047302246,-5.772027015686035,42.63928299103738
+energy_abs_error,360,max_target_atomic_force,Maximum target atomic force,129.79174812897304,88.36419114461758,80.56225702821285
+energy_abs_error,360,target_force_rms,Target force RMS,48.91867156977164,37.38702940665833,78.63223290291128
+energy_abs_error,360,h_planarity_ratio,H-cloud planarity ratio,0.13849407772038216,0.1572151723625497,44.56555706946337
+energy_abs_error,360,ch_mean,Mean C-H distance,1.9419266454588802,2.240336047296681,16.686458580732257
+energy_abs_error,360,ch_min,Minimum C-H distance,1.1444586047595346,1.6152541013890722,18.9164864560807
+energy_abs_error,360,ch_max,Maximum C-H distance,2.7344308552704635,2.7933916652512494,39.95549944374305
+energy_abs_error,360,ch_range,C-H distance range,1.4761613343893105,1.1082661646345595,75.78344729309117
+energy_abs_error,360,ch_cv,C-H radial coefficient of variation,0.2942907062089092,0.19572019460707707,79.44099301241265
+energy_abs_error,360,hch_min_deg,Minimum H-C-H angle,32.59303958005633,36.163980305814235,41.80427255340692
+energy_abs_error,360,hch_max_deg,Maximum H-C-H angle,137.67273504312112,135.72185211756437,53.3906673833423
+energy_abs_error,360,hch_mean_deg,Mean H-C-H angle (C-centered),86.32202155049077,90.26069149622963,40.85051063138289
+energy_abs_error,360,hch_angle_rmse_tetra_deg,H-C-H angular distortion,47.59287179370389,42.20776311965333,71.77714721434018
+energy_abs_error,360,chh_mean_deg,Mean C-H-H angle (H-centered),46.83898922475463,44.8696542518852,59.149489368617104
+energy_abs_error,360,hhh_mean_deg,Mean H-H-H angle (H-centered),60.0,60.0,71.67964599557494
+energy_abs_error,360,hydrogen_center_angle_mean_deg,Mean of all H-centered angles,53.41949461237731,52.4348271259426,59.149489368617104
+energy_abs_error,360,all_atom_angle_mean_deg,Mean of all atom-centered angles,60.0,60.0,62.33577919723996
+energy_abs_error,360,atom_center_mean_angle_std_deg,Variation among atom-centered mean angles,24.908359294876703,22.313421649886653,69.92712408905112
+energy_abs_error,360,tetrahedral_asymmetry,Combined tetrahedral asymmetry,0.8020773693755675,0.7433818997367098,65.84207302591282
+energy_abs_error,360,hh_min,Minimum H-H distance,1.337588540545133,1.5372654646137625,36.4729559119489
+energy_abs_error,360,hh_max,Maximum H-H distance,3.7504428724792613,4.231960264346535,25.831572894661182
+energy_abs_error,360,h_tetra_volume,Hydrogen tetrahedron volume,0.45344759408850677,0.9224571370749728,27.60909511368892
+force_rmse,226,target_energy,Target energy,-16.700446128845215,-5.787624835968018,41.8080226002825
+force_rmse,226,max_target_atomic_force,Maximum target atomic force,134.86789884660573,88.37926913048787,81.54851935649195
+force_rmse,226,target_force_rms,Target force RMS,53.035919866117545,37.396712044913016,81.85977324716559
+force_rmse,226,h_planarity_ratio,H-cloud planarity ratio,0.15768810572604747,0.1571480243443509,50.14812685158564
+force_rmse,226,ch_mean,Mean C-H distance,1.8832778659639895,2.2401520950755502,12.588907361342017
+force_rmse,226,ch_min,Minimum C-H distance,1.1076730191397417,1.614197370039276,17.097713721421517
+force_rmse,226,ch_max,Maximum C-H distance,2.6468556117059636,2.7934265385015418,28.23410292628658
+force_rmse,226,ch_range,C-H distance range,1.4425312816371296,1.1086085691902015,73.73717171464644
+force_rmse,226,ch_cv,C-H radial coefficient of variation,0.30627542349917625,0.19586137511853546,81.88852360654508
+force_rmse,226,hch_min_deg,Minimum H-C-H angle,33.80373944079134,36.1505349268047,44.561807022587786
+force_rmse,226,hch_max_deg,Maximum H-C-H angle,142.9064546007126,135.71409727941636,62.708283853548174
+force_rmse,226,hch_mean_deg,Mean H-C-H angle (C-centered),91.05474512623144,90.24724137926772,51.95564944561807
+force_rmse,226,hch_angle_rmse_tetra_deg,H-C-H angular distortion,44.53401998384666,42.22180037907381,60.02450030625383
+force_rmse,226,chh_mean_deg,Mean C-H-H angle (H-centered),44.47262743688428,44.87637931036614,48.04435055438193
+force_rmse,226,hhh_mean_deg,Mean H-H-H angle (H-centered),60.0,60.0,71.67964599557494
+force_rmse,226,hydrogen_center_angle_mean_deg,Mean of all H-centered angles,52.23631371844215,52.43818965518309,48.04435055438193
+force_rmse,226,all_atom_angle_mean_deg,Mean of all atom-centered angles,60.0,60.0,62.33577919723996
+force_rmse,226,atom_center_mean_angle_std_deg,Variation among atom-centered mean angles,25.190356076826824,22.315943896301672,72.1159014487681
+force_rmse,226,tetrahedral_asymmetry,Combined tetrahedral asymmetry,0.758604503628072,0.7435535485792619,54.26442830535382
+force_rmse,226,hh_min,Minimum H-H distance,1.3120463271506115,1.536859482958049,34.705433817922724
+force_rmse,226,hh_max,Maximum H-H distance,3.7091731264591683,4.231268877723838,24.15905198814985
+force_rmse,226,h_tetra_volume,Hydrogen tetrahedron volume,0.586627409634136,0.9207743970667491,34.56668208352605

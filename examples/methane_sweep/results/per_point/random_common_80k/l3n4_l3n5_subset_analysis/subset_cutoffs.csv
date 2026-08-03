@@ -1,0 +1,4 @@
+subset,selection,descriptor,cutoff
+high_force,>=,max_target_atomic_force,179.03454736741315
+high_energy,>=,target_energy,53.86563358306882
+planar,<=,h_planarity_ratio,0.0460367843388306

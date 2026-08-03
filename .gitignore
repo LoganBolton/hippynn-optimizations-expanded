@@ -19,3 +19,14 @@ examples/TEST_*/*
 
 examples/methane_sweep/logs_v1_10_hours_max
 examples/methane_sweep/logs
+
+# Methane sweep raw evaluation artifacts are large, reproducible outputs. Keep
+# summary tables and figures in Git, but leave per-structure arrays locally.
+examples/methane_sweep/results/per_point/**/*_per_point.csv
+examples/methane_sweep/results/per_point/**/*_per_point.npz
+examples/methane_sweep/results/per_point/**/shared_hard_point_audit.csv
+examples/methane_sweep/results/per_point/**/*_source_comparison.csv
+examples/methane_sweep/results/per_point/**/molecule_level_architecture_comparison.csv
+examples/methane_sweep/results/per_point/**/molecule_subset_descriptors.csv
+examples/methane_sweep/results/per_point/**/boxplot_*_excluded_points.csv
+examples/methane_sweep/slurm-*.out

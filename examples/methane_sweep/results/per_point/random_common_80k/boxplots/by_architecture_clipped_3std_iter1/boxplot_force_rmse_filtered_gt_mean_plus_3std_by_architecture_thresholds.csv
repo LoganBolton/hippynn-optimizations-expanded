@@ -1,0 +1,25 @@
+run_label,architecture,seed,source_file,metric_column,std_threshold,iteration,n_before,mean,sample_std,threshold,n_removed
+L3N4 seed 0,L3N4,0,examples/methane_sweep/results/per_point/random_common_80k/l3_n4_d1000000_seed0_task0_per_point.csv,force_rmse,3.0,1,80000,0.7487737191471382,1.062059810771518,3.9349531514616922,1249
+L3N4 seed 1,L3N4,1,examples/methane_sweep/results/per_point/random_common_80k/l3_n4_d1000000_seed1_task1_per_point.csv,force_rmse,3.0,1,80000,0.7759377503699537,2.727832319847768,8.959434709913259,133
+L3N4 seed 7,L3N4,7,examples/methane_sweep/results/per_point/random_common_80k/l3_n4_d1000000_seed7_task2_per_point.csv,force_rmse,3.0,1,80000,0.7593240561979255,1.803635935018513,6.170231861253464,417
+L3N4 seed 42,L3N4,42,examples/methane_sweep/results/per_point/random_common_80k/l3_n4_d1000000_seed42_task3_per_point.csv,force_rmse,3.0,1,80000,3.06855626350397,635.9190477885116,1910.8256996290388,1
+L3N4 seed 101,L3N4,101,examples/methane_sweep/results/per_point/random_common_80k/l3_n4_d1000000_seed101_task4_per_point.csv,force_rmse,3.0,1,80000,0.7459622809873312,1.2523542465365345,4.503025020596935,924
+L3N4 seed 202,L3N4,202,examples/methane_sweep/results/per_point/random_common_80k/l3_n4_d1000000_seed202_task5_per_point.csv,force_rmse,3.0,1,80000,0.8431210359313008,7.652568671926223,23.80082705170997,11
+L3N5 seed 0,L3N5,0,examples/methane_sweep/results/per_point/random_common_80k/l3_n5_d1000000_seed0_task3_per_point.csv,force_rmse,3.0,1,80000,0.9302972736635371,1.2755249187294415,4.756872029851861,1199
+L3N5 seed 1,L3N5,1,examples/methane_sweep/results/per_point/random_common_80k/l3_n5_d1000000_seed1_task4_per_point.csv,force_rmse,3.0,1,80000,0.77667101360709,1.0342250207399561,3.8793460758269585,1424
+L3N5 seed 2,L3N5,2,examples/methane_sweep/results/per_point/random_common_80k/l3_n5_d1000000_seed2_task5_per_point.csv,force_rmse,3.0,1,80000,0.8995919849183872,2.005835693119988,6.917099064278351,413
+L3N5 seed 3,L3N5,3,examples/methane_sweep/results/per_point/random_common_80k/l3_n5_d1000000_seed3_task6_per_point.csv,force_rmse,3.0,1,80000,1.3426306001985093,150.97216563344338,454.2591275005286,3
+L3N5 seed 4,L3N5,4,examples/methane_sweep/results/per_point/random_common_80k/l3_n5_d1000000_seed4_task7_per_point.csv,force_rmse,3.0,1,80000,0.767989277423989,1.1236320753312905,4.13888550341786,1187
+L3N5 seed 7,L3N5,7,examples/methane_sweep/results/per_point/random_common_80k/l3_n5_d1000000_seed7_task2_per_point.csv,force_rmse,3.0,1,80000,0.8156407186690648,2.715445565417085,8.96197741492032,164
+L3N5 seed 42,L3N5,42,examples/methane_sweep/results/per_point/random_common_80k/l3_n5_d1000000_seed42_task0_per_point.csv,force_rmse,3.0,1,80000,0.7763728265238862,1.0743564989113195,3.9994423232578447,1338
+L3N5 seed 1776,L3N5,1776,examples/methane_sweep/results/per_point/random_common_80k/l3_n5_d1000000_seed1776_task1_per_point.csv,force_rmse,3.0,1,80000,0.8445330250675972,11.79982220048153,36.24399962651219,3
+L4N3 seed 7,L4N3,7,examples/methane_sweep/results/per_point/random_common_80k/l4_n3_d1000000_seed7_task2_per_point.csv,force_rmse,3.0,1,80000,0.7753723255357129,1.0564935853803457,3.94485308167675,1348
+L4N3 seed 42,L4N3,42,examples/methane_sweep/results/per_point/random_common_80k/l4_n3_d1000000_seed42_task0_per_point.csv,force_rmse,3.0,1,80000,0.809886800124928,2.047969306208862,6.953794718751514,348
+L4N3 seed 101,L4N3,101,examples/methane_sweep/results/per_point/random_common_80k/l4_n3_d1000000_seed101_task3_per_point.csv,force_rmse,3.0,1,80000,0.8257259389713092,1.1601534754277159,4.306186365254456,1277
+L4N3 seed 202,L4N3,202,examples/methane_sweep/results/per_point/random_common_80k/l4_n3_d1000000_seed202_task4_per_point.csv,force_rmse,3.0,1,80000,0.7987275902263791,1.2491149539856543,4.546072452183342,1006
+L4N3 seed 303,L4N3,303,examples/methane_sweep/results/per_point/random_common_80k/l4_n3_d1000000_seed303_task5_per_point.csv,force_rmse,3.0,1,80000,0.8081150269731313,1.0942569696426558,4.090885935901099,1335
+L4N3 seed 1776,L4N3,1776,examples/methane_sweep/results/per_point/random_common_80k/l4_n3_d1000000_seed1776_task1_per_point.csv,force_rmse,3.0,1,80000,0.7893848742178087,1.2645035356073908,4.582895481039981,1002
+L4N4 seed 0,L4N4,0,examples/methane_sweep/results/per_point/random_common_80k/l4_n4_d1000000_seed0_task6_per_point.csv,force_rmse,3.0,1,80000,0.6998088506690505,1.0027711299909015,3.708122240641755,1249
+L4N4 seed 7,L4N4,7,examples/methane_sweep/results/per_point/random_common_80k/l4_n4_d1000000_seed7_task7_per_point.csv,force_rmse,3.0,1,80000,0.7121068102430937,1.0548637193503148,3.8766979682940383,1136
+L4N4 seed 42,L4N4,42,examples/methane_sweep/results/per_point/random_common_80k/l4_n4_d1000000_seed42_task8_per_point.csv,force_rmse,3.0,1,80000,0.7284919982471453,1.294255059768757,4.611257177553417,809
+L4N4 seed 1776,L4N4,1776,examples/methane_sweep/results/per_point/random_common_80k/l4_n4_d1000000_seed1776_task9_per_point.csv,force_rmse,3.0,1,80000,0.7028454213925167,2.376875554184212,7.833472083945153,161
