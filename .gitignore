@@ -29,4 +29,6 @@ examples/methane_sweep/results/per_point/**/*_source_comparison.csv
 examples/methane_sweep/results/per_point/**/molecule_level_architecture_comparison.csv
 examples/methane_sweep/results/per_point/**/molecule_subset_descriptors.csv
 examples/methane_sweep/results/per_point/**/boxplot_*_excluded_points.csv
+examples/methane_sweep/results/per_point/**/all_runs_*_ge_2std.csv
+examples/methane_sweep/results/per_point/**/top*_molecules.xyz
 examples/methane_sweep/slurm-*.out
