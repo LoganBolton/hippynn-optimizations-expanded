@@ -2,6 +2,8 @@ import pytest
 import torch
 import time
 
+from hippynn import settings
+from hippynn._settings_setup import DEFAULT_SETTINGS
 from hippynn.layers.hiplayers.tensors import HopInvariantLayerTorch, TensorExtractor
 from hippynn.layers.hiplayers.invariants import (
     HopInvariantLayer,
@@ -57,6 +59,44 @@ def evaluate_polynomial_collection_torch(x, polyCollection):
         monomial_start += polynomial_size
 
     return torch.stack(outputs, dim=1)
+
+
+def test_parallel_polynomial_kernel_is_opt_in():
+    default, _ = DEFAULT_SETTINGS["USE_PARALLEL_POLYNOMIAL_EVAL"]
+    assert default is False
+
+
+@pytest.mark.parametrize("use_parallel", [False, True], ids=["serial", "parallel"])
+def test_polynomial_kernel_backends(use_parallel, monkeypatch):
+    if not (triton_available_with_gather and torch.cuda.is_available()):
+        pytest.skip("Triton polynomial kernels require CUDA and tl.gather")
+
+    from hippynn.custom_kernels.poly_triton import EvaluatePolynomials
+
+    monkeypatch.setattr(settings, "USE_PARALLEL_POLYNOMIAL_EVAL", use_parallel)
+    torch.manual_seed(0)
+    tensor_features = torch.randn(
+        (3, 9), dtype=torch.float64, requires_grad=True, device="cuda"
+    )
+    poly_collection = compute_invariant_polynomial_collection(
+        n_max=2,
+        l_max=2,
+        input_tensor_ordering=["zero", "one", "two"],
+    )
+    poly_collection.set_device("cuda")
+
+    actual = EvaluatePolynomials.apply(tensor_features, poly_collection)
+    expected = evaluate_polynomial_collection_torch(
+        tensor_features, poly_collection
+    )
+
+    assert torch.allclose(actual, expected, rtol=1e-4, atol=1e-4)
+    assert torch.autograd.gradcheck(
+        EvaluatePolynomials.apply, (tensor_features, poly_collection)
+    )
+    assert torch.autograd.gradgradcheck(
+        EvaluatePolynomials.apply, (tensor_features, poly_collection)
+    )
 
 
 def test_polynomial_invariants_are_rotation_invariant_lmax3():
